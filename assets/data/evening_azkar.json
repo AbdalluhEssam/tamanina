@@ -1,0 +1,47 @@
+[
+  {
+    "id": "6",
+    "title": "أستغفر الله العظيم",
+    "arabic": "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيَّ الْقَيُّومَ وَأَتُوبُ إِلَيْهِ",
+    "transliteration": "Astaghfiru Allah al-'azim alladhi la ilaha illa huwa'l-hayy al-qayyum wa atubu ilayh",
+    "translation": "I seek forgiveness from Allah the Almighty, who is the only god, the Ever-Living, the Sustainer, and I repent to Him",
+    "count": 3,
+    "type": "evening"
+  },
+  {
+    "id": "7",
+    "title": "الحمد لله رب العالمين",
+    "arabic": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+    "transliteration": "Al-hamdu lillahi rabbi'l-'alamin",
+    "translation": "All praise is due to Allah, Lord of all the worlds",
+    "count": 1,
+    "type": "evening"
+  },
+  {
+    "id": "8",
+    "title": "لا إله إلا الله وحده لا شريك له",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    "transliteration": "La ilaha illa Allah wahdahu la sharika lah, lahu'l-mulk wa lahu'l-hamd wa huwa 'ala kulli shay'in qadir",
+    "translation": "There is no god but Allah alone, with no partner; His is the kingdom and His is the praise, and He has power over everything",
+    "count": 10,
+    "type": "evening"
+  },
+  {
+    "id": "9",
+    "title": "سبحان الله والحمد لله ولا إله إلا الله والله أكبر",
+    "arabic": "سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ",
+    "transliteration": "Subhan Allah wa'l-hamdu lillah wa la ilaha illa Allah wa Allahu akbar",
+    "translation": "Glory be to Allah, and all praise is due to Allah, and there is no god but Allah, and Allah is the Greatest",
+    "count": 33,
+    "type": "evening"
+  },
+  {
+    "id": "10",
+    "title": "اللهم أنت ربي لا إله إلا أنت",
+    "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ",
+    "transliteration": "Allahumma anta rabbi la ilaha illa anta, khalaqtani wa ana 'abduka wa ana 'ala 'ahdika wa wa'dika ma stata't",
+    "translation": "O Allah, You are my Lord, there is no god but You. You have created me and I am Your servant, and I am on Your covenant and promise as much as I am able",
+    "count": 1,
+    "type": "evening"
+  }
+]

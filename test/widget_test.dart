@@ -7,13 +7,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tamanina/app.dart';
+import 'package:tamanina/core/routing/app_router.dart';
 
 import 'package:tamanina/main.dart';
 
-void main() {
+void main() async {
+  final sharedPreferences = await SharedPreferences.getInstance();
+
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(appRouter: AppRouter(sharedPreferences)));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
