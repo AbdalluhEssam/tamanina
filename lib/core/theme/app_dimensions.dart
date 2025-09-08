@@ -107,7 +107,7 @@ class AppSizing {
   static double get avatarXLarge => 96.w;
 
   // App Bar
-  static double get appBarHeight => 56.h;
+  static double get appBarHeight => 40.h;
   static double get appBarElevation => 0.0;
 
   // Bottom Navigation

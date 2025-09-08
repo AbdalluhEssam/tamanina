@@ -1,5 +1,7 @@
 name: tamanina
 description: A new Flutter project with Clean Architecture by Abdalluh Essam
+
+version: 1.0.0+1
 # Flutter version on machine: 3.29.3
 publish_to: 'none'
 

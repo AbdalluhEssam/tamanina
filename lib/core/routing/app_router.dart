@@ -4,7 +4,7 @@ import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 import '../../features/onboarding/presentation/view/onboarding_screen.dart';
-import '../../features/home/presentation/view/home_screen.dart';
+import '../../features/home/presentation/screens/home_layout.dart';
 
 /// موجه المسارات الرئيسي للتطبيق
 /// Main App Router
@@ -23,7 +23,7 @@ class AppRouter {
         return _createRoute(const OnboardingScreen());
 
       case AppRoutes.home:
-        return _createRoute(const HomeScreen());
+        return _createRoute(const HomeLayout());
 
       case AppRoutes.settings:
         return _createRoute(_buildComingSoonScreen('الإعدادات'));

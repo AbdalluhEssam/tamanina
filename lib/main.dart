@@ -7,7 +7,6 @@ import 'core/cubit/locale/locale_cubit.dart';
 import 'core/cubit/theme/theme_cubit.dart';
 import 'core/utils/app_shared_preferences.dart';
 import 'core/routing/app_router.dart';
-import 'core/services/notification_service.dart';
 import 'core/services/service_locator.dart' as di;
 import 'features/splash/presentation/cubit/splash_cubit.dart';
 import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';

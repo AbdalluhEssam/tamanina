@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import '../constants/endpoint_constants.dart';
 import 'api_consumer.dart';
 import 'interceptors.dart';
-import 'status_code.dart';
 
 
 class DioConsumer implements ApiConsumer {

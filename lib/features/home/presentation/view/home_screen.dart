@@ -1,334 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../cubit/home_cubit.dart';
+import '../cubit/home_state.dart';
+import '../widgets/welcome_card.dart';
+import '../widgets/home_feature_card.dart';
 
-/// الشاشة الرئيسية للتطبيق
-/// Main Home Screen
-class HomeScreen extends StatefulWidget {
+/// Home Screen - Main features overview
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  final List<HomeTabData> _tabs = [
-    HomeTabData(
-      title: 'الرئيسية',
-      icon: Icons.home_rounded,
-      screen: const MainHomeTab(),
-    ),
-    HomeTabData(
-      title: 'الصلوات',
-      icon: Icons.access_time_rounded,
-      screen: const PrayerTimesTab(),
-    ),
-    HomeTabData(
-      title: 'الأذكار',
-      icon: Icons.auto_stories_rounded,
-      screen: const AzkarTab(),
-    ),
-    HomeTabData(
-      title: 'القرآن',
-      icon: Icons.book_rounded,
-      screen: const QuranTab(),
-    ),
-    HomeTabData(
-      title: 'المزيد',
-      icon: Icons.more_horiz_rounded,
-      screen: const MoreTab(),
-    ),
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _tabs.map((tab) => tab.screen).toList(),
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+    return BlocBuilder<HomeCubit, HomeState>(
+      builder: (context, state) {
+        if (state is HomeLoading) {
+          return _buildLoadingState();
+        } else if (state is HomeLoaded) {
+          return _buildLoadedState(state, context);
+        } else if (state is HomeError) {
+          return _buildErrorState(state.message, context);
+        }
+        return _buildInitialState();
+      },
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.backgroundLight,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: _tabs.map((tab) {
-          return BottomNavigationBarItem(
-            icon: Icon(tab.icon),
-            label: tab.title,
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-/// بيانات التبويبات
-class HomeTabData {
-  final String title;
-  final IconData icon;
-  final Widget screen;
-
-  const HomeTabData({
-    required this.title,
-    required this.icon,
-    required this.screen,
-  });
-}
-
-/// التبويب الرئيسي
-class MainHomeTab extends StatelessWidget {
-  const MainHomeTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              AppAssets.logo,
-              width: 32,
-              height: 32,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              AppConstants.appName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.backgroundLight,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primaryGreen,
-        elevation: 0,
-      ),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ترحيب
-            WelcomeCard(),
-            SizedBox(height: 20),
-
-            // الوصول السريع
-            QuickAccessSection(),
-            SizedBox(height: 20),
-
-            // إحصائيات سريعة
-            StatsSection(),
-            SizedBox(height: 20),
-
-            // التذكيرات
-            RemindersSection(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// بطاقة الترحيب
-class WelcomeCard extends StatelessWidget {
-  const WelcomeCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-      ),
+  Widget _buildLoadingState() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+            strokeWidth: 3,
+          ),
+          AppSpacing.verticalSpaceLG,
           Text(
-            'السلام عليكم',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.backgroundLight,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'أهلاً وسهلاً بك في طمأنينة',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.backgroundLight.withOpacity(0.9),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _getTimeGreeting(),
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.backgroundLight.withOpacity(0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _getTimeGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'صباح الخير';
-    if (hour < 17) return 'نهار سعيد';
-    return 'مساء الخير';
-  }
-}
-
-/// قسم الوصول السريع
-class QuickAccessSection extends StatelessWidget {
-  const QuickAccessSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'الوصول السريع',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickAccessCard(
-                'التسبيح',
-                Icons.radio_button_checked,
-                AppColors.primaryGreen,
-                () {},
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickAccessCard(
-                'القبلة',
-                Icons.navigation,
-                AppColors.primaryBlue,
-                () {},
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickAccessCard(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// قسم الإحصائيات
-class StatsSection extends StatelessWidget {
-  const StatsSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'إحصائيات اليوم',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 12),
-          Text(
-            'قريباً... سيتم عرض إحصائياتك اليومية هنا',
-            style: TextStyle(
-              fontSize: 14,
+            'جاري التحميل...',
+            style: AppTypography.bodyMediumArabic.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
@@ -336,123 +49,290 @@ class StatsSection extends StatelessWidget {
       ),
     );
   }
-}
 
-/// قسم التذكيرات
-class RemindersSection extends StatelessWidget {
-  const RemindersSection({super.key});
+  Widget _buildLoadedState(HomeLoaded state, BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read<HomeCubit>().refreshHomeData();
+      },
+      color: AppColors.primaryGreen,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(
+          top: AppSizing.appBarHeight,
+          left: AppSpacing.screenPadding,
+          right: AppSpacing.screenPadding,
+          bottom: 60.h, // Space for FAB and BottomNav
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Card
+            WelcomeCard(
+              greeting: state.greeting,
+              stats: state.stats,
+            ),
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.goldLight.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.3),
+            AppSpacing.verticalSpaceXL,
+
+            // Features Section Title
+            _buildSectionTitle('الخصائص الرئيسية', 'Main Features'),
+
+            AppSpacing.verticalSpaceLG,
+
+            // Features Grid
+            _buildFeaturesGrid(state.features, context),
+
+            AppSpacing.verticalSpaceXL,
+
+            // Quick Access Section
+            _buildQuickAccessSection(context),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.notifications_rounded,
-            color: AppColors.goldAccent,
-            size: 24,
+    );
+  }
+
+  Widget _buildErrorState(String message, BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: AppSpacing.screenPaddingAll,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64.w,
+              color: AppColors.error,
+            ),
+            AppSpacing.verticalSpaceLG,
+            Text(
+              'حدث خطأ',
+              style: AppTypography.h5Arabic.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            AppSpacing.verticalSpaceMD,
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMediumArabic.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            AppSpacing.verticalSpaceXL,
+            ElevatedButton(
+              onPressed: () => context.read<HomeCubit>().loadHomeData(),
+              child: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitialState() {
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildSectionTitle(String arabicTitle, String englishTitle) {
+    return Row(
+      children: [
+        Container(
+          width: 4.w,
+          height: 24.h,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryGreen, AppColors.goldAccent],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(2.r),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'تذكير',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+        ),
+        AppSpacing.horizontalSpaceMD,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                arabicTitle,
+                style: AppTypography.h6Arabic.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'لا تنسى قراءة أذكار الصباح',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+              ),
+              Text(
+                englishTitle,
+                style: AppTypography.captionEnglish.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeaturesGrid(List features, BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.15,
+        crossAxisSpacing: 12.w,
+        mainAxisSpacing: 12.h,
+      ),
+      itemCount: features.length,
+      itemBuilder: (context, index) {
+        final feature = features[index];
+        final colors = _getFeatureColors(feature.color);
+
+        return HomeFeatureCard(
+          titleArabic: feature.titleArabic,
+          titleEnglish: feature.titleEnglish,
+          iconPath: feature.iconPath,
+          color: colors,
+          isActive: feature.isActive,
+          onTap: () => _navigateToFeature(feature, context),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickAccessSection(BuildContext context) {
+    return Container(
+      padding: AppSpacing.paddingLG,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: AppRadius.lg,
+        border: Border.all(
+          color: AppColors.goldAccent.withOpacity(0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.goldAccent.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.star_rounded,
+                color: AppColors.goldAccent,
+                size: AppSizing.iconMD,
+              ),
+              AppSpacing.horizontalSpaceSM,
+              Text(
+                'وصول سريع',
+                style: AppTypography.labelLargeArabic.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.verticalSpaceMD,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildQuickAccessButton(
+                'التسبيح',
+                Icons.radio_button_checked,
+                AppColors.primaryGreen,
+                () => Navigator.pushNamed(context, '/sebha'),
+              ),
+              _buildQuickAccessButton(
+                'القبلة',
+                Icons.navigation_rounded,
+                AppColors.primaryBlue,
+                () => Navigator.pushNamed(context, '/qibla'),
+              ),
+              _buildQuickAccessButton(
+                'الأذكار',
+                Icons.auto_stories_rounded,
+                AppColors.goldAccent,
+                () => Navigator.pushNamed(context, '/azkar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickAccessButton(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 50.w,
+            height: 50.w,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: AppRadius.md,
+              border: Border.all(
+                color: color.withOpacity(0.2),
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: AppSizing.iconMD,
+            ),
+          ),
+          AppSpacing.verticalSpaceXS,
+          Text(
+            title,
+            style: AppTypography.captionArabic.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
     );
   }
-}
 
-/// باقي التبويبات (مؤقتة)
-class PrayerTimesTab extends StatelessWidget {
-  const PrayerTimesTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'أوقات الصلاة\nقريباً...',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
+  Color _getFeatureColors(String colorName) {
+    switch (colorName.toLowerCase()) {
+      case 'green':
+        return AppColors.primaryGreen;
+      case 'blue':
+        return AppColors.primaryBlue;
+      case 'gold':
+        return AppColors.goldAccent;
+      case 'orange':
+        return AppColors.warning;
+      case 'purple':
+        return AppColors.ishaColor;
+      case 'teal':
+        return AppColors.info;
+      default:
+        return AppColors.primaryGreen;
+    }
   }
-}
 
-class AzkarTab extends StatelessWidget {
-  const AzkarTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'الأذكار\nقريباً...',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class QuranTab extends StatelessWidget {
-  const QuranTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'القرآن الكريم\nقريباً...',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class MoreTab extends StatelessWidget {
-  const MoreTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'المزيد\nقريباً...',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
+  void _navigateToFeature(dynamic feature, BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('سيتم فتح ${feature.titleArabic} قريباً إن شاء الله'),
+        backgroundColor: AppColors.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.md,
         ),
       ),
     );

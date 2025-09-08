@@ -21,12 +21,10 @@ class AppTheme {
           onTertiary: AppColors.textPrimary,
           surface: AppColors.surfaceLight, // الأبيض النقي
           onSurface: AppColors.textOnSurface,
-          background: AppColors.backgroundLight, // الأبيض الدافئ
-          onBackground: AppColors.textPrimary,
           error: AppColors.error,
           onError: AppColors.textOnPrimary,
           outline: AppColors.divider,
-          surfaceVariant: AppColors.creamAccent,
+          surfaceContainerHighest: AppColors.creamAccent,
           onSurfaceVariant: AppColors.textSecondary,
         ),
 
@@ -281,14 +279,14 @@ class AppTheme {
 
         // Switch Theme
         switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.selected)) {
+          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.primaryGreen;
             }
             return AppColors.textSecondary;
           }),
-          trackColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.selected)) {
+          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.primaryGreenWithOpacity(0.5);
             }
             return AppColors.divider;
@@ -327,12 +325,10 @@ class AppTheme {
           onSecondary: AppColors.textPrimary,
           surface: AppColors.surfaceDark,
           onSurface: AppColors.textOnSurfaceDark,
-          background: AppColors.backgroundDark,
-          onBackground: AppColors.textOnSurfaceDark,
           error: AppColors.error,
           onError: AppColors.textOnPrimary,
           outline: AppColors.dividerDark,
-          surfaceVariant: AppColors.surfaceDark,
+          surfaceContainerHighest: AppColors.surfaceDark,
           onSurfaceVariant: AppColors.textOnSurfaceDark.withOpacity(0.7),
         ),
 

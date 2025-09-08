@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamanina/app.dart';
 import 'package:tamanina/core/routing/app_router.dart';
 
-import 'package:tamanina/main.dart';
 
 void main() async {
   final sharedPreferences = await SharedPreferences.getInstance();
