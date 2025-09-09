@@ -461,7 +461,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
             final index = entry.key;
             final tasbeeh = entry.value;
             return _buildTasbeehItem(tasbeeh, index);
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -792,7 +792,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
               ),
               AppSpacing.verticalSpaceMD,
               Text(
-                'لقد أكملت دورة كاملة من التسبيح\n${_completedCycles} دورة مكتملة',
+                'لقد أكملت دورة كاملة من التسبيح\n$_completedCycles دورة مكتملة',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMediumArabic.copyWith(
                   color: AppColors.textPrimary,

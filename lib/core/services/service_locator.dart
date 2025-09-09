@@ -13,6 +13,8 @@ import '../../features/onboarding/data/repositories/onboarding_repository_impl.d
 import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
 import '../../features/onboarding/domain/usecases/complete_onboarding_usecase.dart';
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
+// Quran feature DI
+import '../../features/quran/injection_container.dart' as quran_di;
 
 final sl = GetIt.instance;
 
@@ -20,6 +22,9 @@ Future<void> init() async {
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+
+  // Initialize Quran feature dependencies
+  await quran_di.initQuranDependencies();
 
   // === SPLASH FEATURE ===
   // Data sources

@@ -8,7 +8,7 @@ class AppTheme {
   // Primary app theme (Light Mode)
   static ThemeData get lightTheme => ThemeData(
         // Basic theme configuration
-        useMaterial3: true,
+        useMaterial3: false,
         brightness: Brightness.light,
 
         // Color scheme - تحديث نظام الألوان الإسلامية الهادئة
