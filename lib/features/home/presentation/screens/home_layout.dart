@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/usecases/home_usecases.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../cubit/home_navigation_cubit.dart';
@@ -24,8 +23,6 @@ class HomeLayout extends StatefulWidget {
 }
 
 class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
-  // Draggable FAB position - start with safe default position
-  Offset? _fabPosition;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   late AnimationController _scaleController;
@@ -35,7 +32,7 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Initialize animations
+    // Initialize animations for center FAB
     _pulseController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -61,20 +58,6 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
       parent: _scaleController,
       curve: Curves.easeInOut,
     ));
-  }
-
-  // Get safe initial FAB position - centered on screen
-  Offset _getSafeFabPosition(BuildContext context) {
-    if (_fabPosition != null) return _fabPosition!;
-
-    final screenSize = MediaQuery.of(context).size;
-    final safeArea = MediaQuery.of(context).padding;
-    final fabSize = 60.w; // Approximate FAB size
-
-    return Offset(
-      screenSize.width - fabSize - 16, // 16 = margin من اليمين
-      screenSize.height - fabSize - safeArea.bottom - 200, // 16 = margin من تحت
-    );
   }
 
   @override
@@ -148,13 +131,13 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
               },
             ),
 
-            // Body with different screens and draggable FAB
-            body: Stack(
-              children: [
-                _buildBody(currentIndex),
-                _buildDraggableChatbot(context),
-              ],
-            ),
+            // Body with different screens
+            body: _buildBody(currentIndex),
+
+            // Floating Action Button in center
+            floatingActionButton: _buildCenterFloatingButton(),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
 
             // Bottom Navigation Bar
             bottomNavigationBar: ModernBottomNavBar(
@@ -184,44 +167,10 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
     }
   }
 
-  /// Draggable Floating Chatbot Button
-  Widget _buildDraggableChatbot(BuildContext context) {
-    final currentPosition = _fabPosition ?? _getSafeFabPosition(context);
-
-    return Positioned(
-      left: currentPosition.dx,
-      top: currentPosition.dy,
-      child: Draggable(
-        feedback: _buildChatbotButton(context, isDragging: true),
-        childWhenDragging: Container(), // Hide original when dragging
-        onDragEnd: (details) {
-          setState(() {
-            // Keep FAB within screen bounds
-            final screenSize = MediaQuery.of(context).size;
-            final safeArea = MediaQuery.of(context).padding;
-            final fabSize = 60.w; // Approximate FAB size
-
-            _fabPosition = Offset(
-              details.offset.dx.clamp(0, screenSize.width - fabSize),
-              details.offset.dy.clamp(
-                AppSizing.appBarHeight + safeArea.top + 20.h,
-                screenSize.height -
-                    kBottomNavigationBarHeight -
-                    safeArea.bottom -
-                    20.h, // Safe margin above bottom nav
-              ),
-            );
-          });
-        },
-        child: _buildChatbotButton(context),
-      ),
-    );
-  }
-
-  /// Chatbot Button Widget
-  Widget _buildChatbotButton(BuildContext context, {bool isDragging = false}) {
+  /// Center Floating Action Button
+  Widget _buildCenterFloatingButton() {
     return GestureDetector(
-      onTap: isDragging ? null : () => _showChatbotBottomSheet(context),
+      onTap: () => Navigator.pushNamed(context, '/chatbot'),
       onTapDown: (_) => _scaleController.forward(),
       onTapUp: (_) => _scaleController.reverse(),
       onTapCancel: () => _scaleController.reverse(),
@@ -231,8 +180,8 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
           return Transform.scale(
             scale: _pulseAnimation.value * _scaleAnimation.value,
             child: Container(
-              width: 60.w,
-              height: 60.w,
+              width: 65.w,
+              height: 65.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -246,14 +195,14 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primaryGreen.withOpacity(0.4),
-                    blurRadius: isDragging ? 20 : 12,
-                    offset: const Offset(0, 4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
                   // Glow effect
                   BoxShadow(
                     color: AppColors.primaryGreen.withOpacity(0.2),
-                    blurRadius: isDragging ? 30 : 20,
-                    spreadRadius: isDragging ? 5 : 2,
+                    blurRadius: 25,
+                    spreadRadius: 2,
                   ),
                 ],
               ),
@@ -262,8 +211,8 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
                 children: [
                   // Background pulse circle
                   Container(
-                    width: 50.w,
-                    height: 50.w,
+                    width: 55.w,
+                    height: 55.w,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.1),
@@ -273,15 +222,15 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
                   Icon(
                     Icons.mosque_rounded, // Islamic mosque icon
                     color: Colors.white,
-                    size: AppSizing.iconMD,
+                    size: AppSizing.iconLG,
                   ),
                   // Chat indicator
                   Positioned(
-                    top: 12.w,
-                    right: 12.w,
+                    top: 10.w,
+                    right: 10.w,
                     child: Container(
-                      width: 12.w,
-                      height: 12.w,
+                      width: 14.w,
+                      height: 14.w,
                       decoration: BoxDecoration(
                         color: AppColors.goldAccent,
                         shape: BoxShape.circle,
@@ -293,7 +242,7 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
                       child: Icon(
                         Icons.chat_bubble,
                         color: Colors.white,
-                        size: 6.w,
+                        size: 8.w,
                       ),
                     ),
                   ),
@@ -302,187 +251,6 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
             ),
           );
         },
-      ),
-    );
-  }
-
-  /// Show Chatbot Bottom Sheet
-  void _showChatbotBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildChatbotBottomSheet(context),
-    );
-  }
-
-  /// Chatbot Bottom Sheet Content
-  Widget _buildChatbotBottomSheet(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppRadius.xl.topLeft.x),
-          topRight: Radius.circular(AppRadius.xl.topRight.x),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: EdgeInsets.only(top: 12.h),
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: AppColors.textSecondary.withOpacity(0.3),
-              borderRadius: AppRadius.sm,
-            ),
-          ),
-
-          // Header
-          Container(
-            padding: AppSpacing.paddingLG,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primaryGreen.withOpacity(0.1),
-                  AppColors.goldAccent.withOpacity(0.1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.xl.topLeft.x),
-                topRight: Radius.circular(AppRadius.xl.topRight.x),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50.w,
-                  height: 50.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primaryGreen,
-                        AppColors.primaryGreen.withOpacity(0.8),
-                      ],
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.mosque_rounded,
-                    color: Colors.white,
-                    size: AppSizing.iconMD,
-                  ),
-                ),
-                AppSpacing.horizontalSpaceMD,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'المساعد الإسلامي الذكي',
-                        style: AppTypography.h6Arabic.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'AI Islamic Assistant',
-                        style: AppTypography.captionEnglish.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Chat content (placeholder)
-          Expanded(
-            child: Container(
-              padding: AppSpacing.paddingLG,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: AppSpacing.paddingXL,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: AppRadius.lg,
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 48.w,
-                          color: AppColors.primaryGreen,
-                        ),
-                        AppSpacing.verticalSpaceMD,
-                        Text(
-                          'مرحباً بك في المساعد الإسلامي الذكي',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.h6Arabic.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        AppSpacing.verticalSpaceSM,
-                        Text(
-                          'يمكنني مساعدتك في:\n• أسئلة حول الإسلام\n• تفسير القرآن\n• الأحاديث النبوية\n• أحكام الصلاة والزكاة\n• الأذكار والأدعية',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyMediumArabic.copyWith(
-                            color: AppColors.textSecondary,
-                            height: 1.5,
-                          ),
-                        ),
-                        AppSpacing.verticalSpaceLG,
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 8.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.goldAccent.withOpacity(0.1),
-                            borderRadius: AppRadius.md,
-                          ),
-                          child: Text(
-                            'قريباً إن شاء الله',
-                            style: AppTypography.labelMediumArabic.copyWith(
-                              color: AppColors.goldAccent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

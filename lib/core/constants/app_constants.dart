@@ -78,6 +78,7 @@ class AppRoutes {
   static const String qibla = '/qibla';
   static const String statistics = '/statistics';
   static const String settings = '/settings';
+  static const String chatbot = '/chatbot';
 }
 
 /// مسارات الملفات والأصول

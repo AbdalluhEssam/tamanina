@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tamanina/core/extensions/navigation_extensions.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -246,7 +248,7 @@ class HomeScreen extends StatelessWidget {
                 'التسبيح',
                 Icons.radio_button_checked,
                 AppColors.primaryGreen,
-                () => Navigator.pushNamed(context, '/sebha'),
+                () => context.pushNamed(AppRoutes.sebha),
               ),
               _buildQuickAccessButton(
                 'القبلة',

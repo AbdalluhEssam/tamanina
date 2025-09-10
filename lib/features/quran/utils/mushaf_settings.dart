@@ -10,7 +10,25 @@ class MushafSettings {
   // القيم الافتراضية
   static const double defaultFontSize = 18.0;
   static const double defaultLineHeight = 1.8;
+  static const String defaultFontFamily = 'Amiri';
+  static const List<String> supportedFonts = [
+    'Amiri',
+    'Cairo',
+    'Tajawal',
+    'Scheherazade',
+    'NotoNaskhArabic',
+  ];
+
+  // أسماء الخطوط باللغة العربية للعرض
+  static const Map<String, String> fontDisplayNames = {
+    'Amiri': 'أميري',
+    'Cairo': 'القاهرة',
+    'Tajawal': 'تجوال',
+    'Scheherazade': 'شهرزاد',
+    'NotoNaskhArabic': 'نوتو نسخ عربي',
+  };
   static const double minFontSize = 12.0;
+  static const String _fontFamilyKey = 'mushaf_font_family';
   static const double maxFontSize = 32.0;
   static const double minLineHeight = 1.2;
   static const double maxLineHeight = 2.5;
@@ -65,6 +83,19 @@ class MushafSettings {
     await prefs.setBool(_darkModeKey, darkMode);
   }
 
+  // الحصول على نوع الخط
+  static Future<String> getFontFamily() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_fontFamilyKey) ?? defaultFontFamily;
+  }
+
+  // تعيين نوع الخط
+  static Future<void> setFontFamily(String fontFamily) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!supportedFonts.contains(fontFamily)) return;
+    await prefs.setString(_fontFamilyKey, fontFamily);
+  }
+
   // إعادة تعيين الإعدادات للقيم الافتراضية
   static Future<void> resetToDefaults() async {
     final prefs = await SharedPreferences.getInstance();
@@ -72,6 +103,7 @@ class MushafSettings {
     await prefs.setDouble(_lineHeightKey, defaultLineHeight);
     await prefs.setBool(_showBasmalaKey, true);
     await prefs.setBool(_darkModeKey, false);
+    await prefs.setString(_fontFamilyKey, defaultFontFamily);
   }
 
   // الحصول على جميع الإعدادات
@@ -81,6 +113,7 @@ class MushafSettings {
       lineHeight: await getLineHeight(),
       showBasmala: await getShowBasmala(),
       darkMode: await getDarkMode(),
+      fontFamily: await getFontFamily(),
     );
   }
 }
@@ -91,12 +124,14 @@ class MushafSettingsData {
   final double lineHeight;
   final bool showBasmala;
   final bool darkMode;
+  final String fontFamily;
 
   const MushafSettingsData({
     required this.fontSize,
     required this.lineHeight,
     required this.showBasmala,
     required this.darkMode,
+    required this.fontFamily,
   });
 
   MushafSettingsData copyWith({
@@ -104,12 +139,14 @@ class MushafSettingsData {
     double? lineHeight,
     bool? showBasmala,
     bool? darkMode,
+    String? fontFamily,
   }) {
     return MushafSettingsData(
       fontSize: fontSize ?? this.fontSize,
       lineHeight: lineHeight ?? this.lineHeight,
       showBasmala: showBasmala ?? this.showBasmala,
       darkMode: darkMode ?? this.darkMode,
+      fontFamily: fontFamily ?? this.fontFamily,
     );
   }
 }

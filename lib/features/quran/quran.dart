@@ -16,8 +16,6 @@ export 'presentation/bloc/quran_event.dart';
 export 'presentation/bloc/quran_state.dart';
 export 'presentation/screens/quran_screen.dart';
 export 'presentation/screens/quran_tab_screen.dart';
-export 'presentation/screens/surah_details_screen.dart';
-export 'presentation/screens/quran_index_screen.dart';
 
 // Dependency injection
 export 'injection_container.dart';

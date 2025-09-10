@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../utils/mushaf_settings.dart';
 
 /// شاشة إعدادات المصحف الشريف
@@ -14,6 +15,7 @@ class MushafSettingsScreen extends StatefulWidget {
 class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
   MushafSettingsData? settings;
   bool isLoading = true;
+  List<String> availableFonts = [];
 
   @override
   void initState() {
@@ -24,6 +26,8 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
   Future<void> _loadSettings() async {
     try {
       final settingsData = await MushafSettings.getAllSettings();
+      // load supported fonts from utility
+      availableFonts = MushafSettings.supportedFonts;
       setState(() {
         settings = settingsData;
         isLoading = false;
@@ -61,6 +65,13 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
     await MushafSettings.setDarkMode(darkMode);
     setState(() {
       settings = settings?.copyWith(darkMode: darkMode);
+    });
+  }
+
+  Future<void> _updateFontFamily(String newFont) async {
+    await MushafSettings.setFontFamily(newFont);
+    setState(() {
+      settings = settings?.copyWith(fontFamily: newFont);
     });
   }
 
@@ -131,6 +142,8 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
             textColor: textColor,
             children: [
               _buildFontSizeSlider(textColor),
+              SizedBox(height: 12.h),
+              _buildFontFamilySelector(textColor),
               SizedBox(height: 16.h),
               _buildLineHeightSlider(textColor),
               SizedBox(height: 16.h),
@@ -279,7 +292,7 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Text(
-                '${settings!.lineHeight.toStringAsFixed(1)}',
+                settings!.lineHeight.toStringAsFixed(1),
                 style: AppTypography.bodySmallArabic.copyWith(
                   color: Colors.brown,
                   fontWeight: FontWeight.bold,
@@ -324,24 +337,132 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
         children: [
           Text(
             'معاينة النص',
-            style: AppTypography.captionArabic.copyWith(
+            style: _withSelectedFont(AppTypography.captionArabic.copyWith(
               color: Colors.brown,
               fontWeight: FontWeight.bold,
-            ),
+            )),
           ),
           SizedBox(height: 8.h),
           Text(
             'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ﴿١﴾ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ ﴿٢﴾',
             textAlign: TextAlign.center,
             textDirection: TextDirection.rtl,
-            style: AppTypography.bodyLargeArabic.copyWith(
+            style: _withSelectedFont(AppTypography.bodyLargeArabic.copyWith(
               fontSize: settings!.fontSize.sp,
               height: settings!.lineHeight,
               color: settings!.darkMode ? Colors.white : Colors.black87,
-            ),
+            )),
           ),
         ],
       ),
+    );
+  }
+
+  // Apply the selected mushaf font to a base TextStyle for immediate preview
+  TextStyle _withSelectedFont(TextStyle base) {
+    final font = settings?.fontFamily ?? MushafSettings.defaultFontFamily;
+    try {
+      switch (font) {
+        case 'Amiri':
+          return GoogleFonts.amiri(textStyle: base);
+        case 'Cairo':
+          return GoogleFonts.cairo(textStyle: base);
+        case 'Tajawal':
+          return GoogleFonts.tajawal(textStyle: base);
+        case 'NotoNaskhArabic':
+          return GoogleFonts.notoNaskhArabic(textStyle: base);
+        case 'Scheherazade':
+          return GoogleFonts.getFont('Scheherazade', textStyle: base);
+        default:
+          return GoogleFonts.getFont(font, textStyle: base);
+      }
+    } catch (e) {
+      return base;
+    }
+  }
+
+  Widget _buildFontFamilySelector(Color textColor) {
+    if (availableFonts.isEmpty || settings == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'نوع الخط',
+          style: AppTypography.bodyMediumArabic.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        DropdownMenu<String>(
+          width: 300.w, // ده بيخلي الـ field نفسه يتمدد
+          initialSelection: settings!.fontFamily,
+          label: Text(
+            "اختر الخط",
+            style: AppTypography.bodyMediumArabic.copyWith(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.brown,
+            ),
+          ),
+          textStyle: AppTypography.bodyMediumArabic.copyWith(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
+          trailingIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.brown,
+          ),
+          menuStyle: MenuStyle(
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                side: BorderSide(color: Colors.brown.withOpacity(0.2)),
+              ),
+            ),
+            fixedSize: WidgetStateProperty.all(
+              Size(90.w, 240.h), // 👈 عرض 90px وارتفاع 250px
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.brown.withOpacity(0.06),
+            contentPadding:
+                EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: Colors.brown.withOpacity(0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: Colors.brown, width: 1.5),
+            ),
+          ),
+          dropdownMenuEntries: availableFonts.map((f) {
+            return DropdownMenuEntry<String>(
+              value: f,
+              label: MushafSettings.fontDisplayNames[f] ?? f,
+              style: ButtonStyle(
+                textStyle: WidgetStateProperty.all(
+                  AppTypography.bodyMediumArabic.copyWith(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+          onSelected: (v) {
+            if (v == null) return;
+            _updateFontFamily(v);
+          },
+        )
+      ],
     );
   }
 

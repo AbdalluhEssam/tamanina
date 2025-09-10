@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:quran_sharif/quran_sharif.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../utils/reading_position_manager.dart';
 import '../../utils/mushaf_settings.dart';
 import 'mushaf_settings_screen.dart';
@@ -54,6 +55,8 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           currentLineHeight = settings!.lineHeight;
           showBasmala = settings!.showBasmala;
           isDarkMode = settings!.darkMode;
+          // apply font family if provided
+          // AppTypography uses font fallback; we pass fontFamily directly where needed
         });
       }
     } catch (e) {
@@ -293,12 +296,26 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      title: Text(
-        'المصحف الشريف',
-        style: AppTypography.h6Arabic.copyWith(
-          color: isDarkMode ? Colors.white : Colors.brown,
-          fontWeight: FontWeight.bold,
-        ),
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '\u0627\u0644\u0645\u0635\u062d\u0641 \u0627\u0644\u0634\u0631\u064a\u0641',
+            style: _withSelectedFont(AppTypography.h6Arabic.copyWith(
+              color: isDarkMode ? Colors.white : Colors.brown,
+              fontWeight: FontWeight.bold,
+            )),
+          ),
+          if (settings != null)
+            Text(
+              settings!.fontFamily,
+              style: AppTypography.captionArabic.copyWith(
+                color:
+                    isDarkMode ? Colors.white70 : Colors.brown.withOpacity(0.8),
+                fontSize: 12.sp,
+              ),
+            ),
+        ],
       ),
       centerTitle: true,
       iconTheme: IconThemeData(
@@ -352,9 +369,9 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           SizedBox(height: 20.h),
           Text(
             'جارٍ تحميل المصحف الشريف...',
-            style: AppTypography.bodyLargeArabic.copyWith(
+            style: _withSelectedFont(AppTypography.bodyLargeArabic.copyWith(
               color: Colors.brown,
-            ),
+            )),
           ),
         ],
       ),
@@ -374,15 +391,15 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           SizedBox(height: 20.h),
           Text(
             'حدث خطأ في التحميل',
-            style: AppTypography.h6Arabic.copyWith(
+            style: _withSelectedFont(AppTypography.h6Arabic.copyWith(
               color: Colors.red,
-            ),
+            )),
           ),
           SizedBox(height: 10.h),
           Text(
             error ?? '',
             textAlign: TextAlign.center,
-            style: AppTypography.bodyMediumArabic,
+            style: _withSelectedFont(AppTypography.bodyMediumArabic),
           ),
           SizedBox(height: 20.h),
           ElevatedButton(
@@ -399,7 +416,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
     return Center(
       child: Text(
         'لا توجد بيانات',
-        style: AppTypography.h6Arabic,
+        style: _withSelectedFont(AppTypography.h6Arabic),
       ),
     );
   }
@@ -533,10 +550,12 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
             Text(
               surahName,
               textAlign: TextAlign.center,
-              style: AppTypography.h6Arabic.copyWith(
-                color: isDarkMode ? Colors.amber : Colors.brown,
-                fontWeight: FontWeight.bold,
-                fontSize: 18.sp, // خط أصغر
+              style: _withSelectedFont(
+                AppTypography.h6Arabic.copyWith(
+                  color: isDarkMode ? Colors.amber : Colors.brown,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.sp, // خط أصغر
+                ),
               ),
             ),
             // if (surahDetails.isNotEmpty) ...[
@@ -590,14 +609,16 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
 
   Widget _buildBasmala() {
     return Text(
-      'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0644\u064e\u0651\u0647\u0650 \u0627\u0644\u0631\u064e\u0651\u062d\u0652\u0645\u064e\u0670\u0646\u0650 \u0627\u0644\u0631\u064e\u0651\u062d\u0650\u064a\u0645\u0650',
       textAlign: TextAlign.center,
       textDirection: TextDirection.rtl,
-      style: AppTypography.h4Arabic.copyWith(
-        fontSize: (currentFontSize + 4).sp,
-        height: currentLineHeight,
-        color: isDarkMode ? Colors.amber : Colors.brown,
-        fontWeight: FontWeight.w600,
+      style: _withSelectedFont(
+        AppTypography.h4Arabic.copyWith(
+          fontSize: (currentFontSize + 4).sp,
+          height: currentLineHeight,
+          color: isDarkMode ? Colors.amber : Colors.brown,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -666,12 +687,12 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
       textSpans.add(
         TextSpan(
           text: ayahText,
-          style: AppTypography.bodyLargeArabic.copyWith(
+          style: _withSelectedFont(AppTypography.bodyLargeArabic.copyWith(
             fontSize: currentFontSize.sp,
             height: currentLineHeight,
             color: isDarkMode ? Colors.white : Colors.black87,
             fontWeight: FontWeight.w400,
-          ),
+          )),
         ),
       );
 
@@ -679,11 +700,11 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
       textSpans.add(
         TextSpan(
           text: ' ﴿${ayah.numberInSurah}﴾ ',
-          style: AppTypography.bodyLargeArabic.copyWith(
+          style: _withSelectedFont(AppTypography.bodyLargeArabic.copyWith(
             color: isDarkMode ? Colors.amber : Colors.brown,
             fontWeight: FontWeight.bold,
             fontSize: (currentFontSize - 2).sp,
-          ),
+          )),
         ),
       );
 
@@ -692,9 +713,9 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
         textSpans.add(
           TextSpan(
             text: '  ',
-            style: AppTypography.bodyLargeArabic.copyWith(
+            style: _withSelectedFont(AppTypography.bodyLargeArabic.copyWith(
               fontSize: currentFontSize.sp,
-            ),
+            )),
           ),
         );
       }
@@ -826,11 +847,11 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
               SizedBox(width: 6.w),
               Text(
                 pageNumber.toString(),
-                style: AppTypography.captionArabic.copyWith(
+                style: _withSelectedFont(AppTypography.captionArabic.copyWith(
                   color: isDarkMode ? Colors.amber : Colors.brown,
                   fontWeight: FontWeight.bold,
                   fontSize: 13.sp,
-                ),
+                )),
               ),
             ],
           ),
@@ -926,10 +947,11 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
               ),
               child: Text(
                 '$currentPageNumber من $totalPages',
-                style: AppTypography.bodyMediumArabic.copyWith(
+                style:
+                    _withSelectedFont(AppTypography.bodyMediumArabic.copyWith(
                   color: isDarkMode ? Colors.amber : Colors.brown,
                   fontWeight: FontWeight.bold,
-                ),
+                )),
               ),
             ),
           ),
@@ -999,9 +1021,9 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           children: [
             Text(
               'انتقل إلى صفحة',
-              style: AppTypography.h6Arabic.copyWith(
+              style: _withSelectedFont(AppTypography.h6Arabic.copyWith(
                 fontWeight: FontWeight.bold,
-              ),
+              )),
             ),
             SizedBox(height: 20.h),
             TextField(
@@ -1078,17 +1100,18 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
             children: [
               Text(
                 'العلامات المرجعية',
-                style: AppTypography.h6Arabic.copyWith(
+                style: _withSelectedFont(AppTypography.h6Arabic.copyWith(
                   fontWeight: FontWeight.bold,
-                ),
+                )),
               ),
               SizedBox(height: 20.h),
               if (bookmarks.isEmpty)
                 Text(
                   'لا توجد علامات مرجعية',
-                  style: AppTypography.bodyMediumArabic.copyWith(
+                  style:
+                      _withSelectedFont(AppTypography.bodyMediumArabic.copyWith(
                     color: Colors.grey,
-                  ),
+                  )),
                 )
               else
                 Expanded(
@@ -1145,17 +1168,18 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
             children: [
               Text(
                 'تاريخ القراءة',
-                style: AppTypography.h6Arabic.copyWith(
+                style: _withSelectedFont(AppTypography.h6Arabic.copyWith(
                   fontWeight: FontWeight.bold,
-                ),
+                )),
               ),
               SizedBox(height: 20.h),
               if (history.isEmpty)
                 Text(
                   'لا يوجد تاريخ قراءة',
-                  style: AppTypography.bodyMediumArabic.copyWith(
+                  style:
+                      _withSelectedFont(AppTypography.bodyMediumArabic.copyWith(
                     color: Colors.grey,
-                  ),
+                  )),
                 )
               else
                 Expanded(
@@ -1213,6 +1237,47 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
     if (result != null || mounted) {
       await _loadSettings();
     }
+  }
+
+  // Helper to apply selected font family using GoogleFonts if available
+  TextStyle _withSelectedFont(TextStyle base) {
+    final font = settings?.fontFamily;
+    if (font == null || font.isEmpty) return base;
+    try {
+      // Resolve the actual fontFamily name and apply it to the base
+      // TextStyle. This is more robust when AppTypography already
+      // embeds a concrete font family.
+      String? resolvedFamily;
+      switch (font) {
+        case 'Amiri':
+          resolvedFamily = GoogleFonts.amiri().fontFamily;
+          break;
+        case 'Cairo':
+          resolvedFamily = GoogleFonts.cairo().fontFamily;
+          break;
+        case 'Tajawal':
+          resolvedFamily = GoogleFonts.tajawal().fontFamily;
+          break;
+        case 'NotoNaskhArabic':
+          resolvedFamily = GoogleFonts.notoNaskhArabic().fontFamily;
+          break;
+        case 'Scheherazade':
+          resolvedFamily =
+              GoogleFonts.getFont('Scheherazade').fontFamily ?? 'Scheherazade';
+          break;
+        default:
+          resolvedFamily = GoogleFonts.getFont(font).fontFamily ?? font;
+      }
+
+      if (resolvedFamily != null && resolvedFamily.isNotEmpty) {
+        return base.copyWith(fontFamily: resolvedFamily);
+      }
+    } catch (_) {
+      // Fallback: return base if GoogleFonts cannot load the font
+      return base;
+    }
+    // If resolution failed, return base
+    return base;
   }
 }
 

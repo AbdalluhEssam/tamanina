@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_dimensions.dart';
-import '../../../../../core/theme/app_typography.dart';
+import 'dart:math' as math;
 
 /// Tasbeeh Tab Screen Content
 class TasbeehTabScreen extends StatefulWidget {
@@ -26,6 +25,69 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
   late Animation<double> _rotationAnimation;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+
+  // Draggable button position
+  Offset? _buttonPosition;
+
+  // Animation controller for smooth movement
+  late AnimationController _moveController;
+  late Animation<Offset> _moveAnimation;
+
+  // Get safe initial button position
+  Offset _getSafeButtonPosition(BuildContext context) {
+    if (_buttonPosition != null) return _buttonPosition!;
+
+    final screenSize = MediaQuery.of(context).size;
+    final buttonSize = 80.w; // Button size
+
+    return Offset(
+      screenSize.width - buttonSize - 20.w, // margin from right
+      screenSize.height / 2 - buttonSize / 2, // center vertically
+    );
+  }
+
+  // Get safe position within screen bounds
+  Offset _getSafePosition(Offset position, BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final safeArea = MediaQuery.of(context).padding;
+    final buttonSize = 80.w;
+    final margin = 10.w; // Margin from edges
+
+    final safeX = position.dx.clamp(
+      margin,
+      screenSize.width - buttonSize - margin,
+    );
+
+    final safeY = position.dy.clamp(
+      safeArea.top + margin, // Below status bar with margin
+      screenSize.height -
+          buttonSize -
+          safeArea.bottom -
+          100.h -
+          margin, // Above bottom nav with margin
+    );
+
+    return Offset(safeX, safeY);
+  }
+
+  // Snap to edge if close enough (optional feature)
+  Offset _getSnapPosition(Offset position, BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final buttonSize = 80.w;
+    final snapDistance = 50.w; // Distance to trigger snap
+
+    final safePosition = _getSafePosition(position, context);
+
+    // Check if close to left or right edge
+    if (safePosition.dx < snapDistance) {
+      return Offset(10.w, safePosition.dy); // Snap to left
+    } else if (safePosition.dx > screenSize.width - buttonSize - snapDistance) {
+      return Offset(screenSize.width - buttonSize - 10.w,
+          safePosition.dy); // Snap to right
+    }
+
+    return safePosition; // No snapping needed
+  }
 
   final List<Map<String, dynamic>> _tasbeehList = [
     {
@@ -58,20 +120,20 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
 
     _pulseAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.1,
+      end: 1.15,
     ).animate(CurvedAnimation(
       parent: _pulseController,
-      curve: Curves.easeInOut,
+      curve: Curves.elasticOut,
     ));
 
     _rotationController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 10),
       vsync: this,
     )..repeat();
 
@@ -84,7 +146,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
     ));
 
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
 
@@ -96,6 +158,20 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
       curve: Curves.easeInOut,
     ));
 
+    // Smooth movement animation controller
+    _moveController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+
+    _moveAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _moveController,
+      curve: Curves.easeOutCubic,
+    ));
+
     _fadeController.forward();
   }
 
@@ -104,6 +180,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
     _pulseController.dispose();
     _rotationController.dispose();
     _fadeController.dispose();
+    _moveController.dispose();
     super.dispose();
   }
 
@@ -113,253 +190,303 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        top: AppSizing.appBarHeight,
-        left: AppSpacing.screenPadding,
-        right: AppSpacing.screenPadding,
-        bottom: 60.h, // Space for BottomNav
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return SafeArea(
+      child: Stack(
         children: [
-          // Header
-          _buildHeader(),
+          // Main Content
+          SingleChildScrollView(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              children: [
+                // Compact Header
+                _buildCompactHeader(),
 
-          AppSpacing.verticalSpaceXL,
+                SizedBox(height: 24.h),
 
-          // Counter Display
-          _buildCounterDisplay(),
+                // Main Tasbeeh Circle with Prayer Beads (without button)
+                _buildTasbeehWithBeads(),
 
-          AppSpacing.verticalSpaceXL,
+                SizedBox(height: 20.h),
 
-          // Count Button
-          _buildCountButton(),
+                // Progress Info
+                _buildProgressInfo(),
 
-          AppSpacing.verticalSpaceLG,
+                SizedBox(height: 24.h),
 
-          // Progress Bar
-          _buildProgressBar(),
+                // Action Buttons
+                _buildActionButtons(),
 
-          AppSpacing.verticalSpaceXL,
+                // Extra space for draggable button
+                SizedBox(height: 100.h),
+              ],
+            ),
+          ),
 
-          // Tasbeeh List
-          _buildTasbeehList(),
-
-          AppSpacing.verticalSpaceLG,
-
-          // Action Buttons
-          _buildActionButtons(),
+          // Draggable Counter Button
+          _buildDraggableCountButton(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildCompactHeader() {
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
         width: double.infinity,
-        padding: AppSpacing.paddingLG,
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: _currentTasbeeh['gradient'] as List<Color>,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: AppRadius.lg,
-          border: Border.all(
-            color: (_currentTasbeeh['color'] as Color).withOpacity(0.3),
-          ),
+          borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: (_currentTasbeeh['color'] as Color).withOpacity(0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: (_currentTasbeeh['color'] as Color).withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
+        child: Row(
           children: [
             RotationTransition(
               turns: _rotationAnimation,
               child: Container(
-                width: 50.w,
-                height: 50.w,
+                width: 40.w,
+                height: 40.w,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
                   color: Colors.white.withOpacity(0.3),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.auto_awesome_rounded,
+                  Icons.brightness_7,
+                  size: 20.w,
                   color: Colors.white,
-                  size: AppSizing.iconLG,
                 ),
               ),
             ),
-            AppSpacing.verticalSpaceMD,
-            Text(
-              'التسبيح الذكي',
-              style: AppTypography.h5Arabic.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    offset: const Offset(0, 2),
-                    blurRadius: 4,
-                    color: Colors.black.withOpacity(0.3),
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'التسبيح الذكي',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'المرحلة ${_currentTasbeehIndex + 1} • الدورة ${_completedCycles + 1}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12.sp,
+                    ),
                   ),
                 ],
               ),
             ),
-            AppSpacing.verticalSpaceXS,
-            Text(
-              _currentTasbeeh['meaning'] as String,
-              style: AppTypography.bodyMediumEnglish.copyWith(
-                color: Colors.white.withOpacity(0.9),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            AppSpacing.verticalSpaceSM,
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: AppRadius.sm,
-              ),
-              child: Text(
-                'المرحلة ${_currentTasbeehIndex + 1} من 3 • الدورة ${_completedCycles + 1}',
-                style: AppTypography.captionArabic.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCounterDisplay() {
+  Widget _buildTasbeehWithBeads() {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Container(
-        width: 220.w,
-        height: 220.w,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [
-              (_currentTasbeeh['color'] as Color).withOpacity(0.1),
-              (_currentTasbeeh['color'] as Color).withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: (_currentTasbeeh['color'] as Color).withOpacity(0.4),
-            width: 4,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: (_currentTasbeeh['color'] as Color).withOpacity(0.3),
-              blurRadius: 25,
-              offset: const Offset(0, 10),
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: SizedBox(
+        width: 300.w,
+        height: 300.w,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Text(
-              _currentTasbeeh['text'] as String,
-              textAlign: TextAlign.center,
-              style: AppTypography.h5Arabic.copyWith(
-                color: _currentTasbeeh['color'] as Color,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
+            // Prayer Beads Circle
+            CustomPaint(
+              size: Size(300.w, 300.w),
+              painter: BeadsPainter(
+                totalBeads: _targetCount,
+                activeBeads: _currentCount,
+                activeColor: _currentTasbeeh['color'] as Color,
+                inactiveColor: Colors.grey.shade300,
               ),
             ),
-            AppSpacing.verticalSpaceSM,
-            Text(
-              '$_currentCount',
-              style: AppTypography.h2Arabic.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 56.sp,
-              ),
-            ),
-            Text(
-              'من $_targetCount',
-              style: AppTypography.bodyMediumArabic.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            AppSpacing.verticalSpaceXS,
-            Text(
-              _currentTasbeeh['english'] as String,
-              style: AppTypography.captionEnglish.copyWith(
-                color: (_currentTasbeeh['color'] as Color).withOpacity(0.8),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCountButton() {
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _pulseAnimation.value,
-          child: GestureDetector(
-            onTap: _incrementCounter,
-            child: Container(
-              width: 140.w,
-              height: 140.w,
+            // Main Counter Circle (without clickable button)
+            Container(
+              width: 200.w,
+              height: 200.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: _currentTasbeeh['gradient'] as List<Color>,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: Colors.white,
+                border: Border.all(
+                  color: (_currentTasbeeh['color'] as Color).withOpacity(0.3),
+                  width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (_currentTasbeeh['color'] as Color).withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                    spreadRadius: 2,
-                  ),
-                  BoxShadow(
-                    color: (_currentTasbeeh['color'] as Color).withOpacity(0.2),
-                    blurRadius: 40,
-                    offset: const Offset(0, 15),
-                    spreadRadius: 5,
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
-              child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _currentTasbeeh['text'] as String,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _currentTasbeeh['color'] as Color,
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    '$_currentCount',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 42.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'من $_targetCount',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Draggable Counter Button
+  Widget _buildDraggableCountButton(BuildContext context) {
+    final currentPosition = _buttonPosition ?? _getSafeButtonPosition(context);
+
+    return AnimatedBuilder(
+      animation: _moveAnimation,
+      builder: (context, child) {
+        final animatedPosition = _moveController.isAnimating
+            ? Offset(
+                _moveAnimation.value.dx,
+                _moveAnimation.value.dy,
+              )
+            : currentPosition;
+
+        return Positioned(
+          left: animatedPosition.dx,
+          top: animatedPosition.dy,
+          child: Draggable(
+            feedback: Material(
+              color: Colors.transparent,
+              child: _buildCountButton(isDragging: true),
+            ),
+            childWhenDragging: Opacity(
+              opacity: 0.3,
+              child: _buildCountButton(),
+            ),
+            onDragUpdate: (details) {
+              // Provide haptic feedback during drag
+              HapticFeedback.selectionClick();
+            },
+            onDragEnd: (details) {
+              final newPosition = _getSnapPosition(details.offset, context);
+
+              // Animate to safe position with smooth easing
+              _moveAnimation = Tween<Offset>(
+                begin: currentPosition,
+                end: newPosition,
+              ).animate(CurvedAnimation(
+                parent: _moveController,
+                curve: Curves.easeOutBack,
+              ));
+
+              setState(() {
+                _buttonPosition = newPosition;
+              });
+
+              _moveController.reset();
+              _moveController.forward();
+
+              // Provide success haptic feedback
+              HapticFeedback.mediumImpact();
+            },
+            child: _buildCountButton(),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Count Button Widget
+  Widget _buildCountButton({bool isDragging = false}) {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          child: Transform.scale(
+            scale: _pulseAnimation.value * (isDragging ? 1.1 : 1.0),
+            child: GestureDetector(
+              onTap: isDragging ? null : _incrementCounter,
+              child: Container(
+                width: 80.w,
+                height: 80.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: _currentTasbeeh['gradient'] as List<Color>,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_currentTasbeeh['color'] as Color)
+                          .withOpacity(isDragging ? 0.6 : 0.4),
+                      blurRadius: isDragging ? 25 : 15,
+                      offset: Offset(0, isDragging ? 12 : 6),
+                      spreadRadius: isDragging ? 4 : 0,
+                    ),
+                    // Inner glow for dragging state
+                    if (isDragging)
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 0),
+                        spreadRadius: -2,
+                      ),
+                  ],
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.touch_app_rounded,
+                      isDragging ? Icons.open_with : Icons.touch_app,
                       color: Colors.white,
-                      size: 32.w,
+                      size: 24.w,
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 2.h),
                     Text(
-                      'سبّح',
-                      style: AppTypography.labelMediumArabic.copyWith(
+                      isDragging ? 'اسحب' : 'اضغط',
+                      style: TextStyle(
                         color: Colors.white,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14.sp,
                       ),
                     ),
                   ],
@@ -372,219 +499,89 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
     );
   }
 
-  Widget _buildProgressBar() {
+  Widget _buildProgressInfo() {
     final progress = _currentCount / _targetCount;
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'التقدم',
-                style: AppTypography.labelLargeArabic.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                '${(progress * 100).toInt()}%',
-                style: AppTypography.labelLargeArabic.copyWith(
-                  color: _currentTasbeeh['color'] as Color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.verticalSpaceMD,
-          Container(
-            height: 12.h,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: AppRadius.sm,
-            ),
-            child: ClipRRect(
-              borderRadius: AppRadius.sm,
-              child: LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  _currentTasbeeh['color'] as Color,
-                ),
-                minHeight: 12.h,
-              ),
-            ),
-          ),
-          AppSpacing.verticalSpaceSM,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (index) {
-              final isActive = index == _currentTasbeehIndex;
-              final isCompleted = index < _currentTasbeehIndex;
-              return Container(
-                margin: EdgeInsets.symmetric(horizontal: 4.w),
-                width: isActive ? 24.w : 8.w,
-                height: 8.h,
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.primaryGreen
-                      : isActive
-                          ? _currentTasbeeh['color'] as Color
-                          : AppColors.surfaceLight,
-                  borderRadius: AppRadius.sm,
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTasbeehList() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'مراحل التسبيح',
-            style: AppTypography.h6Arabic.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          AppSpacing.verticalSpaceMD,
-          ..._tasbeehList.asMap().entries.map((entry) {
-            final index = entry.key;
-            final tasbeeh = entry.value;
-            return _buildTasbeehItem(tasbeeh, index);
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTasbeehItem(Map<String, dynamic> tasbeeh, int index) {
-    final isActive = _currentTasbeehIndex == index;
-    final isCompleted = index < _currentTasbeehIndex;
-    final isNext = index == _currentTasbeehIndex + 1;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
       child: Container(
-        padding: AppSpacing.paddingMD,
+        width: double.infinity,
+        padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: isActive
-              ? (tasbeeh['color'] as Color).withOpacity(0.15)
-              : isCompleted
-                  ? AppColors.primaryGreen.withOpacity(0.1)
-                  : Colors.white,
-          borderRadius: AppRadius.md,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isActive
-                ? tasbeeh['color'] as Color
-                : isCompleted
-                    ? AppColors.primaryGreen
-                    : AppColors.textSecondary.withOpacity(0.3),
-            width: isActive ? 2 : 1,
+            color: (_currentTasbeeh['color'] as Color).withOpacity(0.2),
           ),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: (tasbeeh['color'] as Color).withOpacity(0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 50.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? tasbeeh['color'] as Color
-                    : isCompleted
-                        ? AppColors.primaryGreen
-                        : (tasbeeh['color'] as Color).withOpacity(0.2),
-                borderRadius: AppRadius.sm,
-              ),
-              child: Center(
-                child: isCompleted
-                    ? Icon(
-                        Icons.check_rounded,
-                        color: Colors.white,
-                        size: AppSizing.iconMD,
-                      )
-                    : Text(
-                        '${tasbeeh['count']}',
-                        style: AppTypography.labelMediumArabic.copyWith(
-                          color: isActive
-                              ? Colors.white
-                              : tasbeeh['color'] as Color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-            AppSpacing.horizontalSpaceMD,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tasbeeh['text'] as String,
-                    style: AppTypography.bodyLargeArabic.copyWith(
-                      color: isActive
-                          ? tasbeeh['color'] as Color
-                          : AppColors.textPrimary,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    tasbeeh['english'] as String,
-                    style: AppTypography.captionEnglish.copyWith(
-                      color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  if (isActive && _currentCount > 0)
-                    Text(
-                      'تم $_currentCount من ${tasbeeh['count']}',
-                      style: AppTypography.captionArabic.copyWith(
-                        color: tasbeeh['color'] as Color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Column(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (isCompleted)
-                  Icon(
-                    Icons.verified_rounded,
-                    color: AppColors.primaryGreen,
-                    size: AppSizing.iconMD,
-                  )
-                else if (isActive)
-                  Icon(
-                    Icons.play_circle_filled_rounded,
-                    color: tasbeeh['color'] as Color,
-                    size: AppSizing.iconMD,
-                  )
-                else if (isNext)
-                  Icon(
-                    Icons.schedule_rounded,
-                    color: AppColors.textSecondary,
-                    size: AppSizing.iconMD,
+                Text(
+                  _currentTasbeeh['meaning'] as String,
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: TextStyle(
+                    color: _currentTasbeeh['color'] as Color,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
+            ),
+            SizedBox(height: 12.h),
+            Container(
+              height: 8.h,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4.r),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _currentTasbeeh['color'] as Color,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (index) {
+                final isActive = index == _currentTasbeehIndex;
+                final isCompleted = index < _currentTasbeehIndex;
+                return Container(
+                  margin: EdgeInsets.symmetric(horizontal: 3.w),
+                  width: isActive ? 16.w : 6.w,
+                  height: 6.h,
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? AppColors.primaryGreen
+                        : isActive
+                            ? _currentTasbeeh['color'] as Color
+                            : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3.r),
+                  ),
+                );
+              }),
             ),
           ],
         ),
@@ -600,46 +597,40 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
           Expanded(
             child: ElevatedButton.icon(
               onPressed: _resetCounter,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('إعادة تعيين'),
+              icon: Icon(Icons.refresh_rounded, size: 18.w),
+              label: Text('إعادة تعيين'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error.withOpacity(0.1),
                 foregroundColor: AppColors.error,
-                padding: EdgeInsets.symmetric(vertical: 16.h),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.md,
-                  side: BorderSide(
-                    color: AppColors.error.withOpacity(0.3),
-                  ),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 elevation: 0,
               ),
             ),
           ),
-          AppSpacing.horizontalSpaceMD,
+          SizedBox(width: 16.w),
           Expanded(
             child: ElevatedButton.icon(
               onPressed: _toggleVibration,
-              icon: Icon(_isVibrationEnabled
-                  ? Icons.vibration_rounded
-                  : Icons.vibration),
+              icon: Icon(
+                _isVibrationEnabled
+                    ? Icons.vibration_rounded
+                    : Icons.phone_android,
+                size: 18.w,
+              ),
               label: Text(_isVibrationEnabled ? 'اهتزاز مفعل' : 'اهتزاز متوقف'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isVibrationEnabled
-                    ? AppColors.primaryGreen.withOpacity(0.1)
+                    ? (_currentTasbeeh['color'] as Color).withOpacity(0.1)
                     : AppColors.textSecondary.withOpacity(0.1),
                 foregroundColor: _isVibrationEnabled
-                    ? AppColors.primaryGreen
+                    ? _currentTasbeeh['color'] as Color
                     : AppColors.textSecondary,
-                padding: EdgeInsets.symmetric(vertical: 16.h),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.md,
-                  side: BorderSide(
-                    color: (_isVibrationEnabled
-                            ? AppColors.primaryGreen
-                            : AppColors.textSecondary)
-                        .withOpacity(0.3),
-                  ),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 elevation: 0,
               ),
@@ -663,34 +654,27 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
     });
 
     if (_isVibrationEnabled) {
-      _vibrate();
+      HapticFeedback.lightImpact();
     }
   }
 
   void _moveToNextTasbeeh() {
     if (_currentTasbeehIndex < _tasbeehList.length - 1) {
-      // Move to next tasbeeh
       setState(() {
         _currentTasbeehIndex++;
         _currentCount = 0;
       });
-
-      // Restart fade animation for smooth transition
       _fadeController.reset();
       _fadeController.forward();
-
       _showTransitionMessage();
     } else {
-      // Complete full cycle
       setState(() {
         _completedCycles++;
         _currentTasbeehIndex = 0;
         _currentCount = 0;
       });
-
       _fadeController.reset();
       _fadeController.forward();
-
       _showCompletionDialog();
     }
   }
@@ -705,9 +689,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
             Expanded(
               child: Text(
                 'انتقال إلى ${_currentTasbeeh['text']}',
-                style: AppTypography.bodyMediumArabic.copyWith(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -716,7 +698,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.md,
+          borderRadius: BorderRadius.circular(12.r),
         ),
       ),
     );
@@ -728,7 +710,6 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
       _currentTasbeehIndex = 0;
       _completedCycles = 0;
     });
-
     _fadeController.reset();
     _fadeController.forward();
   }
@@ -739,20 +720,17 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
     });
   }
 
-  void _vibrate() {
-    HapticFeedback.lightImpact();
-  }
-
   void _showCompletionDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         child: Container(
-          padding: AppSpacing.paddingLG,
+          padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            borderRadius: AppRadius.lg,
+            borderRadius: BorderRadius.circular(16.r),
             gradient: LinearGradient(
               colors: [
                 AppColors.primaryGreen.withOpacity(0.1),
@@ -769,97 +747,71 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
                 width: 80.w,
                 height: 80.w,
                 decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.2),
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryGreen, AppColors.goldAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
                 ),
                 child: Icon(
-                  Icons.celebration_rounded,
-                  color: Colors.white,
+                  Icons.check_circle,
+                  color: AppColors.primaryGreen,
                   size: 40.w,
                 ),
               ),
-              AppSpacing.verticalSpaceLG,
+              SizedBox(height: 20.h),
               Text(
                 'مبارك! 🎉',
-                style: AppTypography.h5Arabic.copyWith(
-                  color: AppColors.primaryGreen,
+                style: TextStyle(
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              AppSpacing.verticalSpaceMD,
+              SizedBox(height: 12.h),
               Text(
                 'لقد أكملت دورة كاملة من التسبيح\n$_completedCycles دورة مكتملة',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyMediumArabic.copyWith(
-                  color: AppColors.textPrimary,
-                  height: 1.5,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14.sp,
                 ),
               ),
-              AppSpacing.verticalSpaceMD,
+              SizedBox(height: 16.h),
               Container(
-                padding: AppSpacing.paddingMD,
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.1),
-                  borderRadius: AppRadius.md,
-                  border: Border.all(
-                    color: AppColors.primaryGreen.withOpacity(0.3),
+                  color: AppColors.goldAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  'أجر عظيم إن شاء الله',
+                  style: TextStyle(
+                    color: AppColors.goldAccent,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      'إجمالي التسبيحات:',
-                      style: AppTypography.labelMediumArabic.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      '${33 + 33 + 34} تسبيحة',
-                      style: AppTypography.h6Arabic.copyWith(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
               ),
-              AppSpacing.verticalSpaceLG,
+              SizedBox(height: 24.h),
               Row(
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                      ),
-                      child: const Text('إنهاء'),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('إنهاء'),
                     ),
                   ),
-                  AppSpacing.horizontalSpaceMD,
+                  SizedBox(width: 12.w),
                   Expanded(
-                    flex: 2,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        // Don't reset here - the cycle continues
+                        _resetCounter();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.md,
+                          borderRadius: BorderRadius.circular(8.r),
                         ),
-                        elevation: 2,
                       ),
-                      child: const Text('متابعة التسبيح'),
+                      child: Text('جولة أخرى'),
                     ),
                   ),
                 ],
@@ -870,4 +822,68 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen>
       ),
     );
   }
+}
+
+/// Custom Painter for Drawing Prayer Beads Around the Circle
+class BeadsPainter extends CustomPainter {
+  final int totalBeads;
+  final int activeBeads;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  BeadsPainter({
+    required this.totalBeads,
+    required this.activeBeads,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) - 30;
+
+    // Calculate angle between each bead
+    final angleStep = (2 * math.pi) / totalBeads;
+
+    for (int i = 0; i < totalBeads; i++) {
+      final angle = i * angleStep - (math.pi / 2); // Start from top
+      final beadX = center.dx + radius * math.cos(angle);
+      final beadY = center.dy + radius * math.sin(angle);
+      final beadCenter = Offset(beadX, beadY);
+
+      final isActive = i < activeBeads;
+      final beadColor = isActive ? activeColor : inactiveColor;
+      final beadSize = isActive ? 8.0 : 6.0;
+
+      // Draw bead shadow
+      if (isActive) {
+        final shadowPaint = Paint()
+          ..color = beadColor.withOpacity(0.3)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(
+          Offset(beadX + 1, beadY + 1),
+          beadSize,
+          shadowPaint,
+        );
+      }
+
+      // Draw the main bead
+      final paint = Paint()
+        ..color = beadColor
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(beadCenter, beadSize, paint);
+
+      // Draw inner highlight for active beads
+      if (isActive) {
+        final highlightPaint = Paint()
+          ..color = Colors.white.withOpacity(0.5)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(beadCenter, beadSize * 0.4, highlightPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

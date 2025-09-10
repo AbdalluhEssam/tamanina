@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tamanina/features/tasbeeh/presentation/screens/tasbeeh_screen.dart';
+import '../../features/chatbot/presentation/screens/chatbot_provider.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
@@ -38,13 +40,23 @@ class AppRouter {
         return _createRoute(_buildComingSoonScreen('القرآن الكريم'));
 
       case AppRoutes.sebha:
-        return _createRoute(_buildComingSoonScreen('التسبيح'));
+        return _createRoute(Scaffold(
+          appBar: AppBar(
+            title: const Text('التسبيح'),
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: AppColors.backgroundLight,
+          ),
+          body: const TasbeehScreen(),
+        ));
 
       case AppRoutes.qibla:
         return _createRoute(_buildComingSoonScreen('القبلة'));
 
       case AppRoutes.statistics:
         return _createRoute(_buildComingSoonScreen('الإحصائيات'));
+
+      case AppRoutes.chatbot:
+        return _createRoute(const ChatbotProvider());
 
       default:
         return _createRoute(_buildNotFoundScreen());

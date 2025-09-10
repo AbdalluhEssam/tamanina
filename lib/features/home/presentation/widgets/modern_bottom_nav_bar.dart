@@ -100,9 +100,20 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(_items.length, (index) {
-              return _buildNavItem(index);
-            }),
+            children: [
+              // First two items
+              ..._items.take(2).toList().asMap().entries.map((entry) {
+                return _buildNavItem(entry.key);
+              }),
+
+              // Space for FAB in center
+              SizedBox(width: 70.w),
+
+              // Last two items
+              ..._items.skip(2).toList().asMap().entries.map((entry) {
+                return _buildNavItem(entry.key + 2);
+              }),
+            ],
           ),
         ),
       ),
