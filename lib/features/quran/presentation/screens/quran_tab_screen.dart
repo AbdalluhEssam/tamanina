@@ -547,19 +547,26 @@ class _QuranTabScreenState extends State<QuranTabScreen>
                       SizedBox(height: 4.h),
                       Row(
                         children: [
-                          Text(
-                            surah.englishName,
-                            style: AppTypography.captionEnglish.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 12.sp,
+                          Flexible(
+                            child: Text(
+                              surah.englishName,
+                              style: AppTypography.captionEnglish.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 12.sp,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              softWrap: false,
                             ),
                           ),
+                          SizedBox(width: 6.w),
                           Text(
                             ' • ',
                             style: AppTypography.captionArabic.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          SizedBox(width: 6.w),
                           Text(
                             '${surah.ayahs.length} آية',
                             style: AppTypography.captionArabic.copyWith(
@@ -567,12 +574,14 @@ class _QuranTabScreenState extends State<QuranTabScreen>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          SizedBox(width: 6.w),
                           Text(
                             ' • ',
                             style: AppTypography.captionArabic.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          SizedBox(width: 6.w),
                           Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 8.w,
