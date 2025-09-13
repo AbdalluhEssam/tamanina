@@ -1,65 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/chat_message.dart';
+import 'typing_animation_widget.dart';
 
 /// Widget for displaying individual chat messages
 class ChatMessageBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onLongPress;
   final bool isStreaming;
+  final VoidCallback? onTypingComplete;
 
   const ChatMessageBubble({
     super.key,
     required this.message,
     this.onLongPress,
     this.isStreaming = false,
+    this.onTypingComplete,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        vertical: AppSpacing.xs,
-        horizontal: AppSpacing.md,
-      ),
-      child: Row(
-        mainAxisAlignment:
-            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!message.isUser) _buildAssistantAvatar(),
-          if (!message.isUser) AppSpacing.horizontalSpaceXS,
-          Flexible(
-            child: GestureDetector(
-              onLongPress: onLongPress ?? () => _showMessageOptions(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: _buildBubbleDecoration(context),
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (message.isLoading) _buildLoadingIndicator(),
-                    if (!message.isLoading) _buildMessageContent(context),
-                    if (!message.isLoading) _buildMessageTimestamp(context),
-                  ],
+    return RepaintBoundary(
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          vertical: 2.h,
+          horizontal: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisAlignment:
+              message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!message.isUser) _buildAssistantAvatar(),
+            if (!message.isUser) SizedBox(width: 6.w),
+            Flexible(
+              child: GestureDetector(
+                onLongPress: onLongPress ?? () => _showMessageOptions(context),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  decoration: _buildBubbleDecoration(context),
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
+                    minWidth: 60.w,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: message.isUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (message.isLoading)
+                        _buildLoadingIndicator()
+                      else ...[
+                        _buildMessageContent(context),
+                        if (!isStreaming && !message.isUser)
+                          _buildHighlightBox(context),
+                        SizedBox(height: 2.h),
+                        _buildMessageTimestamp(context),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (message.isUser) AppSpacing.horizontalSpaceXS,
-          if (message.isUser) _buildUserAvatar(),
-        ],
+            if (message.isUser) SizedBox(width: 6.w),
+            if (message.isUser) _buildUserAvatar(),
+          ],
+        ),
       ),
     );
   }
@@ -69,101 +83,141 @@ class ChatMessageBubble extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (message.isUser) {
-      // User message bubble
+      // User message bubble with beautiful gradient
       return BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primaryGreen,
-            AppColors.primaryGreen.withOpacity(0.9),
+          colors: const [
+            Color(0xFF1B5E20), // Darker deep green
+            Color(0xFF2E7D32), // Deep green
+            Color(0xFF43A047), // Medium green
+            Color(0xFF4CAF50), // Primary green
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          stops: const [0.0, 0.3, 0.7, 1.0],
         ),
-        borderRadius: BorderRadius.only(
-          topLeft: AppRadius.lg.topLeft,
-          topRight: AppRadius.lg.topRight,
-          bottomLeft: AppRadius.lg.bottomLeft,
-          bottomRight: Radius.circular(4.r),
+        borderRadius: BorderRadiusDirectional.only(
+          topStart: Radius.circular(18.r),
+          topEnd: Radius.circular(18.r),
+          bottomEnd: Radius.circular(6.r),
+          bottomStart: Radius.circular(18.r),
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF2E7D32).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -1),
+            spreadRadius: 0,
           ),
         ],
       );
     } else {
-      // Assistant message bubble
-      Color bubbleColor;
-      Color shadowColor;
+      // Assistant message bubble with elegant design
+      List<Color> gradientColors;
+      Color borderTint;
+      List<Color> shadowColors;
 
       switch (message.type) {
         case MessageType.quran:
-          bubbleColor = isDarkMode
-              ? AppColors.primaryGreen.withOpacity(0.2)
-              : AppColors.primaryGreen.withOpacity(0.1);
-          shadowColor = AppColors.primaryGreen.withOpacity(0.2);
+          gradientColors = isDarkMode
+              ? const [Color(0xFF0D5016), Color(0xFF1B5E20), Color(0xFF2E7D32)]
+              : const [Color(0xFFE8F5E8), Color(0xFFF1F8E9), Color(0xFFFFFFFF)];
+          borderTint = const Color(0xFF4CAF50);
+          shadowColors = [
+            const Color(0xFF4CAF50).withOpacity(0.2),
+            const Color(0xFF2E7D32).withOpacity(0.1),
+          ];
           break;
         case MessageType.hadith:
-          bubbleColor = isDarkMode
-              ? AppColors.goldAccent.withOpacity(0.2)
-              : AppColors.goldAccent.withOpacity(0.1);
-          shadowColor = AppColors.goldAccent.withOpacity(0.2);
+          gradientColors = isDarkMode
+              ? const [Color(0xFF3D3D1A), Color(0xFF4A4A2A), Color(0xFF5D5D3A)]
+              : const [Color(0xFFFFF3C4), Color(0xFFFFF8E1), Color(0xFFFFFFFF)];
+          borderTint = const Color(0xFFFFB74D);
+          shadowColors = [
+            const Color(0xFFFFB74D).withOpacity(0.2),
+            const Color(0xFFF57C00).withOpacity(0.1),
+          ];
           break;
         case MessageType.dua:
-          bubbleColor = isDarkMode
-              ? AppColors.info.withOpacity(0.2)
-              : AppColors.info.withOpacity(0.1);
-          shadowColor = AppColors.info.withOpacity(0.2);
+          gradientColors = isDarkMode
+              ? const [Color(0xFF0A1A5E), Color(0xFF1A237E), Color(0xFF283593)]
+              : const [Color(0xFFBBDEFB), Color(0xFFE3F2FD), Color(0xFFFFFFFF)];
+          borderTint = const Color(0xFF2196F3);
+          shadowColors = [
+            const Color(0xFF2196F3).withOpacity(0.2),
+            const Color(0xFF1976D2).withOpacity(0.1),
+          ];
           break;
         case MessageType.error:
-          bubbleColor = isDarkMode
-              ? AppColors.error.withOpacity(0.2)
-              : AppColors.error.withOpacity(0.1);
-          shadowColor = AppColors.error.withOpacity(0.2);
+          gradientColors = isDarkMode
+              ? const [Color(0xFF3E1723), Color(0xFF5C2C47), Color(0xFF7A4464)]
+              : const [Color(0xFFFFCDD2), Color(0xFFFFEBEE), Color(0xFFFFFFFF)];
+          borderTint = const Color(0xFFE57373);
+          shadowColors = [
+            const Color(0xFFE57373).withOpacity(0.2),
+            const Color(0xFFD32F2F).withOpacity(0.1),
+          ];
           break;
         default:
-          bubbleColor = isDarkMode ? AppColors.surfaceDark : Colors.white;
-          shadowColor = Colors.black.withOpacity(0.1);
+          gradientColors = isDarkMode
+              ? const [Color(0xFF212121), Color(0xFF2C2C2C), Color(0xFF3A3A3A)]
+              : const [Color(0xFFF8F9FA), Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
+          borderTint = isDarkMode ? Colors.white24 : Colors.black12;
+          shadowColors = [
+            borderTint.withOpacity(0.15),
+            borderTint.withOpacity(0.05),
+          ];
       }
 
       return BoxDecoration(
-        color: bubbleColor,
-        borderRadius: BorderRadius.only(
-          topLeft: AppRadius.lg.topLeft,
-          topRight: AppRadius.lg.topRight,
-          bottomRight: AppRadius.lg.bottomRight,
-          bottomLeft: Radius.circular(4.r),
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        borderRadius: BorderRadiusDirectional.only(
+          topStart: Radius.circular(18.r),
+          topEnd: Radius.circular(18.r),
+          bottomEnd: Radius.circular(18.r),
+          bottomStart: Radius.circular(6.r),
         ),
         border: Border.all(
-          color: _getBorderColor(),
-          width: 0.5,
+          color: borderTint.withOpacity(0.3),
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: shadowColor,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: shadowColors[0],
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+            spreadRadius: 1,
           ),
+          BoxShadow(
+            color: shadowColors[1],
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+          if (!isDarkMode)
+            BoxShadow(
+              color: Colors.white.withOpacity(0.7),
+              blurRadius: 3,
+              offset: const Offset(0, -1),
+              spreadRadius: 0,
+            ),
         ],
       );
-    }
-  }
-
-  /// Get border color based on message type
-  Color _getBorderColor() {
-    switch (message.type) {
-      case MessageType.quran:
-        return AppColors.primaryGreen.withOpacity(0.3);
-      case MessageType.hadith:
-        return AppColors.goldAccent.withOpacity(0.3);
-      case MessageType.dua:
-        return AppColors.info.withOpacity(0.3);
-      case MessageType.error:
-        return AppColors.error.withOpacity(0.3);
-      default:
-        return AppColors.divider;
     }
   }
 
@@ -183,36 +237,160 @@ class ChatMessageBubble extends StatelessWidget {
     }
   }
 
-  /// Build regular text content
+  /// Build regular text content (with optional typing effect for streaming)
   Widget _buildTextContent(BuildContext context, Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SelectableText(
-          message.content,
-          style: message.isUser
-              ? AppTypography.bodyMediumArabic.copyWith(color: textColor)
-              : AppTypography.bodyMediumArabic.copyWith(color: textColor),
-          textDirection: _getTextDirection(),
+    if (isStreaming && !message.isUser) {
+      return SimpleTypingText(
+        text: message.content,
+        style: GoogleFonts.cairo(
+          color: textColor,
+          height: 1.6,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.2,
         ),
-        // Show typing indicator when streaming
-        if (isStreaming && !message.isUser) ...[
-          SizedBox(height: 4.h),
-          Row(
-            children: [
-              _buildTypingIndicator(),
-              SizedBox(width: 8.w),
-              Text(
-                'جاري الكتابة...',
-                style: AppTypography.captionArabic.copyWith(
-                  color: textColor.withOpacity(0.7),
+        textDirection: _getTextDirection(),
+        textAlign: TextAlign.right,
+        speed: const Duration(milliseconds: 60),
+        onComplete: onTypingComplete,
+      );
+    }
+
+    return SelectableText(
+      message.content,
+      style: message.isUser
+          ? GoogleFonts.cairo(
+              color: textColor,
+              height: 1.5,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 0.5),
+                  blurRadius: 1,
                 ),
-              ),
-            ],
+              ],
+            )
+          : GoogleFonts.cairo(
+              color: textColor,
+              height: 1.6,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
+            ),
+      textDirection: _getTextDirection(),
+      textAlign: TextAlign.right,
+    );
+  }
+
+  /// Build a small highlight panel emphasizing the key takeaway
+  Widget _buildHighlightBox(BuildContext context) {
+    final highlight = _extractHighlight(message.content);
+    if (highlight == null || highlight.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGreen.withOpacity(0.10),
+            AppColors.primaryGreen.withOpacity(0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(
+          color: AppColors.primaryGreen.withOpacity(0.25),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.12),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
           ),
         ],
-      ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(4.w),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.lightbulb_rounded,
+              color: Colors.white,
+              size: 12.w,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'النقطة المهمة:',
+                  style: GoogleFonts.cairo(
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.sp,
+                    letterSpacing: 0.1,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  highlight,
+                  style: GoogleFonts.cairo(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    height: 1.5,
+                    fontSize: 13.sp,
+                  ),
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  String? _extractHighlight(String content) {
+    // If content contains a closing statement, use the sentence before it
+    final closingIdx = content.indexOf('والله أعلم');
+    String base = content;
+    if (closingIdx > 0) {
+      base = content.substring(0, closingIdx).trim();
+    }
+
+    // Split into sentences by Arabic punctuation or newlines
+    final sentences = base
+        .split(RegExp(r"[\n\r]+|[.!؟]+|[،]+"))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    if (sentences.isEmpty) return null;
+
+    // Heuristic: choose a mid-length sentence that likely carries the ruling
+    sentences
+        .sort((a, b) => (a.length - 80).abs().compareTo((b.length - 80).abs()));
+    final candidate = sentences.first;
+
+    // Ensure it’s concise
+    return candidate.length > 160
+        ? candidate.substring(0, 160).trim() + '…'
+        : candidate;
   }
 
   /// Build Quran verse content with special styling
@@ -222,30 +400,61 @@ class ChatMessageBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Arabic verse with special styling
         if (parts.isNotEmpty)
           Container(
-            padding: AppSpacing.paddingSM,
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withOpacity(0.1),
-              borderRadius: AppRadius.sm,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryGreen.withOpacity(0.12),
+                  AppColors.primaryGreen.withOpacity(0.06),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.primaryGreen.withOpacity(0.25),
+                width: 1,
+              ),
             ),
-            child: SelectableText(
-              parts.first,
-              style: AppTypography.quranText,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.center,
+            child: Column(
+              children: [
+                Icon(
+                  Icons.menu_book_rounded,
+                  color: AppColors.primaryGreen,
+                  size: 18.w,
+                ),
+                SizedBox(height: 6.h),
+                SelectableText(
+                  parts.first,
+                  style: GoogleFonts.amiri(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.8,
+                    letterSpacing: 0.3,
+                    color: AppColors.textPrimary,
+                  ),
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-
-        if (parts.length > 1) AppSpacing.verticalSpaceSM,
-
-        // Translation and reference
+        if (parts.length > 1) SizedBox(height: 8.h),
         if (parts.length > 1)
           SelectableText(
             parts.sublist(1).join('\n\n'),
-            style: AppTypography.bodyMediumArabic.copyWith(color: textColor),
+            style: GoogleFonts.cairo(
+              color: textColor,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              height: 1.6,
+              letterSpacing: 0.2,
+            ),
             textDirection: _getTextDirection(),
+            textAlign: TextAlign.right,
           ),
       ],
     );
@@ -253,10 +462,60 @@ class ChatMessageBubble extends StatelessWidget {
 
   /// Build Hadith content with special styling
   Widget _buildHadithContent(BuildContext context, Color textColor) {
-    return SelectableText(
-      message.content,
-      style: AppTypography.azkarText.copyWith(color: textColor),
-      textDirection: _getTextDirection(),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.goldAccent.withOpacity(0.10),
+            AppColors.goldAccent.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColors.goldAccent.withOpacity(0.25),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.auto_stories_rounded,
+                color: AppColors.goldAccent,
+                size: 16.w,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                'حديث شريف',
+                style: GoogleFonts.cairo(
+                  color: AppColors.goldAccent,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12.sp,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          SelectableText(
+            message.content,
+            style: GoogleFonts.amiri(
+              color: textColor,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              height: 1.7,
+              letterSpacing: 0.3,
+            ),
+            textDirection: _getTextDirection(),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -267,33 +526,75 @@ class ChatMessageBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Arabic dua with special styling
         if (parts.isNotEmpty)
           Container(
-            padding: AppSpacing.paddingSM,
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
-              borderRadius: AppRadius.sm,
-            ),
-            child: SelectableText(
-              parts.first,
-              style: AppTypography.azkarText.copyWith(
-                color: AppColors.info,
-                fontSize: 18.sp,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.info.withOpacity(0.12),
+                  AppColors.info.withOpacity(0.06),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.center,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.info.withOpacity(0.25),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.favorite_rounded,
+                      color: AppColors.info,
+                      size: 16.w,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      'دعاء مبارك',
+                      style: GoogleFonts.cairo(
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8.h),
+                SelectableText(
+                  parts.first,
+                  style: GoogleFonts.amiri(
+                    color: AppColors.info,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.8,
+                    letterSpacing: 0.3,
+                  ),
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-
-        if (parts.length > 1) AppSpacing.verticalSpaceSM,
-
-        // Translation
+        if (parts.length > 1) SizedBox(height: 8.h),
         if (parts.length > 1)
           SelectableText(
             parts.sublist(1).join('\n\n'),
-            style: AppTypography.bodyMediumArabic.copyWith(color: textColor),
+            style: GoogleFonts.cairo(
+              color: textColor,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              height: 1.6,
+              letterSpacing: 0.2,
+            ),
             textDirection: _getTextDirection(),
+            textAlign: TextAlign.right,
           ),
       ],
     );
@@ -301,41 +602,56 @@ class ChatMessageBubble extends StatelessWidget {
 
   /// Build loading indicator
   Widget _buildLoadingIndicator() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 16.w,
-          height: 16.w,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              AppColors.primaryGreen.withOpacity(0.7),
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGreen.withOpacity(0.08),
+            AppColors.primaryGreen.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(
+          color: AppColors.primaryGreen.withOpacity(0.15),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TypingIndicator(
+            color: AppColors.primaryGreen,
+            size: 6.w,
+          ),
+          SizedBox(width: 8.w),
+          Text(
+            'جاري الكتابة...',
+            style: GoogleFonts.cairo(
+              color: AppColors.primaryGreen,
+              fontWeight: FontWeight.w600,
+              fontSize: 12.sp,
+              letterSpacing: 0.1,
             ),
           ),
-        ),
-        AppSpacing.horizontalSpaceSM,
-        Text(
-          'يكتب...',
-          style: AppTypography.captionArabic.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   /// Build timestamp
   Widget _buildMessageTimestamp(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: AppSpacing.xs),
+      padding: EdgeInsets.only(top: 2.h),
       child: Text(
         _formatTime(message.timestamp),
-        style: AppTypography.captionArabic.copyWith(
+        style: GoogleFonts.cairo(
           color: message.isUser
-              ? Colors.white.withOpacity(0.8)
+              ? Colors.white.withOpacity(0.85)
               : AppColors.textSecondary,
           fontSize: 10.sp,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.1,
         ),
         textAlign: TextAlign.end,
       ),
@@ -344,41 +660,79 @@ class ChatMessageBubble extends StatelessWidget {
 
   /// Build user avatar
   Widget _buildUserAvatar() {
-    return CircleAvatar(
-      radius: 14.r,
-      backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
+    return Container(
+      width: 28.w,
+      height: 28.w,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF4CAF50), Color(0xFF66BB6A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4CAF50).withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0.5,
+          ),
+        ],
+      ),
       child: Icon(
         Icons.person_rounded,
-        color: AppColors.primaryGreen,
-        size: AppSizing.iconSM,
+        color: Colors.white,
+        size: 16.w,
       ),
     );
   }
 
   /// Build assistant avatar
   Widget _buildAssistantAvatar() {
-    return CircleAvatar(
-      radius: 14.r,
-      backgroundColor: AppColors.goldAccent.withOpacity(0.1),
+    return Container(
+      width: 28.w,
+      height: 28.w,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF8F00), Color(0xFFFFB74D), Color(0xFFFFA726)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFB74D).withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0.5,
+          ),
+        ],
+      ),
       child: Icon(
         Icons.mosque_rounded,
-        color: AppColors.goldAccent,
-        size: AppSizing.iconSM,
+        color: Colors.white,
+        size: 16.w,
       ),
     );
   }
 
   /// Get text direction based on content
   TextDirection _getTextDirection() {
-    // Simple heuristic: if the message starts with Arabic characters
     if (message.content.isNotEmpty) {
       final firstChar = message.content.codeUnitAt(0);
-      // Arabic Unicode range
       if (firstChar >= 0x0600 && firstChar <= 0x06FF) {
         return TextDirection.rtl;
       }
     }
-    return TextDirection.ltr;
+    return TextDirection.rtl; // Force RTL alignment for Arabic-first UX
   }
 
   /// Format time for display
@@ -414,8 +768,6 @@ class ChatMessageBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AppSpacing.verticalSpaceSM,
-
-              // Handle bar
               Container(
                 width: 40.w,
                 height: 4.h,
@@ -424,64 +776,72 @@ class ChatMessageBubble extends StatelessWidget {
                   borderRadius: AppRadius.xs,
                 ),
               ),
-
               AppSpacing.verticalSpaceLG,
-
-              // Copy option
               ListTile(
-                leading: Icon(
-                  Icons.copy_rounded,
-                  color: AppColors.primaryGreen,
+                leading: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(
+                    Icons.copy_rounded,
+                    color: AppColors.primaryGreen,
+                    size: 20.w,
+                  ),
                 ),
                 title: Text(
                   'نسخ النص',
-                  style: AppTypography.bodyMediumArabic,
+                  style: GoogleFonts.cairo(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                subtitle: Text(
+                  'انسخ محتوى الرسالة',
+                  style: GoogleFonts.cairo(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.sp,
+                  ),
                 ),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: message.content));
                   Navigator.pop(context);
-
-                  // Show confirmation
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('تم نسخ النص'),
+                      content: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 20.w,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'تم نسخ النص بنجاح',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                       backgroundColor: AppColors.success,
                       behavior: SnackBarBehavior.floating,
+                      margin: EdgeInsets.all(16.w),
                       shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.sm,
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
               ),
-
               AppSpacing.verticalSpaceSM,
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// Build animated typing indicator
-  Widget _buildTypingIndicator() {
-    return SizedBox(
-      width: 20.w,
-      height: 12.h,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(3, (index) {
-          return AnimatedContainer(
-            duration: Duration(milliseconds: 600 + (index * 100)),
-            curve: Curves.easeInOut,
-            width: 3.w,
-            height: 3.w,
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withOpacity(0.7),
-              shape: BoxShape.circle,
-            ),
-          );
-        }),
       ),
     );
   }

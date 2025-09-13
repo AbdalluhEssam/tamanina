@@ -79,9 +79,11 @@ class _ChatbotScreenState extends State<ChatbotScreen>
             context.read<ChatbotCubit>().clearError();
           }
 
-          // Auto scroll to bottom when new message arrives
-          if (state is ChatbotLoaded &&
-              state.currentSession.messages.isNotEmpty) {
+          // Auto scroll to bottom when new message arrives or during streaming
+          if ((state is ChatbotLoaded &&
+                  state.currentSession.messages.isNotEmpty) ||
+              (state is ChatbotStreamingResponse &&
+                  state.currentStreamText.isNotEmpty)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _scrollToBottom();
             });
@@ -276,30 +278,53 @@ class _ChatbotScreenState extends State<ChatbotScreen>
 
     return Column(
       children: [
-        // Messages list
+        // Messages list with improved scrolling
         Expanded(
           child: messages.isEmpty
               ? _buildEmptyState(context)
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.only(
-                    top: AppSpacing.md,
-                    bottom: AppSpacing.lg,
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context)
+                            .scaffoldBackgroundColor
+                            .withOpacity(0.98),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    return ChatMessageBubble(
-                      message: message,
-                      onLongPress: () {
-                        // Handle message long press if needed
-                      },
-                    );
-                  },
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    padding: EdgeInsets.only(
+                      top: 16.h,
+                      bottom: 20.h,
+                      left: 8.w,
+                      right: 8.w,
+                    ),
+                    itemCount: messages.length,
+                    reverse: false,
+                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      return ChatMessageBubble(
+                        key: ValueKey('msg_${message.id}'),
+                        message: message,
+                        isStreaming: false,
+                        onLongPress: () {
+                          // Handle message long press if needed
+                        },
+                      );
+                    },
+                  ),
                 ),
         ),
 
-        // Chat input
+        // Chat input with better design
         ChatInputWidget(
           onSendMessage: (message) {
             context.read<ChatbotCubit>().sendStreamingMessage(message);
@@ -327,29 +352,54 @@ class _ChatbotScreenState extends State<ChatbotScreen>
 
     return Column(
       children: [
-        // Messages list
+        // Messages list with streaming support
         Expanded(
           child: messages.isEmpty
               ? _buildEmptyState(context)
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.only(
-                    top: AppSpacing.md,
-                    bottom: AppSpacing.lg,
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context)
+                            .scaffoldBackgroundColor
+                            .withOpacity(0.98),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isStreaming = message.id == 'streaming_temp';
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    padding: EdgeInsets.only(
+                      top: 16.h,
+                      bottom: 20.h,
+                      left: 8.w,
+                      right: 8.w,
+                    ),
+                    itemCount: messages.length,
+                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isStreaming = message.id == 'streaming_temp';
 
-                    return ChatMessageBubble(
-                      message: message,
-                      isStreaming: isStreaming,
-                      onLongPress: () {
-                        // Handle message long press if needed
-                      },
-                    );
-                  },
+                      return ChatMessageBubble(
+                        key: ValueKey('msg_${message.id}'),
+                        message: message,
+                        isStreaming: isStreaming,
+                        onTypingComplete: isStreaming && state.isComplete
+                            ? () =>
+                                context.read<ChatbotCubit>().finalizeStreaming()
+                            : null,
+                        onLongPress: () {
+                          // Handle message long press if needed
+                        },
+                      );
+                    },
+                  ),
                 ),
         ),
 
@@ -366,65 +416,125 @@ class _ChatbotScreenState extends State<ChatbotScreen>
 
   /// Build empty state when no messages
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Islamic greeting icon
-            Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primaryGreen.withOpacity(0.1),
-                    AppColors.goldAccent.withOpacity(0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.primaryGreen.withOpacity(0.2),
-                  width: 2,
-                ),
-              ),
-              child: Icon(
-                Icons.mosque_rounded,
-                size: 40.w,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-
-            AppSpacing.verticalSpaceXL,
-
-            Text(
-              'السلام عليكم ورحمة الله وبركاته',
-              style: AppTypography.h5Arabic.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            AppSpacing.verticalSpaceSM,
-
-            Text(
-              'مرحباً بك في المساعد الإسلامي الذكي\nيمكنني مساعدتك في أسئلتك الإسلامية',
-              style: AppTypography.bodyMediumArabic.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            AppSpacing.verticalSpaceXL,
-
-            // Quick suggestions
-            _buildQuickSuggestions(context),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).scaffoldBackgroundColor,
+            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
           ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Islamic greeting icon with enhanced design
+              TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 1200),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: 0.5 + (value * 0.5),
+                    child: Opacity(
+                      opacity: value,
+                      child: Container(
+                        width: 120.w,
+                        height: 120.w,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF4CAF50).withOpacity(0.1),
+                              Color(0xFFFFB74D).withOpacity(0.1),
+                              Color(0xFF2196F3).withOpacity(0.1),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primaryGreen.withOpacity(0.2),
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.mosque_rounded,
+                          size: 60.w,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 32.h),
+
+              TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 1500),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: Opacity(
+                      opacity: value,
+                      child: Column(
+                        children: [
+                          Text(
+                            'السلام عليكم ورحمة الله وبركاته',
+                            style: AppTypography.h5Arabic.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20.sp,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'مرحباً بك في المساعد الإسلامي الذكي\nيمكنني مساعدتك في أسئلتك الإسلامية بحكمة وعلم',
+                            style: AppTypography.bodyMediumArabic.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.6,
+                              fontSize: 16.sp,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 40.h),
+
+              // Quick suggestions with animation
+              TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 1800),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 30 * (1 - value)),
+                    child: Opacity(
+                      opacity: value,
+                      child: _buildQuickSuggestions(context),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -436,22 +546,26 @@ class _ChatbotScreenState extends State<ChatbotScreen>
       {
         'icon': Icons.menu_book_rounded,
         'text': 'آية من القرآن',
-        'query': 'أريد آية من القرآن'
+        'query': 'أريد آية من القرآن',
+        'color': Color(0xFF4CAF50),
       },
       {
         'icon': Icons.star_rounded,
         'text': 'حديث شريف',
-        'query': 'أريد حديث نبوي شريف'
+        'query': 'أريد حديث نبوي شريف',
+        'color': Color(0xFFFFB74D),
       },
       {
         'icon': Icons.favorite_rounded,
         'text': 'دعاء مأثور',
-        'query': 'أريد دعاء من السنة'
+        'query': 'أريد دعاء من السنة',
+        'color': Color(0xFF2196F3),
       },
       {
         'icon': Icons.schedule_rounded,
         'text': 'عن الصلاة',
-        'query': 'أخبرني عن الصلاة'
+        'query': 'أخبرني عن الصلاة',
+        'color': Color(0xFF9C27B0),
       },
     ];
 
@@ -461,49 +575,94 @@ class _ChatbotScreenState extends State<ChatbotScreen>
           'اقتراحات سريعة:',
           style: AppTypography.captionArabic.copyWith(
             color: AppColors.textSecondary,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        AppSpacing.verticalSpaceMD,
+        SizedBox(height: 20.h),
         Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
+          spacing: 12.w,
+          runSpacing: 12.h,
           alignment: WrapAlignment.center,
-          children: suggestions.map((suggestion) {
-            return InkWell(
-              onTap: () => context.read<ChatbotCubit>().sendStreamingMessage(
-                    suggestion['query'] as String,
-                  ),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.1),
-                  borderRadius: AppRadius.lg,
-                  border: Border.all(
-                    color: AppColors.primaryGreen.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      suggestion['icon'] as IconData,
-                      size: AppSizing.iconSM,
-                      color: AppColors.primaryGreen,
-                    ),
-                    AppSpacing.horizontalSpaceXS,
-                    Text(
-                      suggestion['text'] as String,
-                      style: AppTypography.captionArabic.copyWith(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w500,
+          children: suggestions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final suggestion = entry.value;
+
+            return TweenAnimationBuilder<double>(
+              duration: Duration(milliseconds: 600 + (index * 200)),
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: 0.5 + (value * 0.5),
+                  child: Opacity(
+                    opacity: value,
+                    child: InkWell(
+                      onTap: () =>
+                          context.read<ChatbotCubit>().sendStreamingMessage(
+                                suggestion['query'] as String,
+                              ),
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              (suggestion['color'] as Color).withOpacity(0.1),
+                              (suggestion['color'] as Color).withOpacity(0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(
+                            color:
+                                (suggestion['color'] as Color).withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (suggestion['color'] as Color)
+                                  .withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(6.w),
+                              decoration: BoxDecoration(
+                                color: (suggestion['color'] as Color)
+                                    .withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                suggestion['icon'] as IconData,
+                                size: 18.w,
+                                color: suggestion['color'] as Color,
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              suggestion['text'] as String,
+                              style: AppTypography.captionArabic.copyWith(
+                                color: suggestion['color'] as Color,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.sp,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           }).toList(),
         ),
@@ -580,11 +739,15 @@ class _ChatbotScreenState extends State<ChatbotScreen>
   /// Scroll to bottom of chat
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
     }
   }
 }

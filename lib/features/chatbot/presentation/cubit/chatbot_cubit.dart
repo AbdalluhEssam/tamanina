@@ -43,6 +43,8 @@ class ChatbotCubit extends Cubit<ChatbotState> {
   ChatSession? _currentSession;
   List<ChatSession> _chatHistory = [];
   StreamSubscription<String>? _streamingSubscription;
+  String _lastStreamingText = '';
+  bool _awaitingFinalize = false;
 
   /// Initialize chatbot with user ID
   Future<void> initialize(String userId) async {
@@ -100,7 +102,9 @@ class ChatbotCubit extends Cubit<ChatbotState> {
         userId: _currentUserId!,
       ).listen(
         (chunk) {
-          streamingText += chunk;
+          // chunk from repository is cumulative; use it directly to avoid duplication
+          streamingText = chunk;
+          _lastStreamingText = streamingText;
           emit(ChatbotStreamingResponse(
             currentSession: _currentSession!,
             currentStreamText: streamingText,
@@ -109,22 +113,13 @@ class ChatbotCubit extends Cubit<ChatbotState> {
           ));
         },
         onDone: () async {
-          // Streaming completed, create the AI message and add to session
-          if (streamingText.isNotEmpty) {
-            final aiMessage = ChatMessage.assistant(
-              id: _generateMessageId(),
-              content: streamingText,
-              type: _determineMessageType(streamingText),
-            );
-
-            _currentSession = _currentSession!.addMessage(aiMessage);
-            _updateChatHistory(_currentSession!);
-          }
-
-          emit(ChatbotLoaded(
+          // Mark complete but keep streaming UI until typing animation finishes
+          _awaitingFinalize = true;
+          emit(ChatbotStreamingResponse(
             currentSession: _currentSession!,
+            currentStreamText: streamingText,
+            isComplete: true,
             chatHistory: _chatHistory,
-            isTyping: false,
           ));
         },
         onError: (error) {
@@ -153,6 +148,31 @@ class ChatbotCubit extends Cubit<ChatbotState> {
         error: 'فشل في إرسال الرسالة: ${e.toString()}',
       ));
     }
+  }
+
+  /// Finalize streaming after typing animation completes in UI
+  void finalizeStreaming() {
+    if (!_awaitingFinalize ||
+        _lastStreamingText.isEmpty ||
+        _currentSession == null) return;
+
+    final aiMessage = ChatMessage.assistant(
+      id: _generateMessageId(),
+      content: _lastStreamingText,
+      type: _determineMessageType(_lastStreamingText),
+    );
+
+    _currentSession = _currentSession!.addMessage(aiMessage);
+    _updateChatHistory(_currentSession!);
+
+    _awaitingFinalize = false;
+    _lastStreamingText = '';
+
+    emit(ChatbotLoaded(
+      currentSession: _currentSession!,
+      chatHistory: _chatHistory,
+      isTyping: false,
+    ));
   }
 
   /// Create a new chat session
@@ -241,6 +261,55 @@ class ChatbotCubit extends Cubit<ChatbotState> {
     if (state is ChatbotLoaded && _currentSession != null) {
       final currentState = state as ChatbotLoaded;
       emit(currentState.copyWith(error: null));
+    }
+  }
+
+  /// Non-streaming send (fallback or testing). Uses _sendMessageUseCase.
+  Future<void> sendMessage(String messageText) async {
+    if (_currentSession == null || _currentUserId == null) {
+      emit(const ChatbotError('لم يتم تهيئة الجلسة بشكل صحيح'));
+      return;
+    }
+
+    final text = messageText.trim();
+    if (text.isEmpty) return;
+
+    try {
+      // Add user message to in-memory session
+      final userMessage = ChatMessage.user(
+        id: _generateMessageId(),
+        content: text,
+      );
+      _currentSession = _currentSession!.addMessage(userMessage);
+
+      emit(ChatbotLoaded(
+        currentSession: _currentSession!,
+        chatHistory: _chatHistory,
+        isTyping: true,
+      ));
+
+      // Use non-streaming use case
+      final aiMessage = await _sendMessageUseCase(
+        sessionId: _currentSession!.id,
+        userMessage: text,
+        userId: _currentUserId!,
+      );
+
+      _currentSession = _currentSession!.addMessage(aiMessage);
+      _updateChatHistory(_currentSession!);
+
+      emit(ChatbotLoaded(
+        currentSession: _currentSession!,
+        chatHistory: _chatHistory,
+        isTyping: false,
+      ));
+    } catch (e) {
+      emit(ChatbotLoaded(
+        currentSession: _currentSession!,
+        chatHistory: _chatHistory,
+        isTyping: false,
+        error: 'فشل في إرسال الرسالة: ${e.toString()}',
+      ));
     }
   }
 

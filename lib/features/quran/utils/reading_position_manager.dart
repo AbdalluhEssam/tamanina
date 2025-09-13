@@ -70,7 +70,7 @@ class ReadingPositionManager {
         List<dynamic> decoded = jsonDecode(bookmarksJson);
         bookmarks = decoded.cast<Map<String, dynamic>>();
       }
-
+    
       // التحقق من عدم وجود العلامة مسبقاً
       bool exists = bookmarks.any((bookmark) => bookmark['page'] == pageNumber);
       if (!exists) {
@@ -141,7 +141,7 @@ class ReadingPositionManager {
         List<dynamic> decoded = jsonDecode(historyJson);
         history = decoded.cast<Map<String, dynamic>>();
       }
-
+    
       // إضافة أو تحديث الإدخال
       int existingIndex =
           history.indexWhere((entry) => entry['page'] == pageNumber);

@@ -87,16 +87,10 @@ class AppPreferences {
     await _prefs.clear();
 
     // استرجاع بيانات تسجيل الدخول إذا كانت موجودة
-    if (savedEmail != null) {
-      await _prefs.setString('saved_email', savedEmail);
+    await _prefs.setString('saved_email', savedEmail!);
+      await _prefs.setString('saved_password', savedPassword!);
+      await _prefs.setBool('remember_me', rememberMe!);
     }
-    if (savedPassword != null) {
-      await _prefs.setString('saved_password', savedPassword);
-    }
-    if (rememberMe != null) {
-      await _prefs.setBool('remember_me', rememberMe);
-    }
-  }
 
   bool isLoggedInUser() {
     return _prefs.containsKey("userModel");

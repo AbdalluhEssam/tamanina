@@ -60,12 +60,11 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     required String userId,
   }) async* {
     try {
-      // Add user message to session first
+      // Persist user message so storage stays in sync with UI
       final userMsg = ChatMessage.user(
         id: _generateMessageId(),
         content: userMessage,
       );
-
       await _addMessageToSession(sessionId, userMsg);
 
       // Get streaming response
@@ -83,7 +82,8 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
           break;
         }
 
-        fullResponse += chunk;
+        // Service yields cumulative text; propagate as-is and track latest only
+        fullResponse = chunk;
         yield chunk;
       }
 
@@ -229,8 +229,15 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
       // Add greeting message
       final greetingMessage = ChatMessage.assistant(
         id: _generateMessageId(),
-        content:
-            'السلام عليكم ورحمة الله وبركاته\n\nمرحباً بك في المساعد الإسلامي الذكي! أنا هنا لمساعدتك في أسئلتك الإسلامية.\n\nيمكنني الإجابة على أسئلة حول:\n• القرآن الكريم وتفسيره\n• الأحاديث النبوية\n• أحكام الصلاة والعبادات\n• الأخلاق الإسلامية\n• الأدعية والأذكار\n\nكيف يمكنني مساعدتك اليوم؟',
+        content: 'السلام عليكم ورحمة الله وبركاته 🌙\n\n'
+            'مرحباً بك في تطبيق "طمأنينة – Tamanina"، المساعد الإسلامي الذكي.\n\n'
+            'يمكنني مساعدتك في:\n'
+            '• القرآن الكريم وتفسيره\n'
+            '• الأحاديث النبوية\n'
+            '• أحكام الصلاة والعبادات\n'
+            '• الفقه والمعاملات\n'
+            '• الأخلاق والأدعية والأذكار\n\n'
+            'كيف يمكنني خدمتك اليوم؟',
         type: MessageType.greeting,
       );
 

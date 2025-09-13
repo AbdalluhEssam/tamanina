@@ -97,7 +97,7 @@ void main() {
                 'Response should contain relevant Islamic content for: $question');
         print('✅ Question: $question');
         print(
-            '✅ Answer: ${response.content.length > 100 ? response.content.substring(0, 100) + "..." : response.content}\n');
+            '✅ Answer: ${response.content.length > 100 ? "${response.content.substring(0, 100)}..." : response.content}\n');
       }
     });
 

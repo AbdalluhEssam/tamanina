@@ -4,35 +4,19 @@ import 'package:http/http.dart' as http;
 import '../../../../core/config/api_config.dart';
 import '../../domain/entities/chat_message.dart';
 
-/// Service for Islamic AI responses using ChatGPT API with offline fallback
+/// Service for Islamic AI responses using Groq API with offline fallback
 class IslamicAiService {
   /// Store conversation context
   final List<Map<String, String>> _conversationHistory = [];
 
   /// Current model being used
   final String model;
-
-  /// Islamic context prompt for ChatGPT
-  static const String _islamicSystemPrompt =
-      '''أنت مساعد ذكي إسلامي متخصص في تقديم إجابات دقيقة ومفيدة حول الدين الإسلامي.
-
-إرشادات مهمة:
-- أجب بالعربية دائماً وبوضوح تام
-- اعتمد على القرآن الكريم والسنة النبوية الصحيحة
-- أجب على السؤال المحدد مباشرة قبل إعطاء معلومات عامة
-- اذكر الدليل من القرآن أو الحديث عند الإمكان مع ذكر المرجع
-- كن لطيفاً ومتفهماً ولكن واضحاً في الإجابة
-- إذا لم تكن متأكداً من إجابة فقل "والله أعلم" وأشر إلى ضرورة سؤال أهل العلم
-- في المسائل الخلافية، اذكر الآراء الأساسية مع الدليل
-- احترم جميع المذاهب الإسلامية المعتبرة
-- قدم النصائح العملية والتطبيقية
-- استخدم لغة واضحة ومفهومة
-- لا تعطِ ردود عامة، بل أجب على السؤال المطروح مباشرة
-
-موضوعاتك: العقيدة، العبادات، المعاملات، الأخلاق، السيرة النبوية، التفسير، الحديث، الفقه الإسلامي، الزواج، الطلاق، تعدد الزوجات، الميراث، الحلال والحرام.
-
-تذكر: أجب على السؤال المحدد أولاً، ثم أضف المعلومات الإضافية إذا لزم الأمر.''';
-
+  static const String _islamicSystemPrompt = '''
+أنت مساعد إسلامي ذكي اسمه "طمأنينة – Tamanina". 
+دورك أن تجيب على الأسئلة الشرعية باختصار (3 أسطر فقط) 
+واختم إجابتك دائمًا بعبارة: 
+"والله أعلم، ويُفضل الرجوع إلى الأزهر الشريف أو العلماء الموثوقين".
+''';
   IslamicAiService({this.model = ApiConfig.defaultModel});
 
   /// Generate streaming response using ChatGPT API with fallback to offline responses
@@ -47,52 +31,50 @@ class IslamicAiService {
         'content': userMessage,
       });
 
-      // Try ChatGPT API first, fallback to offline responses
-      String response = await _getChatGPTResponse(userMessage) ??
-          _getOfflineResponse(userMessage);
+      // Try to get response from Groq API first
+      final apiResponse = await _getGroqStreamingResponse(userMessage);
 
-      // Add AI response to conversation history
-      _conversationHistory.add({
-        'role': 'assistant',
-        'content': response,
-      });
+      if (apiResponse != null && apiResponse.isNotEmpty) {
+        // Stream the API response word by word, handling emojis properly
+        yield* _streamTextWithEmojis(apiResponse);
 
-      // Keep conversation history manageable
-      if (_conversationHistory.length > ApiConfig.maxConversationHistory) {
-        _conversationHistory.removeRange(
-            0, _conversationHistory.length - ApiConfig.maxConversationHistory);
-      }
+        // Add AI response to conversation history
+        _conversationHistory.add({
+          'role': 'assistant',
+          'content': apiResponse,
+        });
 
-      // Stream response word by word for typing effect
-      final words = response.split(' ');
-      for (int i = 0; i < words.length; i++) {
-        await Future.delayed(ApiConfig.streamingDelay);
-        if (i == 0) {
-          yield words[i];
-        } else {
-          yield ' ${words[i]}';
+        // Keep conversation history manageable
+        if (_conversationHistory.length >
+            ApiConfig.maxConversationHistory * 2) {
+          _conversationHistory.removeRange(0, 2);
         }
+      } else {
+        // Fallback to offline response only if API fails
+        print('🔄 API failed, using offline fallback response');
+        final offlineResponse = _getOfflineResponse(userMessage);
+        yield* _streamTextWithEmojis(offlineResponse);
       }
     } catch (e) {
-      // Fallback to offline response on any error
-      final fallbackResponse = _getOfflineResponse(userMessage);
-      final words = fallbackResponse.split(' ');
-      for (int i = 0; i < words.length; i++) {
-        await Future.delayed(ApiConfig.streamingDelay);
-        if (i == 0) {
-          yield words[i];
-        } else {
-          yield ' ${words[i]}';
-        }
-      }
+      print('❌ Error in streaming response: $e');
+      // Fallback to offline response in case of error
+      final offlineResponse = _getOfflineResponse(userMessage);
+      yield* _streamTextWithEmojis(offlineResponse);
     }
   }
 
-  /// Get response from ChatGPT API with retry mechanism
-  Future<String?> _getChatGPTResponse(String userMessage) async {
+  /// Get response from Groq API with retry mechanism
+  Future<String?> _getGroqResponse(String userMessage) async {
+    // Check if API key is properly configured
+    if (ApiConfig.openAIApiKey == 'YOUR_OPENAI_API_KEY_HERE' ||
+        ApiConfig.openAIApiKey.isEmpty) {
+      print('⚠️ Groq API key not configured properly');
+      return null;
+    }
+
     for (int attempt = 0; attempt < ApiConfig.maxRetries; attempt++) {
       try {
-        // Prepare messages for ChatGPT API
+        // Prepare messages for Groq API
         final messages = [
           {
             'role': 'system',
@@ -113,7 +95,7 @@ class IslamicAiService {
             '${ApiConfig.openAIBaseUrl}${ApiConfig.chatCompletionsEndpoint}';
 
         print(
-            '🔄 Attempting ChatGPT API call (attempt ${attempt + 1}/${ApiConfig.maxRetries})...');
+            '� Attempting Groq API call (attempt ${attempt + 1}/${ApiConfig.maxRetries})...');
         print('📝 Request: $userMessage');
 
         final response = await http
@@ -147,9 +129,12 @@ class IslamicAiService {
             final content =
                 data['choices'][0]['message']['content'].toString().trim();
             print(
-                '✅ ChatGPT Response received: ${content.substring(0, content.length > 100 ? 100 : content.length)}...');
+                '✅ Groq Response received: ${content.substring(0, content.length > 100 ? 100 : content.length)}...');
             return content;
           }
+        } else if (response.statusCode == 401) {
+          print('❌ API Authentication failed - Invalid API key');
+          return null; // Don't retry on auth failure
         } else if (response.statusCode == 429) {
           print('⚠️ API Rate limit exceeded, attempt ${attempt + 1}');
           if (attempt < ApiConfig.maxRetries - 1) {
@@ -157,15 +142,14 @@ class IslamicAiService {
             continue;
           }
         } else {
-          print(
-              '❌ ChatGPT API Error: ${response.statusCode} - ${response.body}');
+          print('❌ Groq API Error: ${response.statusCode} - ${response.body}');
           if (attempt < ApiConfig.maxRetries - 1) {
             await Future.delayed(ApiConfig.retryDelay);
             continue;
           }
         }
       } catch (e) {
-        print('🚨 ChatGPT API Exception (attempt ${attempt + 1}): $e');
+        print('🚨 Groq API Exception (attempt ${attempt + 1}): $e');
         if (attempt < ApiConfig.maxRetries - 1) {
           await Future.delayed(ApiConfig.retryDelay);
           continue;
@@ -173,9 +157,132 @@ class IslamicAiService {
       }
     }
 
-    print(
-        '💔 All ChatGPT API attempts failed, falling back to offline response');
+    print('💔 All Groq API attempts failed, falling back to offline response');
     return null;
+  }
+
+  /// Get streaming response from Groq API
+  Future<String?> _getGroqStreamingResponse(String userMessage) async {
+    // Check if API key is properly configured
+    if (ApiConfig.openAIApiKey == 'YOUR_OPENAI_API_KEY_HERE' ||
+        ApiConfig.openAIApiKey.isEmpty) {
+      print('⚠️ Groq API key not configured for streaming');
+      return null;
+    }
+
+    try {
+      print('🚀 Getting Groq API response for streaming...');
+
+      // Prepare messages for Groq API
+      final messages = [
+        {
+          'role': 'system',
+          'content': _islamicSystemPrompt,
+        }
+      ];
+
+      // Add conversation history (limit to manage token usage)
+      final recentHistory = _conversationHistory.length >
+              ApiConfig.maxConversationHistory
+          ? _conversationHistory.sublist(
+              _conversationHistory.length - ApiConfig.maxConversationHistory)
+          : _conversationHistory;
+
+      messages.addAll(recentHistory);
+
+      final apiUrl =
+          '${ApiConfig.openAIBaseUrl}${ApiConfig.chatCompletionsEndpoint}';
+
+      final response = await http
+          .post(
+            Uri.parse(apiUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ${ApiConfig.openAIApiKey}',
+              'User-Agent': 'Tamanina-Islamic-App/1.0',
+            },
+            body: jsonEncode({
+              'model': model,
+              'messages': messages,
+              'max_tokens': ApiConfig.maxTokens,
+              'temperature': ApiConfig.temperature,
+              'top_p': 0.9,
+              'frequency_penalty': 0.1,
+              'presence_penalty': 0.1,
+            }),
+          )
+          .timeout(Duration(seconds: ApiConfig.timeoutSeconds));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['choices'] != null &&
+            data['choices'].isNotEmpty &&
+            data['choices'][0]['message'] != null &&
+            data['choices'][0]['message']['content'] != null) {
+          final content =
+              data['choices'][0]['message']['content'].toString().trim();
+          print('✅ Groq API response received for streaming');
+          return content;
+        }
+      } else if (response.statusCode == 401) {
+        print('❌ API Authentication failed - Invalid API key for streaming');
+        return null;
+      } else {
+        print(
+            '❌ Groq API streaming error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Groq API streaming failed: $e');
+      return null;
+    }
+    return null;
+  }
+
+  /// Stream text with proper emoji handling
+  Stream<String> _streamTextWithEmojis(String text) async* {
+    // Split by spaces but be careful with emojis and Arabic text
+    final words = _smartSplitText(text);
+    String currentText = '';
+
+    for (int i = 0; i < words.length; i++) {
+      currentText += '${words[i]} ';
+      yield currentText.trim();
+
+      // Add realistic typing delay
+      await Future.delayed(ApiConfig.streamingDelay);
+    }
+  }
+
+  /// Smart text splitting that preserves emojis and Arabic text
+  List<String> _smartSplitText(String text) {
+    final List<String> result = [];
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+
+      if (char == ' ') {
+        if (buffer.isNotEmpty) {
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+      } else if (char == '\n') {
+        if (buffer.isNotEmpty) {
+          result.add(buffer.toString());
+          buffer.clear();
+        }
+        result.add('\n');
+      } else {
+        buffer.write(char);
+      }
+    }
+
+    if (buffer.isNotEmpty) {
+      result.add(buffer.toString());
+    }
+
+    return result;
   }
 
   /// Generate single response (non-streaming) - for backward compatibility
@@ -190,8 +297,8 @@ class IslamicAiService {
         'content': userMessage,
       });
 
-      // Try ChatGPT API first, fallback to offline
-      String responseContent = await _getChatGPTResponse(userMessage) ??
+      // Try Groq API first, fallback to offline
+      String responseContent = await _getGroqResponse(userMessage) ??
           _getOfflineResponse(userMessage);
 
       // Add AI response to conversation history
@@ -225,65 +332,29 @@ class IslamicAiService {
     }
   }
 
-  /// Get offline Islamic responses - always works without internet
+  /// Get offline Islamic responses - Simple fallback when API is unavailable
   String _getOfflineResponse(String userMessage) {
-    final messageLower = userMessage.toLowerCase();
+    final messageLower = userMessage.toLowerCase().trim();
 
-    // Islamic greetings
-    if (messageLower.contains('سلام') ||
-        messageLower.contains('السلام') ||
-        messageLower.contains('مرحبا') ||
-        messageLower.contains('أهلا')) {
-      return 'وعليكم السلام ورحمة الله وبركاته\n\nمرحباً بك أخي الكريم، أنا هنا لمساعدتك في الأسئلة الإسلامية. كيف يمكنني خدمتك؟';
+    // Islamic greetings - Only for pure greetings, not questions
+    if ((messageLower == 'سلام' ||
+            messageLower == 'السلام عليكم' ||
+            messageLower == 'السلام عليكم ورحمة الله وبركاته' ||
+            messageLower == 'مرحبا' ||
+            messageLower == 'مرحباً' ||
+            messageLower == 'أهلا' ||
+            messageLower == 'أهلاً' ||
+            messageLower == 'صباح الخير' ||
+            messageLower == 'مساء الخير') &&
+        !messageLower.contains('؟') &&
+        !messageLower.contains('كيف') &&
+        !messageLower.contains('ما') &&
+        !messageLower.contains('هل')) {
+      return 'وعليكم السلام ورحمة الله وبركاته\n\nأهلاً وسهلاً بك، أخي الكريم. أنا مساعد إسلامي هنا لمساعدتك في أسئلتك الدينية.\n\nيمكنني مساعدتك في:\n• أسئلة القرآن والتفسير\n• الأحاديث النبوية\n• أحكام الفقه والعبادات\n• الأخلاق الإسلامية\n\nما الذي تود أن تسأل عنه؟';
     }
 
-    // Prayer related questions
-    if (messageLower.contains('صلاة') ||
-        messageLower.contains('صلوات') ||
-        messageLower.contains('فرض') ||
-        messageLower.contains('وضوء')) {
-      return 'الصلاة عماد الدين وهي أول ما يحاسب عليه العبد يوم القيامة.\n\nالصلوات الخمس المفروضة هي:\n• الفجر: ركعتان\n• الظهر: أربع ركعات\n• العصر: أربع ركعات\n• المغرب: ثلاث ركعات\n• العشاء: أربع ركعات\n\nقال تعالى: "وأقيموا الصلاة وآتوا الزكاة واركعوا مع الراكعين" البقرة:43';
-    }
-
-    // Marriage and polygamy questions - Enhanced
-    if (messageLower.contains('زواج') ||
-        messageLower.contains('عائلة') ||
-        messageLower.contains('تعدد') ||
-        messageLower.contains('التعدد') ||
-        messageLower.contains('زوجات') ||
-        messageLower.contains('أربع') ||
-        messageLower.contains('حرام') ||
-        messageLower.contains('حلال') ||
-        messageLower.contains('ثانية') ||
-        messageLower.contains('ثالثة') ||
-        messageLower.contains('رابعة') ||
-        messageLower.contains('أتزوج')) {
-      // Specific answer for polygamy questions
-      if (messageLower.contains('تعدد') ||
-          messageLower.contains('التعدد') ||
-          messageLower.contains('زوجات') ||
-          messageLower.contains('أربع') ||
-          messageLower.contains('ثانية') ||
-          messageLower.contains('ثالثة') ||
-          messageLower.contains('رابعة') ||
-          (messageLower.contains('أتزوج') && messageLower.contains('ثانية'))) {
-        return 'تعدد الزوجات في الإسلام حكم شرعي مباح وليس واجباً أو محرماً.\n\nالأدلة الشرعية:\nقال تعالى: "فانكحوا ما طاب لكم من النساء مثنى وثلاث ورباع فإن خفتم ألا تعدلوا فواحدة" النساء:3\n\nشروط التعدد:\n• القدرة على العدل بين الزوجات\n• القدرة المالية على الإنفاق\n• القدرة الجسدية والنفسية\n• ألا يتجاوز أربع زوجات\n\nقال النبي ﷺ: "من كان له امرأتان فمال إلى إحداهما جاء يوم القيامة وشقه مائل"\n\nحكمة التشريع:\n• حماية المرأة الأرملة والمطلقة\n• زيادة النسل في المجتمع\n• تلبية الحاجات الفطرية بطريقة شرعية\n\nوالله أعلم. يُنصح بمراجعة أهل العلم في هذه المسألة لفهم تفاصيل أكثر.';
-      }
-
-      // General marriage guidance
-      return 'الزواج في الإسلام رباط مقدس ونصف الدين.\n\nقال تعالى: "ومن آياته أن خلق لكم من أنفسكم أزواجاً لتسكنوا إليها وجعل بينكم مودة ورحمة" الروم:21\n\nمن آداب الأسرة في الإسلام:\n• المعاشرة بالمعروف\n• حسن التربية للأولاد\n• بر الوالدين\n• العدل بين الأولاد\n\nقال النبي ﷺ: "خيركم خيركم لأهله وأنا خيركم لأهلي"';
-    }
-
-    // Quran related questions
-    if (messageLower.contains('قرآن') ||
-        messageLower.contains('تلاوة') ||
-        messageLower.contains('حفظ') ||
-        messageLower.contains('آية')) {
-      return 'القرآن الكريم هو كلام الله المنزل على نبينا محمد صلى الله عليه وسلم.\n\n• يستحب قراءة القرآن يومياً\n• كل حرف بحسنة والحسنة بعشر أمثالها\n• من قرأ القرآن فله بكل حرف حسنة\n\nقال تعالى: "إن هذا القرآن يهدي للتي هي أقوم" الإسراء:9\n\nهل تريد توجيهات حول حفظ القرآن أم تلاوته؟';
-    }
-
-    // General Islamic advice - Only for unmatched questions
-    return 'بارك الله فيك على سؤالك الكريم.\n\nأجب على سؤالك بالاعتماد على:\n• القرآن الكريم وتفسيره\n• السنة النبوية المطهرة\n• فهم السلف الصالح\n\nقال تعالى: "فاسألوا أهل الذكر إن كنتم لا تعلمون" النحل:43\n\nهل يمكنك إعادة صياغة سؤالك بطريقة أكثر تحديداً لأتمكن من مساعدتك بشكل أفضل؟';
+    // For any other question when API is unavailable
+    return 'عذراً، لا يمكنني الإجابة على سؤالك بدقة في الوقت الحالي.\n\nأحتاج للاتصال بقاعدة المعرفة الإسلامية الشاملة للحصول على إجابة دقيقة وموثوقة.\n\nيرجى:\n• التأكد من اتصالك بالإنترنت\n• المحاولة مرة أخرى\n\nأعتذر عن الإزعاج وأتطلع لمساعدتك قريباً إن شاء الله.';
   }
 
   /// Determine message type based on content

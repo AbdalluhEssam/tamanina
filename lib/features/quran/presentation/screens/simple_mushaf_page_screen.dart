@@ -1269,7 +1269,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           resolvedFamily = GoogleFonts.getFont(font).fontFamily ?? font;
       }
 
-      if (resolvedFamily != null && resolvedFamily.isNotEmpty) {
+      if (resolvedFamily!.isNotEmpty) {
         return base.copyWith(fontFamily: resolvedFamily);
       }
     } catch (_) {

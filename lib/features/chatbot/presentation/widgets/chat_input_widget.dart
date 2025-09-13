@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
 
 /// Widget for chat input with Islamic-inspired design
@@ -32,7 +31,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
     super.initState();
 
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 90),
       vsync: this,
     );
 
@@ -57,53 +56,85 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).scaffoldBackgroundColor,
+            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.97),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+            spreadRadius: 1,
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+            horizontal: 16.w,
+            vertical: 10.h,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Text input field
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.surfaceDark
-                        : AppColors.creamAccent.withOpacity(0.5),
-                    borderRadius: AppRadius.xl,
-                    border: Border.all(
-                      color: AppColors.divider,
-                      width: 0.5,
+                    gradient: LinearGradient(
+                      colors: Theme.of(context).brightness == Brightness.dark
+                          ? const [Color(0xFF2C2C2C), Color(0xFF3A3A3A)]
+                          : const [Color(0xFFFFFFFF), Color(0xFFF8F9FA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: widget.isEnabled
+                          ? AppColors.primaryGreen.withOpacity(0.25)
+                          : AppColors.divider.withOpacity(0.5),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     enabled: widget.isEnabled,
-                    maxLines: null,
+                    maxLines: 5,
+                    minLines: 1,
                     textInputAction: TextInputAction.send,
                     textDirection: TextDirection.rtl,
                     textAlign: TextAlign.right,
-                    style: AppTypography.bodyMediumArabic,
+                    style: AppTypography.bodyMediumArabic.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : AppColors.textPrimary,
+                      fontSize: 16.sp,
+                      height: 1.4,
+                    ),
                     decoration: InputDecoration(
-                      hintText: 'اكتب سؤالك هنا...',
+                      hintText: widget.isEnabled
+                          ? 'اكتب سؤالك الإسلامي هنا...'
+                          : 'يرجى الانتظار...',
                       hintStyle: AppTypography.bodyMediumArabic.copyWith(
                         color: AppColors.textSecondary,
+                        fontSize: 15.sp,
                       ),
                       contentPadding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.md,
+                        horizontal: 18.w,
+                        vertical: 12.h,
                       ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -111,63 +142,63 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                       disabledBorder: InputBorder.none,
                     ),
                     onSubmitted: _handleSubmitted,
-                    onChanged: (text) {
-                      setState(() {
-                        // Rebuild to update send button state
-                      });
-                    },
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
               ),
 
-              AppSpacing.horizontalSpaceSM,
+              SizedBox(width: 12.w),
 
               // Send button
               AnimatedBuilder(
                 animation: _scaleAnimation,
                 builder: (context, child) {
+                  final canSend = _canSend();
                   return Transform.scale(
                     scale: _scaleAnimation.value,
                     child: GestureDetector(
                       onTapDown: (_) => _scaleController.forward(),
-                      onTapUp: (_) => _scaleController.reverse(),
+                      onTapUp: (_) {
+                        _scaleController.reverse();
+                        _handleSendPressed();
+                      },
                       onTapCancel: () => _scaleController.reverse(),
-                      onTap: _canSend() ? _handleSendPressed : null,
                       child: Container(
                         width: 48.w,
                         height: 48.w,
                         decoration: BoxDecoration(
-                          gradient: _canSend()
-                              ? LinearGradient(
+                          gradient: canSend
+                              ? const LinearGradient(
                                   colors: [
-                                    AppColors.primaryGreen,
-                                    AppColors.primaryGreen.withOpacity(0.9),
+                                    Color(0xFF4CAF50),
+                                    Color(0xFF66BB6A)
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 )
-                              : null,
-                          color: _canSend()
-                              ? null
-                              : AppColors.divider.withOpacity(0.5),
+                              : LinearGradient(
+                                  colors: [
+                                    AppColors.divider,
+                                    AppColors.divider.withOpacity(0.85),
+                                  ],
+                                ),
                           shape: BoxShape.circle,
-                          boxShadow: _canSend()
+                          boxShadow: canSend
                               ? [
                                   BoxShadow(
-                                    color:
-                                        AppColors.primaryGreen.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                                    color: const Color(0xFF4CAF50)
+                                        .withOpacity(0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ]
                               : null,
                         ),
                         child: Icon(
                           Icons.send_rounded,
-                          color: _canSend()
-                              ? Colors.white
-                              : AppColors.textSecondary,
-                          size: AppSizing.iconMD,
+                          color:
+                              canSend ? Colors.white : AppColors.textSecondary,
+                          size: 20.w,
                         ),
                       ),
                     ),
@@ -192,6 +223,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
       final text = _controller.text.trim();
       _controller.clear();
       widget.onSendMessage(text);
+      setState(() {});
     }
   }
 
