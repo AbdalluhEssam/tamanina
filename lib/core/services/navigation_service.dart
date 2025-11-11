@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
 
 class NavigationService {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -49,5 +50,23 @@ class NavigationService {
 
   static bool canPop() {
     return navigator!.canPop();
+  }
+
+  // Feature-specific navigation helpers
+
+  /// Navigate to Prayer Times screen
+  /// التنقل إلى شاشة مواقيت الصلاة
+  static Future<void> goToPrayerTimes() {
+    return pushNamed(AppRoutes.prayerTimes);
+  }
+
+  /// Navigate to Home screen
+  static Future<void> goToHome() {
+    return pushNamed(AppRoutes.home);
+  }
+
+  /// Navigate to Settings screen
+  static Future<void> goToSettings() {
+    return pushNamed(AppRoutes.settings);
   }
 }

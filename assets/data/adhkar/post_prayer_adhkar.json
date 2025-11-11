@@ -1,0 +1,74 @@
+[
+  {
+    "id": 31,
+    "arabicText": "اللَّهُ أَكْبَرُ",
+    "transliteration": "Allāhu akbar",
+    "translation": "Allah is the Greatest",
+    "count": 34,
+    "reference": "مسلم",
+    "benefits": "التكبير بعد الصلاة"
+  },
+  {
+    "id": 32,
+    "arabicText": "سُبْحَانَ اللَّهِ",
+    "transliteration": "Subḥāna llāh",
+    "translation": "Glory be to Allah",
+    "count": 33,
+    "reference": "مسلم",
+    "benefits": "التسبيح بعد الصلاة"
+  },
+  {
+    "id": 33,
+    "arabicText": "الْحَمْدُ لِلَّهِ",
+    "transliteration": "Al-ḥamdu lillāh",
+    "translation": "All praise is due to Allah",
+    "count": 33,
+    "reference": "مسلم",
+    "benefits": "الحمد بعد الصلاة"
+  },
+  {
+    "id": 34,
+    "arabicText": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    "transliteration": "Lā ilāha illā llāhu waḥdahu lā sharīka lah, lahu l-mulku wa-lahu l-ḥamd, wa-huwa ʿalā kulli shayʾin qadīr",
+    "translation": "There is no god but Allah alone, with no partner. His is the dominion and His is the praise, and He is capable of all things",
+    "count": 1,
+    "reference": "مسلم",
+    "benefits": "من قالها بعد كل صلاة غفرت له خطاياه وإن كانت مثل زبد البحر"
+  },
+  {
+    "id": 35,
+    "arabicText": "اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
+    "transliteration": "Allāhumma anta s-salāmu wa-minka s-salām, tabārakta yā dhā l-jalāli wa-l-ikrām",
+    "translation": "O Allah, You are Peace and from You comes peace. Blessed are You, O Possessor of majesty and honor",
+    "count": 1,
+    "reference": "مسلم",
+    "benefits": "من السنة بعد السلام من الصلاة"
+  },
+  {
+    "id": 36,
+    "arabicText": "اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ",
+    "transliteration": "Allāhumma lā māniʿa li-mā aʿṭayt, wa-lā muʿṭiya li-mā manaʿt, wa-lā yanfaʿu dhā l-jaddi minka l-jadd",
+    "translation": "O Allah, there is no preventer of what You have given, and no giver of what You have prevented, and the might of the mighty person cannot benefit him against You",
+    "count": 1,
+    "reference": "البخاري",
+    "benefits": "من الأذكار بعد الصلاة"
+  },
+  {
+    "id": 37,
+    "arabicText": "لَا إِلَهَ إِلَّا اللَّهُ، وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ يُحْيِي وَيُمِيتُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    "transliteration": "Lā ilāha illā llāhu waḥdahu lā sharīka lah, lahu l-mulku wa-lahu l-ḥamdu yuḥyī wa-yumīt, wa-huwa ʿalā kulli shayʾin qadīr",
+    "translation": "There is no god but Allah alone, with no partner. His is the dominion and His is the praise. He gives life and causes death, and He is capable of all things",
+    "count": 10,
+    "reference": "الترمذي",
+    "benefits": "من قالها عشر مرات بعد صلاة المغرب والفجر كتب الله له بها عشر حسنات"
+  },
+  {
+    "id": 38,
+    "arabicText": "أَسْتَغْفِرُ اللَّهَ",
+    "transliteration": "Astaghfiru llāh",
+    "translation": "I seek the forgiveness of Allah",
+    "count": 3,
+    "reference": "مسلم",
+    "benefits": "كان النبي يستغفر ثلاثا بعد الصلاة"
+  }
+]

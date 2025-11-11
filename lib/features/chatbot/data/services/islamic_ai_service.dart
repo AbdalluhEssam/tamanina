@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/api_config.dart';
-import '../../domain/entities/chat_message.dart';
+import '../../data/model/chat_message.dart';
 
 /// Service for Islamic AI responses using Groq API with offline fallback
 class IslamicAiService {

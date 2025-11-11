@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tamanina/features/tasbeeh/presentation/screens/tasbeeh_screen.dart';
-import '../../features/chatbot/presentation/screens/chatbot_provider.dart';
+import 'package:tamanina/features/tasbeeh/ui/screens/tasbeeh_screen.dart';
+import '../../features/chatbot/ui/screens/chatbot_provider.dart';
+import '../../features/prayer_times/data/services/prayer_times_service.dart';
+import '../../features/prayer_times/data/repo/prayer_times_repository.dart';
+import '../../features/prayer_times/ui/cubit/prayer_times_cubit.dart';
+import '../../features/prayer_times/ui/screens/prayer_times_screen.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
-import '../../features/splash/presentation/view/splash_screen.dart';
-import '../../features/onboarding/presentation/view/onboarding_screen.dart';
-import '../../features/home/presentation/screens/home_layout.dart';
+import '../../features/splash/ui/screens/splash_screen.dart';
+import '../../features/onboarding/ui/screens/onboarding_screen.dart';
+import '../../features/home/ui/screens/home_layout.dart';
 
 /// موجه المسارات الرئيسي للتطبيق
 /// Main App Router
@@ -32,6 +38,9 @@ class AppRouter {
 
       case AppRoutes.prayer:
         return _createRoute(_buildComingSoonScreen('أوقات الصلاة'));
+
+      case AppRoutes.prayerTimes:
+        return _createRoute(_buildPrayerTimesScreen());
 
       case AppRoutes.azkar:
         return _createRoute(_buildComingSoonScreen('الأذكار'));
@@ -164,6 +173,20 @@ class AppRouter {
           ],
         ),
       ),
+    );
+  }
+
+  /// بناء شاشة مواقيت الصلاة
+  Widget _buildPrayerTimesScreen() {
+    return BlocProvider(
+      create: (context) => PrayerTimesCubit(
+        repository: PrayerTimesRepository(
+          service: PrayerTimesService(),
+          prefs: sharedPreferences,
+        ),
+        notifications: FlutterLocalNotificationsPlugin(),
+      ),
+      child: const PrayerTimesScreen(),
     );
   }
 

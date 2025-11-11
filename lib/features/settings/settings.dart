@@ -1,2 +1,2 @@
 // Export all settings screens
-export 'presentation/screens/settings_screen.dart';
+export 'ui/screens/settings_screen.dart';

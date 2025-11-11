@@ -8,13 +8,37 @@ import 'core/routing/app_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/cubit/theme/theme_cubit.dart';
 import 'core/services/navigation_service.dart';
+import 'core/services/app_update_service.dart';
 
 /// تطبيق طمأنينة الرئيسي
 /// Main Tamanina App Widget
-class TamaninaApp extends StatelessWidget {
+class TamaninaApp extends StatefulWidget {
   final AppRouter appRouter;
 
   const TamaninaApp({super.key, required this.appRouter});
+
+  @override
+  State<TamaninaApp> createState() => _TamaninaAppState();
+}
+
+class _TamaninaAppState extends State<TamaninaApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Check for app updates after the first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
+  }
+
+  Future<void> _checkForUpdates() async {
+    // Wait a bit for the app to fully load
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted && NavigationService.navigatorKey.currentContext != null) {
+      await AppUpdateService()
+          .checkForUpdates(NavigationService.navigatorKey.currentContext!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +64,7 @@ class TamaninaApp extends StatelessWidget {
             localizationsDelegates: context.localizationDelegates,
 
             // التوجيه والمسارات
-            onGenerateRoute: appRouter.generateRoute,
+            onGenerateRoute: widget.appRouter.generateRoute,
             initialRoute: AppRoutes.splash,
 
             // إعدادات إضافية للتطبيق

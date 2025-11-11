@@ -90,7 +90,7 @@ void main() {
 
         print('✅ Question: $question');
         print(
-            '✅ Clean response received: ${finalResponse.length > 100 ? finalResponse.substring(0, 100) + "..." : finalResponse}');
+            '✅ Clean response received: ${finalResponse.length > 100 ? "${finalResponse.substring(0, 100)}..." : finalResponse}');
       }
     });
   });

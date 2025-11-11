@@ -3,16 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Features
 import '../../features/splash/data/datasources/splash_local_data_source.dart';
-import '../../features/splash/data/repositories/splash_repository_impl.dart';
-import '../../features/splash/domain/repositories/splash_repository.dart';
-import '../../features/splash/domain/usecases/splash_usecases.dart';
-import '../../features/splash/presentation/cubit/splash_cubit.dart';
+import '../../features/splash/data/repo/splash_repository_impl.dart';
+import '../../features/splash/data/repo/splash_repository.dart';
+import '../../features/splash/data/repo/splash_usecases.dart';
+import '../../features/splash/ui/cubit/splash_cubit.dart';
 
 import '../../features/onboarding/data/datasources/onboarding_local_data_source.dart';
-import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
-import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
-import '../../features/onboarding/domain/usecases/complete_onboarding_usecase.dart';
-import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import '../../features/onboarding/data/repo/onboarding_repository_impl.dart';
+import '../../features/onboarding/data/repo/onboarding_repository.dart';
+import '../../features/onboarding/data/repo/complete_onboarding_usecase.dart';
+import '../../features/onboarding/ui/cubit/onboarding_cubit.dart';
+
+// Adhkar feature
+import '../../features/adhkar/ui/cubit/adhkar_cubit.dart';
+
 // Quran feature DI
 import '../../features/quran/injection_container.dart' as quran_di;
 
@@ -68,5 +72,11 @@ Future<void> init() async {
     () => OnboardingCubit(
       completeOnboardingUseCase: sl(),
     ),
+  );
+
+  // === ADHKAR FEATURE ===
+  // Cubit (uses SharedPreferences for favorites)
+  sl.registerFactory(
+    () => AdhkarCubit(sl()),
   );
 }

@@ -2,10 +2,10 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/datasources/quran_local_datasource.dart';
-import 'data/repositories/quran_repository_impl.dart';
-import 'domain/repositories/quran_repository.dart';
-import 'domain/usecases/quran_usecases.dart';
-import 'presentation/bloc/quran_bloc.dart';
+import 'data/repo/quran_repository_impl.dart';
+import 'data/repo/quran_repository.dart';
+import 'ui/cubit/quran_cubit.dart';
+import 'ui/cubit/audio_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -28,41 +28,12 @@ Future<void> initQuranDependencies() async {
     ),
   );
 
-  // Use cases
-  sl.registerLazySingleton(() => GetAllSurahsUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(() => GetSurahUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(() => GetVerseUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(() => SearchQuranUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => GetFavoriteSurahsUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => GetFavoriteVersesUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => GetBookmarkedVersesUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => ToggleSurahFavoriteUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => ToggleVerseFavoriteUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(
-      () => ToggleVerseBookmarkUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(() => UpdateLastReadUseCase(sl<QuranRepository>()));
-  sl.registerLazySingleton(() => GetReadingStatsUseCase(sl<QuranRepository>()));
-
-  // BLoC
+  // Cubits
   sl.registerFactory(
-    () => QuranBloc(
-      getAllSurahsUseCase: sl<GetAllSurahsUseCase>(),
-      getSurahUseCase: sl<GetSurahUseCase>(),
-      getVerseUseCase: sl<GetVerseUseCase>(),
-      searchQuranUseCase: sl<SearchQuranUseCase>(),
-      getFavoriteSurahsUseCase: sl<GetFavoriteSurahsUseCase>(),
-      getFavoriteVersesUseCase: sl<GetFavoriteVersesUseCase>(),
-      getBookmarkedVersesUseCase: sl<GetBookmarkedVersesUseCase>(),
-      toggleSurahFavoriteUseCase: sl<ToggleSurahFavoriteUseCase>(),
-      toggleVerseFavoriteUseCase: sl<ToggleVerseFavoriteUseCase>(),
-      toggleVerseBookmarkUseCase: sl<ToggleVerseBookmarkUseCase>(),
-      updateLastReadUseCase: sl<UpdateLastReadUseCase>(),
-      getReadingStatsUseCase: sl<GetReadingStatsUseCase>(),
-    ),
+    () => QuranCubit(repository: sl<QuranRepository>()),
+  );
+
+  sl.registerFactory(
+    () => AudioCubit(repository: sl<QuranRepository>()),
   );
 }

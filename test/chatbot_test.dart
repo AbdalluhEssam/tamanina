@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamanina/features/chatbot/data/services/islamic_ai_service.dart';
-import 'package:tamanina/features/chatbot/domain/entities/chat_message.dart';
+import 'package:tamanina/features/chatbot/data/model/chat_message.dart';
 
 void main() {
   group('Islamic AI Service Tests', () {

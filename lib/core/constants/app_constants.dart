@@ -72,6 +72,7 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String home = '/home';
   static const String prayer = '/prayer';
+  static const String prayerTimes = '/prayer-times';
   static const String azkar = '/azkar';
   static const String quran = '/quran';
   static const String sebha = '/sebha';

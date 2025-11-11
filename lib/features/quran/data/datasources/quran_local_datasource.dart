@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/quran_entity.dart';
+import '../../data/model/quran_entity.dart';
 
 abstract class QuranLocalDataSource {
   /// الحصول على آخر آية مقروءة للسورة
