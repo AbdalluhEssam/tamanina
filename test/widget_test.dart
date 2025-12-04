@@ -7,28 +7,69 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tamanina/app.dart';
-import 'package:tamanina/core/routing/app_router.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:tamanina/core/services/prayer_service.dart';
+import 'package:tamanina/features/home/ui/widgets/prayer_time_card.dart';
 
+void main() {
+  // Ensure Flutter bindings are initialized
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-void main() async {
-  final sharedPreferences = await SharedPreferences.getInstance();
+  // Initialize locale data for date formatting
+  setUpAll(() async {
+    await initializeDateFormatting('ar');
+  });
 
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(appRouter: AppRouter(sharedPreferences)));
+  group('Basic Widget Tests', () {
+    testWidgets('PrayerTimeCard should render prayer name',
+        (WidgetTester tester) async {
+      final prayerData = PrayerTimeData(
+        name: 'fajr',
+        nameArabic: 'الفجر',
+        time: DateTime(2024, 3, 15, 5, 30),
+      );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          minTextAdapt: true,
+          builder: (context, child) {
+            return MaterialApp(
+              home: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Scaffold(
+                  body: PrayerTimeCard(prayer: prayerData, isDark: false),
+                ),
+              ),
+            );
+          },
+        ),
+      );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      // Prayer name should be displayed
+      expect(find.text('الفجر'), findsOneWidget);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('MaterialApp structure test', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          minTextAdapt: true,
+          builder: (context, child) {
+            return MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: Text('تطبيق طمأنينة'),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+
+      expect(find.text('تطبيق طمأنينة'), findsOneWidget);
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
   });
 }

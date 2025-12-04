@@ -1,6 +1,7 @@
 /// Splash Feature
 ///
 /// This feature provides the initial splash screen and app initialization.
+library;
 
 // Export repositories
 export 'data/repo/splash_repository.dart';

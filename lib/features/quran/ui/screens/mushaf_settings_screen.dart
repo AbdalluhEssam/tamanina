@@ -131,7 +131,7 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
     final cardColor = isDark ? Colors.grey[800] : Colors.white;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16.w),
+      // padding: EdgeInsets.all(16.w),
       child: Column(
         children: [
           // بطاقة إعدادات النص
@@ -151,8 +151,6 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
             ],
           ),
 
-          SizedBox(height: 16.h),
-
           // بطاقة إعدادات العرض
           _buildSettingsCard(
             title: 'إعدادات العرض',
@@ -166,15 +164,12 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
             ],
           ),
 
-          SizedBox(height: 16.h),
-
           // معلومات إضافية
           _buildInfoCard(cardColor, textColor),
 
-          SizedBox(height: 20.h),
-
           // أزرار الإجراءات
           _buildActionButtons(),
+          SizedBox(height: 16.h),
         ],
       ),
     );
@@ -561,48 +556,51 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _resetSettings,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            label: Text(
-              'إعادة تعيين',
-              style: AppTypography.labelMediumArabic.copyWith(
-                color: Colors.white,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _resetSettings,
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: Text(
+                'إعادة تعيين',
+                style: AppTypography.labelMediumArabic.copyWith(
+                  color: Colors.white,
+                ),
               ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[600],
-              padding: EdgeInsets.symmetric(vertical: 14.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 16.w),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.check, color: Colors.white),
-            label: Text(
-              'تم',
-              style: AppTypography.labelMediumArabic.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.brown,
-              padding: EdgeInsets.symmetric(vertical: 14.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[600],
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+          SizedBox(width: 16.w),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.check, color: Colors.white),
+              label: Text(
+                'تم',
+                style: AppTypography.labelMediumArabic.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.brown,
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

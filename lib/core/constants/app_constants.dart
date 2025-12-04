@@ -80,6 +80,10 @@ class AppRoutes {
   static const String statistics = '/statistics';
   static const String settings = '/settings';
   static const String chatbot = '/chatbot';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String termsOfService = '/terms-of-service';
+  static const String notificationSettings = '/notification-settings';
+  static const String mushafReader = '/mushaf-reader';
 }
 
 /// مسارات الملفات والأصول

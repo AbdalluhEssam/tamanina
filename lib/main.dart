@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'core/constants/app_constants.dart';
 import 'core/cubit/locale/locale_cubit.dart';
@@ -13,6 +14,9 @@ import 'core/routing/app_router.dart';
 import 'core/services/service_locator.dart' as di;
 import 'core/services/notification_service.dart';
 import 'core/services/app_update_service.dart';
+import 'core/services/prayer_service.dart';
+import 'core/services/location_service.dart';
+import 'core/services/prayer_notification_service.dart';
 import 'features/splash/ui/cubit/splash_cubit.dart';
 import 'features/onboarding/ui/cubit/onboarding_cubit.dart';
 import 'firebase_options.dart';
@@ -22,6 +26,11 @@ import 'app_bloc_observer.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+
+  // Initialize Hive for local storage
+  await Hive.initFlutter();
+  await Hive.openBox('prayer_settings');
+  await Hive.openBox('bookmarks');
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -36,6 +45,11 @@ void main() async {
 
   // Initialize Notifications
   await NotificationService().initialize();
+
+  // Initialize Prayer Services
+  await PrayerService().initialize();
+  await LocationService().initialize();
+  await PrayerNotificationService().initialize();
 
   // Initialize App Update Service
   await AppUpdateService().initialize();

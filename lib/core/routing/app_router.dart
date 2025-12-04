@@ -8,6 +8,14 @@ import '../../features/prayer_times/data/services/prayer_times_service.dart';
 import '../../features/prayer_times/data/repo/prayer_times_repository.dart';
 import '../../features/prayer_times/ui/cubit/prayer_times_cubit.dart';
 import '../../features/prayer_times/ui/screens/prayer_times_screen.dart';
+import '../../features/legal/ui/screens/privacy_policy_screen.dart';
+import '../../features/legal/ui/screens/terms_of_service_screen.dart';
+import '../../features/settings/ui/screens/notification_settings_screen.dart';
+import '../../features/qibla/ui/screens/qibla_screen.dart';
+import '../../features/settings/ui/screens/enhanced_settings_screen.dart';
+import '../../features/adhkar/ui/screens/adhkar_screen.dart';
+import '../../features/quran/ui/screens/quran_tab_screen.dart';
+import '../../features/statistics/ui/screens/statistics_screen.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../../features/splash/ui/screens/splash_screen.dart';
@@ -34,19 +42,19 @@ class AppRouter {
         return _createRoute(const HomeLayout());
 
       case AppRoutes.settings:
-        return _createRoute(_buildComingSoonScreen('الإعدادات'));
+        return _createRoute(const EnhancedSettingsScreen());
 
       case AppRoutes.prayer:
-        return _createRoute(_buildComingSoonScreen('أوقات الصلاة'));
+        return _createRoute(_buildPrayerTimesScreen());
 
       case AppRoutes.prayerTimes:
         return _createRoute(_buildPrayerTimesScreen());
 
       case AppRoutes.azkar:
-        return _createRoute(_buildComingSoonScreen('الأذكار'));
+        return _createRoute(const AdhkarScreen());
 
       case AppRoutes.quran:
-        return _createRoute(_buildComingSoonScreen('القرآن الكريم'));
+        return _createRoute(const QuranTabScreen());
 
       case AppRoutes.sebha:
         return _createRoute(Scaffold(
@@ -59,13 +67,22 @@ class AppRouter {
         ));
 
       case AppRoutes.qibla:
-        return _createRoute(_buildComingSoonScreen('القبلة'));
+        return _createRoute(const QiblaScreen());
 
       case AppRoutes.statistics:
-        return _createRoute(_buildComingSoonScreen('الإحصائيات'));
+        return _createRoute(const StatisticsScreen());
 
       case AppRoutes.chatbot:
         return _createRoute(const ChatbotProvider());
+
+      case AppRoutes.privacyPolicy:
+        return _createRoute(const PrivacyPolicyScreen());
+
+      case AppRoutes.termsOfService:
+        return _createRoute(const TermsOfServiceScreen());
+
+      case AppRoutes.notificationSettings:
+        return _createRoute(const NotificationSettingsScreen());
 
       default:
         return _createRoute(_buildNotFoundScreen());

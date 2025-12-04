@@ -1,6 +1,7 @@
 /// Onboarding Feature
 ///
 /// This feature provides the initial onboarding experience for new users.
+library;
 
 // Export models
 export 'data/model/onboarding_page.dart';

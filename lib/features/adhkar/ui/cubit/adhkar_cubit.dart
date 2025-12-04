@@ -12,6 +12,7 @@ enum AdhkarCategory {
   evening,
   sleep,
   postPrayer,
+  misc,
 }
 
 class AdhkarCubit extends Cubit<AdhkarState> {
@@ -84,6 +85,8 @@ class AdhkarCubit extends Cubit<AdhkarState> {
         return 'sleep_adhkar.json';
       case AdhkarCategory.postPrayer:
         return 'post_prayer_adhkar.json';
+      case AdhkarCategory.misc:
+        return 'misc_adhkar.json';
     }
   }
 
@@ -110,6 +113,8 @@ class AdhkarCubit extends Cubit<AdhkarState> {
         return 'أذكار النوم';
       case AdhkarCategory.postPrayer:
         return 'أذكار بعد الصلاة';
+      case AdhkarCategory.misc:
+        return 'أذكار متنوعة';
     }
   }
 }

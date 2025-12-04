@@ -1,5 +1,6 @@
 /// Prayer Times Feature
 /// ميزة مواقيت الصلاة
+library;
 
 // Data Layer
 export 'data/model/prayer_time_model.dart';

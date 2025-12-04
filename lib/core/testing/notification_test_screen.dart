@@ -4,7 +4,7 @@ import 'package:tamanina/core/services/app_update_service.dart';
 
 /// Test screen for notifications and updates
 class NotificationTestScreen extends StatelessWidget {
-  const NotificationTestScreen({Key? key}) : super(key: key);
+  const NotificationTestScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

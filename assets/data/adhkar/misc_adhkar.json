@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "arabicText": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ",
+    "transliteration": "Subhan Allahi wa bihamdihi, Subhan Allahil Azeem",
+    "translation": "Glory be to Allah and praise Him, Glory be to Allah the Almighty",
+    "count": 100,
+    "reference": "رواه البخاري ومسلم",
+    "benefits": "كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن"
+  },
+  {
+    "id": 2,
+    "arabicText": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+    "transliteration": "La hawla wa la quwwata illa billah",
+    "translation": "There is no power and no strength except with Allah",
+    "count": 100,
+    "reference": "رواه البخاري ومسلم",
+    "benefits": "كنز من كنوز الجنة"
+  },
+  {
+    "id": 3,
+    "arabicText": "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ",
+    "transliteration": "Astaghfirullah al-Azeem alladhi la ilaha illa huwal Hayyul Qayyum wa atubu ilayh",
+    "translation": "I seek forgiveness from Allah the Almighty, there is no god but He, the Living, the Self-Subsisting, and I repent to Him",
+    "count": 3,
+    "reference": "رواه أبو داود والترمذي",
+    "benefits": "غُفر له وإن كان فارًا من الزحف"
+  },
+  {
+    "id": 4,
+    "arabicText": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
+    "transliteration": "Allahumma salli ala Muhammad wa ala aali Muhammad, kama sallayta ala Ibrahim wa ala aali Ibrahim, innaka Hamidun Majid",
+    "translation": "O Allah, send prayers upon Muhammad and the family of Muhammad, as You sent prayers upon Ibrahim and the family of Ibrahim. Verily, You are Praiseworthy, Glorious",
+    "count": 10,
+    "reference": "رواه البخاري",
+    "benefits": "من صلى عليّ صلاة صلى الله عليه بها عشراً"
+  },
+  {
+    "id": 5,
+    "arabicText": "سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ",
+    "transliteration": "Subhan Allah, wal hamdu lillah, wa la ilaha illallah, wallahu Akbar",
+    "translation": "Glory be to Allah, praise be to Allah, there is no god but Allah, and Allah is the Greatest",
+    "count": 100,
+    "reference": "رواه مسلم",
+    "benefits": "أحب الكلام إلى الله، لا يضرك بأيهن بدأت"
+  },
+  {
+    "id": 6,
+    "arabicText": "رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ",
+    "transliteration": "Rabbi-ghfir li wa tub alayya innaka anta at-Tawwab ar-Raheem",
+    "translation": "My Lord, forgive me and accept my repentance. Indeed, You are the Accepter of repentance, the Merciful",
+    "count": 100,
+    "reference": "رواه أبو داود والترمذي",
+    "benefits": "كان النبي ﷺ يقولها في المجلس الواحد مائة مرة"
+  },
+  {
+    "id": 7,
+    "arabicText": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ",
+    "transliteration": "Allahumma inni as'alukal afwa wal aafiyah fid-dunya wal-akhirah",
+    "translation": "O Allah, I ask You for forgiveness and well-being in this world and the Hereafter",
+    "count": 3,
+    "reference": "رواه ابن ماجه",
+    "benefits": "ما سُئل الله شيئاً أحب إليه من العافية"
+  },
+  {
+    "id": 8,
+    "arabicText": "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+    "transliteration": "Ya Hayyu Ya Qayyum, bi rahmatika astaghith, aslih li sha'ni kullahu, wa la takilni ila nafsi tarfata ayn",
+    "translation": "O Ever Living, O Self-Subsisting, by Your mercy I seek help. Rectify for me all my affairs and do not leave me to myself for the blink of an eye",
+    "count": 3,
+    "reference": "رواه الحاكم",
+    "benefits": "دعاء الكرب والهم"
+  },
+  {
+    "id": 9,
+    "arabicText": "لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ",
+    "transliteration": "La ilaha illa anta subhanaka inni kuntu mina adh-dhalimin",
+    "translation": "There is no god but You, Glory be to You, indeed I have been among the wrongdoers",
+    "count": 40,
+    "reference": "سورة الأنبياء - آية 87",
+    "benefits": "دعوة ذي النون، ما دعا بها مسلم في شيء قط إلا استجاب الله له"
+  },
+  {
+    "id": 10,
+    "arabicText": "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    "transliteration": "Hasbiyallahu la ilaha illa huwa, alayhi tawakkaltu wa huwa Rabbul Arshil Azeem",
+    "translation": "Allah is sufficient for me. There is no god but He. In Him I have placed my trust and He is Lord of the Mighty Throne",
+    "count": 7,
+    "reference": "رواه أبو داود",
+    "benefits": "من قالها سبع مرات صباحاً ومساءً كفاه الله ما أهمه"
+  },
+  {
+    "id": 11,
+    "arabicText": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ وَقَهْرِ الرِّجَالِ",
+    "transliteration": "Allahumma inni a'udhu bika minal-hammi wal-hazan, wa a'udhu bika minal-ajzi wal-kasal, wa a'udhu bika minal-jubni wal-bukhl, wa a'udhu bika min ghalabatid-dayni wa qahrir-rijal",
+    "translation": "O Allah, I seek refuge in You from worry and grief, from helplessness and laziness, from cowardice and miserliness, and from being overcome by debt and overpowered by men",
+    "count": 3,
+    "reference": "رواه البخاري",
+    "benefits": "دعاء الكرب والضيق"
+  },
+  {
+    "id": 12,
+    "arabicText": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+    "transliteration": "Rabbana aatina fid-dunya hasanatan wa fil-akhirati hasanatan wa qina adhaban-nar",
+    "translation": "Our Lord, give us good in this world and good in the Hereafter, and protect us from the punishment of the Fire",
+    "count": 7,
+    "reference": "سورة البقرة - آية 201",
+    "benefits": "أكثر دعاء النبي ﷺ"
+  },
+  {
+    "id": 13,
+    "arabicText": "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
+    "transliteration": "Allahumma a'inni ala dhikrika wa shukrika wa husni ibadatik",
+    "translation": "O Allah, help me to remember You, thank You, and worship You properly",
+    "count": 3,
+    "reference": "رواه أبو داود والنسائي",
+    "benefits": "وصية النبي ﷺ لمعاذ بن جبل"
+  },
+  {
+    "id": 14,
+    "arabicText": "اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي، وَأَصْلِحْ لِي دُنْيَايَ الَّتِي فِيهَا مَعَاشِي، وَأَصْلِحْ لِي آخِرَتِي الَّتِي فِيهَا مَعَادِي",
+    "transliteration": "Allahumma aslih li deeni alladhi huwa ismatu amri, wa aslih li dunyaya allati fiha ma'ashi, wa aslih li akhirati allati fiha ma'adi",
+    "translation": "O Allah, rectify for me my religion which is the safeguard of my affairs, and rectify for me my worldly life wherein is my livelihood, and rectify for me my Hereafter to which is my return",
+    "count": 1,
+    "reference": "رواه مسلم",
+    "benefits": "دعاء جامع لخير الدنيا والآخرة"
+  },
+  {
+    "id": 15,
+    "arabicText": "اللَّهُمَّ اهْدِنِي وَسَدِّدْنِي",
+    "transliteration": "Allahumma-hdini wa saddidni",
+    "translation": "O Allah, guide me and grant me success",
+    "count": 3,
+    "reference": "رواه مسلم",
+    "benefits": "طلب الهداية والتوفيق من الله"
+  },
+  {
+    "id": 16,
+    "arabicText": "رَبِّ زِدْنِي عِلْمًا",
+    "transliteration": "Rabbi zidni ilma",
+    "translation": "My Lord, increase me in knowledge",
+    "count": 7,
+    "reference": "سورة طه - آية 114",
+    "benefits": "طلب زيادة العلم النافع"
+  },
+  {
+    "id": 17,
+    "arabicText": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا",
+    "transliteration": "Allahumma inni as'aluka ilman nafi'a, wa rizqan tayyiba, wa amalan mutaqabbala",
+    "translation": "O Allah, I ask You for beneficial knowledge, good provision, and accepted deeds",
+    "count": 1,
+    "reference": "رواه ابن ماجه",
+    "benefits": "دعاء بعد صلاة الفجر"
+  },
+  {
+    "id": 18,
+    "arabicText": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى",
+    "transliteration": "Allahumma inni as'alukal-huda wat-tuqa wal-afafa wal-ghina",
+    "translation": "O Allah, I ask You for guidance, piety, chastity, and self-sufficiency",
+    "count": 3,
+    "reference": "رواه مسلم",
+    "benefits": "جمع أفضل ما يُسأل الله"
+  },
+  {
+    "id": 19,
+    "arabicText": "اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي ظُلْمًا كَثِيرًا، وَلَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ، فَاغْفِرْ لِي مَغْفِرَةً مِنْ عِنْدِكَ، وَارْحَمْنِي إِنَّكَ أَنْتَ الْغَفُورُ الرَّحِيمُ",
+    "transliteration": "Allahumma inni dhalamtu nafsi dhulman kathira, wa la yaghfirudh-dhunuba illa anta, faghfir li maghfiratan min indik, warhamni innaka antal Ghafurur-Rahim",
+    "translation": "O Allah, I have wronged myself greatly, and none forgives sins but You. Grant me forgiveness from You and have mercy on me. Indeed, You are the Forgiving, the Merciful",
+    "count": 3,
+    "reference": "رواه البخاري ومسلم",
+    "benefits": "دعاء علّمه النبي ﷺ لأبي بكر الصديق"
+  },
+  {
+    "id": 20,
+    "arabicText": "اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ، وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ",
+    "transliteration": "Allahummak-fini bi-halalika an haramik, wa aghnini bi-fadlika amman siwak",
+    "translation": "O Allah, suffice me with what You have made lawful against what You have made unlawful, and enrich me by Your bounty from depending on anyone other than You",
+    "count": 3,
+    "reference": "رواه الترمذي",
+    "benefits": "دعاء لسداد الدين وطلب الرزق الحلال"
+  }
+]

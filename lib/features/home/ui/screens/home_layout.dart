@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tamanina/features/quran/ui/screens/quran_tab_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../data/repo/home_usecases.dart';
 import '../../data/repo/home_repository_impl.dart';
 import '../cubit/home_navigation_cubit.dart';
 import '../cubit/home_cubit.dart';
-import 'home_screen.dart';
+import 'enhanced_home_screen.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/modern_bottom_nav_bar.dart';
 import '../../../tasbeeh/ui/screens/tasbeeh_screen.dart';
-import '../../../quran/ui/screens/quran_screen.dart';
 import '../../../quran/ui/cubit/quran_cubit.dart';
 import '../../../../core/services/service_locator.dart' as di;
-import '../../../settings/ui/screens/settings_screen.dart';
+import '../../../settings/ui/screens/enhanced_settings_screen.dart';
 
 /// Main Home Layout with Bottom Navigation and AppBar
 class HomeLayout extends StatefulWidget {
@@ -108,30 +108,12 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
             appBar: HomeAppBar(
               title: _getAppBarTitle(currentIndex),
               onMenuPressed: () {
-                // Handle menu action
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('القائمة قريباً إن شاء الله'),
-                    backgroundColor: AppColors.primaryGreen,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                );
+                // Navigate to Azkar/Adhkar screen
+                Navigator.pushNamed(context, '/azkar');
               },
               onNotificationPressed: () {
-                // Handle notifications
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('الإشعارات قريباً إن شاء الله'),
-                    backgroundColor: AppColors.primaryGreen,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                );
+                // Navigate to notification settings
+                Navigator.pushNamed(context, '/notification-settings');
               },
             ),
 
@@ -159,15 +141,15 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
   Widget _buildBody(int currentIndex) {
     switch (currentIndex) {
       case 0:
-        return const HomeScreen();
+        return const EnhancedHomeScreen();
       case 2:
         return const TasbeehScreen();
       case 1:
-        return const QuranScreen();
+        return const QuranTabScreen();
       case 3:
-        return const SettingsScreen();
+        return const EnhancedSettingsScreen();
       default:
-        return const HomeScreen();
+        return const EnhancedHomeScreen();
     }
   }
 

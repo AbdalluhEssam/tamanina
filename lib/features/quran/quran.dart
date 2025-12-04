@@ -13,7 +13,6 @@ export 'data/repo/quran_repository_impl.dart';
 // Presentation layer
 export 'ui/cubit/quran_cubit.dart';
 export 'ui/cubit/quran_event.dart';
-export 'ui/screens/quran_screen.dart';
 export 'ui/screens/quran_tab_screen.dart';
 
 // Dependency injection

@@ -1,6 +1,7 @@
 /// Azkar Feature
 ///
 /// This feature provides access to Islamic supplications (Azkar).
+library;
 
 // Export models
 export 'data/model/azkar_entity.dart';

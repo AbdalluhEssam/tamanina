@@ -10,7 +10,7 @@ class AppSpacing {
   static double get xs => 4.h; // Extra small: 4dp
   static double get sm => 8.h; // Small: 8dp
   static double get md => 16.h; // Medium: 16dp
-  static double get lg => 24.h; // Large: 24dp
+  static double get lg => 16.h; // Large: 24dp
   static double get xl => 32.h; // Extra large: 32dp
   static double get xxl => 40.h; // Extra extra large: 40dp
   static double get xxxl => 48.h; // Largest: 48dp

@@ -1,6 +1,7 @@
 /// Sebha Feature
 ///
 /// This feature provides digital tasbih counter functionality.
+library;
 
 // Export models
 export 'data/model/sebha_entity.dart';

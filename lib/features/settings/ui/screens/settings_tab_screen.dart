@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_dimensions.dart';
-import '../../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/cubit/theme/theme_cubit.dart';
+import '../../../../core/constants/app_constants.dart';
 
 /// Settings Tab Screen Content
 class SettingsTabScreen extends StatefulWidget {
@@ -13,10 +16,8 @@ class SettingsTabScreen extends StatefulWidget {
 }
 
 class _SettingsTabScreenState extends State<SettingsTabScreen> {
-  bool _notificationsEnabled = true;
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
-  bool _darkModeEnabled = false;
   String _selectedLanguage = 'العربية';
 
   @override
@@ -148,15 +149,12 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       title: 'إعدادات التطبيق',
       icon: Icons.tune_rounded,
       children: [
-        _buildSwitchItem(
+        _buildSettingsItem(
           title: 'الإشعارات',
-          subtitle: 'تلقي إشعارات الصلاة والأذكار',
+          subtitle: 'إدارة تنبيهات الصلاة والأذكار',
           icon: Icons.notifications_rounded,
-          value: _notificationsEnabled,
-          onChanged: (value) {
-            setState(() {
-              _notificationsEnabled = value;
-            });
+          onTap: () {
+            Navigator.pushNamed(context, AppRoutes.notificationSettings);
           },
         ),
         _buildSwitchItem(
@@ -185,11 +183,11 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
           title: 'الوضع الليلي',
           subtitle: 'تفعيل الثيم المظلم',
           icon: Icons.dark_mode_rounded,
-          value: _darkModeEnabled,
+          value: Theme.of(context).brightness == Brightness.dark,
           onChanged: (value) {
-            setState(() {
-              _darkModeEnabled = value;
-            });
+            context.read<ThemeCubit>().changeTheme(
+                  value ? ThemeMode.dark : ThemeMode.light,
+                );
           },
         ),
         _buildSettingsItem(
@@ -249,13 +247,17 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
           title: 'شروط الاستخدام',
           subtitle: 'اقرأ شروط وأحكام الاستخدام',
           icon: Icons.description_rounded,
-          onTap: () {},
+          onTap: () {
+            Navigator.pushNamed(context, AppRoutes.termsOfService);
+          },
         ),
         _buildSettingsItem(
           title: 'سياسة الخصوصية',
           subtitle: 'كيف نحمي بياناتك',
           icon: Icons.privacy_tip_rounded,
-          onTap: () {},
+          onTap: () {
+            Navigator.pushNamed(context, AppRoutes.privacyPolicy);
+          },
         ),
       ],
     );

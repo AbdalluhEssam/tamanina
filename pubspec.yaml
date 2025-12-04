@@ -53,6 +53,23 @@ dependencies:
   # Quran Library for complete Quran features
   quran_sharif: ^1.0.0
   just_audio: ^0.10.5
+  # Prayer Times - Accurate calculation using adhan algorithm
+  adhan: ^2.0.0
+  # Compass for Qibla direction
+  flutter_compass: ^0.8.0
+  # Audio playback for Adhan
+  audio_session: ^0.1.21
+  # Geocoding for location names
+  geocoding: ^3.0.0
+  # Hijri calendar
+  hijri: ^3.0.0
+  # Hive for fast local storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  # Path provider for file storage
+  path_provider: ^2.1.4
+  # UUID for unique identifiers
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +80,9 @@ dev_dependencies:
   bloc_test:
   mockito:
   flutter_lints:
+  hive_generator: ^2.0.1
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
@@ -74,3 +94,5 @@ flutter:
     - assets/lang/
     - assets/data/
     - assets/data/adhkar/
+    - assets/audio/
+    - assets/audio/adhan/
