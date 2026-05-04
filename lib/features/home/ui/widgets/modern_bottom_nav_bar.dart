@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 
 /// Modern Glass-Effect Bottom Navigation Bar
+/// Theme-aware: responds to dark/light mode changes
 class ModernBottomNavBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -77,19 +78,27 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Container(
       // height: 70.h,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: isDark
+            ? colorScheme.surface.withOpacity(0.95)
+            : Colors.white.withOpacity(0.95),
         border: Border(
           top: BorderSide(
-            color: AppColors.goldAccent.withOpacity(0.2),
+            color: isDark
+                ? AppColors.dividerDark.withOpacity(0.3)
+                : AppColors.goldAccent.withOpacity(0.2),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: isDark ? Colors.black38 : Colors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -103,7 +112,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
             children: [
               // First two items
               ..._items.take(2).toList().asMap().entries.map((entry) {
-                return _buildNavItem(entry.key);
+                return _buildNavItem(entry.key, isDark, colorScheme);
               }),
 
               // Space for FAB in center
@@ -111,7 +120,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
 
               // Last two items
               ..._items.skip(2).toList().asMap().entries.map((entry) {
-                return _buildNavItem(entry.key + 2);
+                return _buildNavItem(entry.key + 2, isDark, colorScheme);
               }),
             ],
           ),
@@ -120,9 +129,16 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
     );
   }
 
-  Widget _buildNavItem(int index) {
+  Widget _buildNavItem(int index, bool isDark, ColorScheme colorScheme) {
     final item = _items[index];
     final isActive = widget.currentIndex == index;
+
+    // Theme-aware colors
+    final activeColor =
+        isDark ? AppColors.primaryGreenLight : AppColors.primaryGreen;
+    final inactiveColor = isDark
+        ? colorScheme.onSurface.withOpacity(0.6)
+        : AppColors.textSecondary;
 
     return Expanded(
       child: GestureDetector(
@@ -146,7 +162,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
                   gradient: isActive
                       ? LinearGradient(
                           colors: [
-                            AppColors.primaryGreen.withOpacity(0.2),
+                            activeColor.withOpacity(0.2),
                             AppColors.goldAccent.withOpacity(0.1),
                           ],
                           begin: Alignment.topLeft,
@@ -167,9 +183,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
                     child: Icon(
                       isActive ? item.activeIcon : item.icon,
                       key: ValueKey(isActive),
-                      color: isActive
-                          ? AppColors.primaryGreen
-                          : AppColors.textSecondary,
+                      color: isActive ? activeColor : inactiveColor,
                       size: isActive ? 20.w : 18.w,
                     ),
                   ),
@@ -182,9 +196,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
               AnimatedDefaultTextStyle(
                 duration: AppDuration.fast,
                 style: TextStyle(
-                  color: isActive
-                      ? AppColors.primaryGreen
-                      : AppColors.textSecondary,
+                  color: isActive ? activeColor : inactiveColor,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                   fontSize: isActive ? 10.sp : 9.sp,
                   fontFamily: 'Cairo',

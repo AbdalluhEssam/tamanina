@@ -174,7 +174,7 @@ class AdhkarScreen extends StatelessWidget {
                 SizedBox(height: 6.h),
                 Text(
                   'سورة الرعد • آية 28',
-                  style: AppTypography.bodyLargeArabic?.copyWith(
+                  style: AppTypography.bodyLargeArabic.copyWith(
                     fontSize: 12.sp,
                     color: isDark ? Colors.white70 : AppColors.textSecondary,
                   ),
@@ -423,8 +423,7 @@ class _AdhkarCategoryCard extends StatefulWidget {
     required this.isDark,
     required this.index,
     this.onTap,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<_AdhkarCategoryCard> createState() => _AdhkarCategoryCardState();

@@ -57,7 +57,7 @@ class AppTheme {
         ),
 
         // Card Theme
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: AppSizing.cardElevation,
           color: AppColors.surfaceLight,
           surfaceTintColor: Colors.transparent,
@@ -203,7 +203,7 @@ class AppTheme {
         ),
 
         // Dialog Theme
-        dialogTheme: DialogTheme(
+        dialogTheme: DialogThemeData(
           elevation: AppElevation.level7,
           backgroundColor: AppColors.surfaceLight,
           surfaceTintColor: Colors.transparent,
@@ -247,7 +247,7 @@ class AppTheme {
         ),
 
         // Tab Bar Theme
-        tabBarTheme: TabBarTheme(
+        tabBarTheme: TabBarThemeData(
           labelColor: AppColors.primaryGreen,
           unselectedLabelColor: AppColors.textSecondary,
           labelStyle: AppTypography.tabBarText.copyWith(
@@ -412,5 +412,55 @@ class AppTheme {
   // System theme mode detection
   static ThemeMode getSystemThemeMode() {
     return ThemeMode.system;
+  }
+
+  /// إنشاء السمة الفاتحة مع خط مخصص
+  /// Create light theme with custom font
+  static ThemeData lightThemeWithFont(String? fontFamily) {
+    if (fontFamily == null || fontFamily.isEmpty) {
+      return lightTheme;
+    }
+
+    final baseTheme = lightTheme;
+    return baseTheme.copyWith(
+      textTheme: _applyFontToTextTheme(baseTheme.textTheme, fontFamily),
+    );
+  }
+
+  /// إنشاء السمة الداكنة مع خط مخصص
+  /// Create dark theme with custom font
+  static ThemeData darkThemeWithFont(String? fontFamily) {
+    if (fontFamily == null || fontFamily.isEmpty) {
+      return darkTheme;
+    }
+
+    final baseTheme = darkTheme;
+    return baseTheme.copyWith(
+      textTheme: _applyFontToTextTheme(baseTheme.textTheme, fontFamily),
+    );
+  }
+
+  /// تطبيق الخط على جميع أنماط النص
+  /// Apply font to all text styles
+  static TextTheme _applyFontToTextTheme(
+      TextTheme textTheme, String fontFamily) {
+    return TextTheme(
+      displayLarge: textTheme.displayLarge?.copyWith(fontFamily: fontFamily),
+      displayMedium: textTheme.displayMedium?.copyWith(fontFamily: fontFamily),
+      displaySmall: textTheme.displaySmall?.copyWith(fontFamily: fontFamily),
+      headlineLarge: textTheme.headlineLarge?.copyWith(fontFamily: fontFamily),
+      headlineMedium:
+          textTheme.headlineMedium?.copyWith(fontFamily: fontFamily),
+      headlineSmall: textTheme.headlineSmall?.copyWith(fontFamily: fontFamily),
+      titleLarge: textTheme.titleLarge?.copyWith(fontFamily: fontFamily),
+      titleMedium: textTheme.titleMedium?.copyWith(fontFamily: fontFamily),
+      titleSmall: textTheme.titleSmall?.copyWith(fontFamily: fontFamily),
+      bodyLarge: textTheme.bodyLarge?.copyWith(fontFamily: fontFamily),
+      bodyMedium: textTheme.bodyMedium?.copyWith(fontFamily: fontFamily),
+      bodySmall: textTheme.bodySmall?.copyWith(fontFamily: fontFamily),
+      labelLarge: textTheme.labelLarge?.copyWith(fontFamily: fontFamily),
+      labelMedium: textTheme.labelMedium?.copyWith(fontFamily: fontFamily),
+      labelSmall: textTheme.labelSmall?.copyWith(fontFamily: fontFamily),
+    );
   }
 }

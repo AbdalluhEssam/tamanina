@@ -7,6 +7,8 @@ import 'core/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/cubit/theme/theme_cubit.dart';
+import 'core/settings/settings_cubit.dart';
+import 'core/settings/settings_repository.dart';
 import 'core/services/navigation_service.dart';
 import 'core/services/app_update_service.dart';
 
@@ -48,56 +50,60 @@ class _TamaninaAppState extends State<TamaninaApp> {
       splitScreenMode: true,
       builder: (context, child) {
         return BlocBuilder<ThemeCubit, ThemeState>(
-          builder: (context, themeState) => MaterialApp(
-            navigatorKey: NavigationService.navigatorKey,
-            debugShowCheckedModeBanner: false,
-            title: AppConstants.appName,
+          builder: (context, themeState) =>
+              BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, settingsState) {
+              // الحصول على الخط المحدد
+              final fontFamily = settingsState is SettingsLoaded
+                  ? settingsState.settings.arabicFont.fontFamily
+                  : ArabicFont.cairo.fontFamily;
 
-            // استخدام الألوان والسمات الجديدة
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: _getThemeMode(themeState),
+              return MaterialApp(
+                navigatorKey: NavigationService.navigatorKey,
+                debugShowCheckedModeBanner: false,
+                title: AppConstants.appName,
 
-            // الترجمة والتعريب
-            locale: context.locale,
-            supportedLocales: AppConstants.supportedLocales,
-            localizationsDelegates: context.localizationDelegates,
+                // استخدام الألوان والسمات الجديدة مع الخط المحدد
+                theme: AppTheme.lightThemeWithFont(fontFamily),
+                darkTheme: AppTheme.darkThemeWithFont(fontFamily),
+                themeMode: themeState.themeMode,
 
-            // التوجيه والمسارات
-            onGenerateRoute: widget.appRouter.generateRoute,
-            initialRoute: AppRoutes.splash,
+                // الترجمة والتعريب
+                locale: context.locale,
+                supportedLocales: AppConstants.supportedLocales,
+                localizationsDelegates: context.localizationDelegates,
 
-            // إعدادات إضافية للتطبيق
-            builder: (context, widget) {
-              // ضمان التدرج المناسب للنص على جميع الأجهزة
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(
-                    MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.3),
-                  ),
-                ),
-                child: Directionality(
-                  // دعم الكتابة من اليمين لليسار للعربية
-                  textDirection: _getTextDirection(context),
-                  child: widget!,
+                // التوجيه والمسارات
+                onGenerateRoute: widget.appRouter.generateRoute,
+                initialRoute: AppRoutes.splash,
+
+                // إعدادات إضافية للتطبيق
+                builder: (context, widget) {
+                  // ضمان التدرج المناسب للنص على جميع الأجهزة
+                  return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(
+                        MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.3),
+                      ),
+                    ),
+                    child: Directionality(
+                      // دعم الكتابة من اليمين لليسار للعربية
+                      textDirection: _getTextDirection(context),
+                      child: widget!,
+                    ),
+                  );
+                },
+
+                // إعدادات الأداء
+                scrollBehavior: const MaterialScrollBehavior().copyWith(
+                  scrollbars: false,
                 ),
               );
             },
-
-            // إعدادات الأداء
-            scrollBehavior: const MaterialScrollBehavior().copyWith(
-              scrollbars: false,
-            ),
           ),
         );
       },
     );
-  }
-
-  /// تحديد وضع السمة بناءً على حالة ThemeCubit
-  ThemeMode _getThemeMode(ThemeState themeState) {
-    // يمكن تخصيص هذا لاحقاً بناءً على حالة الـ Cubit الفعلية
-    return AppTheme.getSystemThemeMode();
   }
 
   /// تحديد اتجاه النص بناءً على اللغة

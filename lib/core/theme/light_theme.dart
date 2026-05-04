@@ -49,7 +49,7 @@ ThemeData buildLightTheme() {
         ),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: AppSizing.cardElevation,
       color: AppColors.surfaceLight,
       surfaceTintColor: Colors.transparent,
@@ -173,7 +173,7 @@ ThemeData buildLightTheme() {
         color: AppColors.textSecondary,
       ),
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       elevation: AppElevation.level7,
       backgroundColor: AppColors.surfaceLight,
       surfaceTintColor: Colors.transparent,
@@ -209,7 +209,7 @@ ThemeData buildLightTheme() {
       selectedTileColor: AppColors.creamAccent,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.sm),
     ),
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: AppColors.primaryGreen,
       unselectedLabelColor: AppColors.textSecondary,
       labelStyle: AppTypography.tabBarText.copyWith(

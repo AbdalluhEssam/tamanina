@@ -12,7 +12,7 @@ import '../../features/legal/ui/screens/privacy_policy_screen.dart';
 import '../../features/legal/ui/screens/terms_of_service_screen.dart';
 import '../../features/settings/ui/screens/notification_settings_screen.dart';
 import '../../features/qibla/ui/screens/qibla_screen.dart';
-import '../../features/settings/ui/screens/enhanced_settings_screen.dart';
+import '../../features/settings/ui/screens/production_settings_screen.dart';
 import '../../features/adhkar/ui/screens/adhkar_screen.dart';
 import '../../features/quran/ui/screens/quran_tab_screen.dart';
 import '../../features/statistics/ui/screens/statistics_screen.dart';
@@ -42,7 +42,7 @@ class AppRouter {
         return _createRoute(const HomeLayout());
 
       case AppRoutes.settings:
-        return _createRoute(const EnhancedSettingsScreen());
+        return _createRoute(const ProductionSettingsScreen());
 
       case AppRoutes.prayer:
         return _createRoute(_buildPrayerTimesScreen());

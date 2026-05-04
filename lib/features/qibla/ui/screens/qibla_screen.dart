@@ -66,7 +66,7 @@ class _QiblaScreenState extends State<QiblaScreen>
 
     try {
       // Check compass availability
-      final hasCompass = await FlutterCompass.events != null;
+      final hasCompass = FlutterCompass.events != null;
       if (!hasCompass) {
         setState(() {
           _state = QiblaState.noCompass;

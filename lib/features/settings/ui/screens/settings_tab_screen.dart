@@ -8,6 +8,7 @@ import '../../../../core/cubit/theme/theme_cubit.dart';
 import '../../../../core/constants/app_constants.dart';
 
 /// Settings Tab Screen Content
+/// Theme-aware: responds to dark/light mode changes
 class SettingsTabScreen extends StatefulWidget {
   const SettingsTabScreen({super.key});
 
@@ -65,6 +66,9 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       width: double.infinity,
       padding: AppSpacing.paddingLG,
@@ -104,7 +108,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                 Text(
                   'الإعدادات',
                   style: AppTypography.h5Arabic.copyWith(
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -112,7 +116,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                 Text(
                   'تخصيص التطبيق حسب احتياجك',
                   style: AppTypography.bodyMediumArabic.copyWith(
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -295,6 +299,10 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
     required IconData icon,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -322,7 +330,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
             Text(
               title,
               style: AppTypography.h6Arabic.copyWith(
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -331,14 +339,14 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
         AppSpacing.verticalSpaceMD,
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: AppRadius.lg,
             border: Border.all(
               color: AppColors.goldAccent.withOpacity(0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -359,6 +367,9 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return ListTile(
       contentPadding: AppSpacing.paddingMD,
       leading: Container(
@@ -377,20 +388,20 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       title: Text(
         title,
         style: AppTypography.bodyLargeArabic.copyWith(
-          color: AppColors.textPrimary,
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: AppTypography.captionArabic.copyWith(
-          color: AppColors.textSecondary,
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
       trailing: trailing ??
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.5),
             size: 16.w,
           ),
       onTap: onTap,
@@ -404,6 +415,9 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
     required bool value,
     required Function(bool) onChanged,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return ListTile(
       contentPadding: AppSpacing.paddingMD,
       leading: Container(
@@ -422,14 +436,14 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       title: Text(
         title,
         style: AppTypography.bodyLargeArabic.copyWith(
-          color: AppColors.textPrimary,
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: AppTypography.captionArabic.copyWith(
-          color: AppColors.textSecondary,
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
       trailing: Switch(

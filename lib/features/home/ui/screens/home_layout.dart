@@ -99,8 +99,10 @@ class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
       ],
       child: BlocBuilder<HomeNavigationCubit, int>(
         builder: (context, currentIndex) {
+          final theme = Theme.of(context);
+
           return Scaffold(
-            backgroundColor: AppColors.backgroundLight,
+            backgroundColor: theme.scaffoldBackgroundColor,
             // extendBody: true,
             // extendBodyBehindAppBar: true,
 

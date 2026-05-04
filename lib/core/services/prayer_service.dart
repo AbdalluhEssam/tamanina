@@ -1,9 +1,18 @@
 import 'dart:async';
-import 'package:adhan/adhan.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tamanina/core/settings/settings_repository.dart';
+import 'package:tamanina/features/settings/data/model/settings_entity.dart';
+import 'package:adhan/adhan.dart' as adhan;
 import 'location_service.dart';
+
+typedef Prayer = adhan.Prayer;
+typedef CalculationMethod = adhan.CalculationMethod;
+typedef Coordinates = adhan.Coordinates;
+typedef DateComponents = adhan.DateComponents;
+typedef PrayerTimes = adhan.PrayerTimes;
+typedef Madhab = adhan.Madhab;
 
 /// طرق الحساب المتاحة
 /// Available Calculation Methods

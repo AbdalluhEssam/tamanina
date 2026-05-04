@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_dimensions.dart';
 
 /// Individual feature card widget with Islamic design
+/// Theme-aware: responds to dark/light mode changes
 class HomeFeatureCard extends StatefulWidget {
   final String titleArabic;
   final String titleEnglish;
@@ -67,6 +68,10 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -79,27 +84,33 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
             onTap: widget.isActive ? widget.onTap : null,
             child: Container(
               decoration: BoxDecoration(
-                // Professional Card Design with Soft Background
-                color: const Color(0xFFFAFAFA), // #FAFAFA as requested
+                // Professional Card Design with Soft Background - Theme aware
+                color: isDark
+                    ? colorScheme.surface
+                    : const Color(0xFFFAFAFA), // #FAFAFA for light mode
                 borderRadius:
                     BorderRadius.circular(24.r), // 2xl rounded corners
                 boxShadow: [
                   // Elegant Shadow
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: isDark
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.black.withOpacity(0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                     spreadRadius: 0,
                   ),
                   BoxShadow(
-                    color: widget.color.withOpacity(0.08),
+                    color: widget.color.withOpacity(isDark ? 0.15 : 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                     spreadRadius: 0,
                   ),
                 ],
                 border: Border.all(
-                  color: widget.color.withOpacity(0.08),
+                  color: isDark
+                      ? widget.color.withOpacity(0.15)
+                      : widget.color.withOpacity(0.08),
                   width: 1,
                 ),
               ),
@@ -153,7 +164,7 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                         widget.titleArabic,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: const Color(0xFF2D2D2D), // Dark text
+                          color: colorScheme.onSurface, // Theme aware text
                           fontWeight: FontWeight.bold,
                           fontSize: 13.sp,
                           height: 1.2,
@@ -172,7 +183,8 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                         widget.titleEnglish,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: const Color(0xFF707070), // Secondary text
+                          color: colorScheme.onSurface
+                              .withOpacity(0.6), // Theme aware secondary text
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w500,
                         ),

@@ -17,11 +17,24 @@ import 'core/services/app_update_service.dart';
 import 'core/services/prayer_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/prayer_notification_service.dart';
+import 'core/settings/settings_repository.dart';
+import 'core/settings/settings_cubit.dart';
+import 'core/services/prayer_service_enhanced.dart' as enhanced_prayer;
+import 'core/services/notification_service_enhanced.dart'
+    as enhanced_notification;
 import 'features/splash/ui/cubit/splash_cubit.dart';
 import 'features/onboarding/ui/cubit/onboarding_cubit.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 import 'app_bloc_observer.dart';
+
+/// Global settings repository instance
+late final SettingsRepository settingsRepository;
+
+/// Global enhanced services
+late final enhanced_prayer.PrayerServiceEnhanced prayerServiceEnhanced;
+late final enhanced_notification.NotificationServiceEnhanced
+    notificationServiceEnhanced;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +44,7 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('prayer_settings');
   await Hive.openBox('bookmarks');
+  await Hive.openBox('app_settings'); // Settings box
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -43,13 +57,27 @@ void main() async {
   // Register background message handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
+  // Initialize Settings Repository (MUST be initialized before services)
+  settingsRepository = SettingsRepository();
+  await settingsRepository.initialize();
+
   // Initialize Notifications
   await NotificationService().initialize();
+
+  // Initialize Enhanced Notification Service
+  notificationServiceEnhanced =
+      enhanced_notification.NotificationServiceEnhanced();
+  await notificationServiceEnhanced.initialize();
 
   // Initialize Prayer Services
   await PrayerService().initialize();
   await LocationService().initialize();
   await PrayerNotificationService().initialize();
+
+  // Initialize Enhanced Prayer Service with settings
+  prayerServiceEnhanced = enhanced_prayer.PrayerServiceEnhanced();
+  await prayerServiceEnhanced.initialize();
+  prayerServiceEnhanced.attachSettingsRepository(settingsRepository);
 
   // Initialize App Update Service
   await AppUpdateService().initialize();
@@ -68,6 +96,20 @@ void main() async {
   // Initialize Dependency Injection
   await di.init();
 
+  // Register global services in GetIt for dependency injection
+  if (!di.sl.isRegistered<SettingsRepository>()) {
+    di.sl.registerSingleton<SettingsRepository>(settingsRepository);
+  }
+  if (!di.sl.isRegistered<enhanced_prayer.PrayerServiceEnhanced>()) {
+    di.sl.registerSingleton<enhanced_prayer.PrayerServiceEnhanced>(
+        prayerServiceEnhanced);
+  }
+  if (!di.sl
+      .isRegistered<enhanced_notification.NotificationServiceEnhanced>()) {
+    di.sl.registerSingleton<enhanced_notification.NotificationServiceEnhanced>(
+        notificationServiceEnhanced);
+  }
+
   Bloc.observer = AppBlocObserver();
   await AppPreferences().init();
 
@@ -83,7 +125,10 @@ void main() async {
     child: MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => LocaleCubit()),
-        BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(
+            create: (_) => ThemeCubit(settingsRepository: settingsRepository)),
+        BlocProvider(
+            create: (_) => SettingsCubit(repository: settingsRepository)),
         BlocProvider(create: (_) => di.sl<SplashCubit>()),
         BlocProvider(create: (_) => di.sl<OnboardingCubit>()),
       ],

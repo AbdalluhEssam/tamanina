@@ -40,16 +40,26 @@ Created By **Abdalluh Essam** 🇪🇬
 - Works offline
 
 ### 🔔 Notifications
-- Prayer time reminders
-- Adhan playback support (multiple mu'adhin options)
-- Customizable notification settings
-- Do Not Disturb respect option
+- Prayer time reminders with per-prayer toggle
+- Pre-prayer reminders (5, 10, 15, 30 minutes)
+- Adhan playback support (Makkah, Madinah, Al-Aqsa, Egypt)
+- Do Not Disturb override capability
+- Customizable volume control
+- Auto-reschedule on boot
 
-### ⚙️ Settings
-- Theme selection (Light/Dark)
-- Language support (Arabic/English)
-- Calculation method configuration
-- Notification preferences
+### ⚙️ Settings (Enhanced)
+- **Theme Management**: Light/Dark/System modes with real-time app-wide updates
+- **Prayer Calculation**: 10+ methods including Muslim World League, Umm al-Qura, ISNA
+- **Madhab Selection**: Shafi/Hanafi for Asr calculation
+- **Notification Controls**: 
+  - Global enable/disable
+  - Per-prayer toggles (Fajr, Dhuhr, Asr, Maghrib, Isha)
+  - Pre-prayer reminder timing
+- **Muadhin Mode**: Full adhan playback at prayer time
+- **Adhan Selection**: Choose from multiple mu'adhin recordings
+- **Volume Control**: Dedicated adhan volume slider
+- **Vibration**: Haptic feedback toggle
+- **Reset to Defaults**: One-tap settings reset
 
 ---
 
@@ -65,6 +75,7 @@ lib/
 │   ├── extensions/     # Dart extensions
 │   ├── routing/        # App router configuration
 │   ├── services/       # Core services (prayer, location, notifications)
+│   ├── settings/       # Settings repository and cubit
 │   ├── theme/          # Colors, typography, dimensions
 │   └── utils/          # Utility classes
 ├── features/
@@ -82,6 +93,28 @@ lib/
 ├── main.dart           # Entry point
 └── app_bloc_observer.dart
 ```
+
+### Settings Architecture
+
+The settings module uses a reactive architecture:
+
+```
+SettingsRepository (Hive persistence)
+        ↓
+    Stream<AppSettings>
+        ↓
+SettingsCubit (State Management)
+        ↓
+    SettingsState
+        ↓
+ProductionSettingsScreen (UI)
+```
+
+**Key Files:**
+- `lib/core/settings/settings_repository.dart` - Persistence layer with Hive
+- `lib/core/settings/settings_cubit.dart` - BLoC state management
+- `lib/core/services/prayer_service_enhanced.dart` - Prayer calculations with settings integration
+- `lib/core/services/notification_service_enhanced.dart` - Notification scheduling with adhan
 
 ---
 
@@ -122,13 +155,26 @@ flutter run
 
 ### Android (`android/app/src/main/AndroidManifest.xml`)
 ```xml
+<!-- Location for prayer times -->
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+<!-- Notifications and Alarms -->
 <uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+<!-- Adhan playback over DND -->
+<uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+
+<!-- Wake device for adhan -->
+<uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+<!-- Foreground service for adhan playback -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
 ```
 
 ### iOS (`ios/Runner/Info.plist`)

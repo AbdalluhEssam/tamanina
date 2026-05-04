@@ -206,17 +206,23 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuickAccessSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: AppSpacing.paddingLG,
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: colorScheme.surface,
         borderRadius: AppRadius.lg,
         border: Border.all(
           color: AppColors.goldAccent.withOpacity(0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.goldAccent.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.2)
+                : AppColors.goldAccent.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -235,7 +241,7 @@ class HomeScreen extends StatelessWidget {
               Text(
                 'وصول سريع',
                 style: AppTypography.labelLargeArabic.copyWith(
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -246,18 +252,21 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildQuickAccessButton(
+                context,
                 'التسبيح',
                 Icons.radio_button_checked,
                 AppColors.primaryGreen,
                 () => context.pushNamed(AppRoutes.sebha),
               ),
               _buildQuickAccessButton(
+                context,
                 'القبلة',
                 Icons.navigation_rounded,
                 AppColors.primaryBlue,
                 () => Navigator.pushNamed(context, '/qibla'),
               ),
               _buildQuickAccessButton(
+                context,
                 'الأذكار',
                 Icons.auto_stories_rounded,
                 AppColors.goldAccent,
@@ -271,11 +280,15 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuickAccessButton(
+    BuildContext context,
     String title,
     IconData icon,
     Color color,
     VoidCallback onTap,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -300,7 +313,7 @@ class HomeScreen extends StatelessWidget {
           Text(
             title,
             style: AppTypography.captionArabic.copyWith(
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
