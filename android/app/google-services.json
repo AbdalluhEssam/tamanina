@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "902662652361",
+    "project_id": "tamanina-624c9",
+    "storage_bucket": "tamanina-624c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902662652361:android:a3acbf9f1a10d6af7aa818",
+        "android_client_info": {
+          "package_name": "com.abdalluh.tamanina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnSRX-HRsQ6_kmGJzrwfGz503THx1lQ30"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902662652361:android:5ffff616f55c095e7aa818",
+        "android_client_info": {
+          "package_name": "com.engaz.tech.tamanina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnSRX-HRsQ6_kmGJzrwfGz503THx1lQ30"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,89 @@
+{
+  "surahs": [
+    {
+      "id": 1,
+      "name": "الفاتحة",
+      "english_name": "Al-Fatiha",
+      "ayahs": [
+        {
+          "number": 1,
+          "text": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3",
+          "words": [
+            {"word": "بِسْمِ", "start_ms": 0, "duration_ms": 700},
+            {"word": "اللَّهِ", "start_ms": 700, "duration_ms": 800},
+            {"word": "الرَّحْمَٰنِ", "start_ms": 1600, "duration_ms": 900},
+            {"word": "الرَّحِيمِ", "start_ms": 2500, "duration_ms": 800}
+          ]
+        },
+        {
+          "number": 2,
+          "text": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/2.mp3",
+          "words": [
+            {"word": "الْحَمْدُ", "start_ms": 0, "duration_ms": 800},
+            {"word": "لِلَّهِ", "start_ms": 800, "duration_ms": 700},
+            {"word": "رَبِّ", "start_ms": 1500, "duration_ms": 600},
+            {"word": "الْعَالَمِينَ", "start_ms": 2100, "duration_ms": 1100}
+          ]
+        },
+        {
+          "number": 3,
+          "text": "الرَّحْمَٰنِ الرَّحِيمِ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/3.mp3",
+          "words": [
+            {"word": "الرَّحْمَٰنِ", "start_ms": 0, "duration_ms": 900},
+            {"word": "الرَّحِيمِ", "start_ms": 900, "duration_ms": 900}
+          ]
+        },
+        {
+          "number": 4,
+          "text": "مَالِكِ يَوْمِ الدِّينِ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/4.mp3",
+          "words": [
+            {"word": "مَالِكِ", "start_ms": 0, "duration_ms": 800},
+            {"word": "يَوْمِ", "start_ms": 800, "duration_ms": 600},
+            {"word": "الدِّينِ", "start_ms": 1400, "duration_ms": 900}
+          ]
+        },
+        {
+          "number": 5,
+          "text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/5.mp3",
+          "words": [
+            {"word": "إِيَّاكَ", "start_ms": 0, "duration_ms": 800},
+            {"word": "نَعْبُدُ", "start_ms": 800, "duration_ms": 700},
+            {"word": "وَإِيَّاكَ", "start_ms": 1500, "duration_ms": 800},
+            {"word": "نَسْتَعِينُ", "start_ms": 2300, "duration_ms": 1000}
+          ]
+        },
+        {
+          "number": 6,
+          "text": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/6.mp3",
+          "words": [
+            {"word": "اهْدِنَا", "start_ms": 0, "duration_ms": 800},
+            {"word": "الصِّرَاطَ", "start_ms": 800, "duration_ms": 900},
+            {"word": "الْمُسْتَقِيمَ", "start_ms": 1700, "duration_ms": 1000}
+          ]
+        },
+        {
+          "number": 7,
+          "text": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
+          "audio_url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/7.mp3",
+          "words": [
+            {"word": "صِرَاطَ", "start_ms": 0, "duration_ms": 700},
+            {"word": "الَّذِينَ", "start_ms": 700, "duration_ms": 700},
+            {"word": "أَنْعَمْتَ", "start_ms": 1400, "duration_ms": 800},
+            {"word": "عَلَيْهِمْ", "start_ms": 2200, "duration_ms": 800},
+            {"word": "غَيْرِ", "start_ms": 3000, "duration_ms": 700},
+            {"word": "الْمَغْضُوبِ", "start_ms": 3700, "duration_ms": 900},
+            {"word": "عَلَيْهِمْ", "start_ms": 4600, "duration_ms": 700},
+            {"word": "وَلَا", "start_ms": 5300, "duration_ms": 600},
+            {"word": "الضَّالِّينَ", "start_ms": 5900, "duration_ms": 1100}
+          ]
+        }
+      ]
+    }
+  ]
+}
