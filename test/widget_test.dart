@@ -5,11 +5,13 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tamanina/core/services/prayer_service.dart';
+import 'package:tamanina/core/widgets/tamanina_ui.dart';
 import 'package:tamanina/features/home/ui/widgets/prayer_time_card.dart';
 
 void main() {
@@ -70,6 +72,74 @@ void main() {
 
       expect(find.text('تطبيق طمأنينة'), findsOneWidget);
       expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('appChevron points forward correctly in RTL and LTR on Android and iOS',
+        (WidgetTester tester) async {
+      Future<({IconData? icon, bool mirrored})> pumpChevron({
+        required TargetPlatform platform,
+        required TextDirection direction,
+        bool backwards = false,
+      }) async {
+        late IconData resolved;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(platform: platform),
+            home: Directionality(
+              textDirection: direction,
+              child: Builder(
+                builder: (context) {
+                  resolved = appChevron(context, backwards: backwards);
+                  return Icon(resolved);
+                },
+              ),
+            ),
+          ),
+        );
+        final hasTransform = find
+            .descendant(of: find.byType(Icon), matching: find.byType(Transform))
+            .evaluate()
+            .isNotEmpty;
+        return (icon: resolved, mirrored: hasTransform);
+      }
+
+      // Android uses Material chevrons (matchTextDirection: true) and lets Icon mirror in RTL.
+      final androidRtl = await pumpChevron(
+        platform: TargetPlatform.android,
+        direction: TextDirection.rtl,
+      );
+      expect(androidRtl.icon, Icons.chevron_right_rounded);
+      expect(androidRtl.mirrored, isTrue);
+
+      final androidLtr = await pumpChevron(
+        platform: TargetPlatform.android,
+        direction: TextDirection.ltr,
+      );
+      expect(androidLtr.icon, Icons.chevron_right_rounded);
+      expect(androidLtr.mirrored, isFalse);
+
+      final androidRtlBack = await pumpChevron(
+        platform: TargetPlatform.android,
+        direction: TextDirection.rtl,
+        backwards: true,
+      );
+      expect(androidRtlBack.icon, Icons.chevron_left_rounded);
+      expect(androidRtlBack.mirrored, isTrue);
+
+      // iOS uses Cupertino chevrons (matchTextDirection: false) and picks left/right explicitly.
+      final iosRtl = await pumpChevron(
+        platform: TargetPlatform.iOS,
+        direction: TextDirection.rtl,
+      );
+      expect(iosRtl.icon, CupertinoIcons.chevron_left);
+      expect(iosRtl.mirrored, isFalse);
+
+      final iosLtr = await pumpChevron(
+        platform: TargetPlatform.iOS,
+        direction: TextDirection.ltr,
+      );
+      expect(iosLtr.icon, CupertinoIcons.chevron_right);
+      expect(iosLtr.mirrored, isFalse);
     });
   });
 }

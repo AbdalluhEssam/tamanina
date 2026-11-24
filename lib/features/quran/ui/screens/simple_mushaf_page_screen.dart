@@ -572,7 +572,6 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
           onPressed: _page > 1 ? () => _jump(_page - 1) : null,
           icon: Icon(
             appChevron(context, backwards: true),
-            textDirection: TextDirection.ltr,
           ),
         ),
         Flexible(
@@ -594,7 +593,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
         IconButton(
           tooltip: appText(context, 'الصفحة التالية', 'Next page'),
           onPressed: _page < _pageCount ? () => _jump(_page + 1) : null,
-          icon: Icon(appChevron(context), textDirection: TextDirection.ltr),
+          icon: Icon(appChevron(context)),
         ),
         IconButton(
           tooltip: appText(context, 'احفظ الصفحة', 'Bookmark page'),

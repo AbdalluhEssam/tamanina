@@ -67,7 +67,6 @@ class HomePrayerTimeline extends StatelessWidget {
                     Icon(
                       appChevron(context),
                       size: 14,
-                      textDirection: TextDirection.ltr,
                     ),
                   ],
                 ),

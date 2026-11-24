@@ -144,7 +144,6 @@ class _QuranBanner extends StatelessWidget {
                         padding: const EdgeInsets.all(4),
                         child: Icon(
                           appChevron(context),
-                          textDirection: TextDirection.ltr,
                           size: 15,
                           color: HomePalette.onGold,
                         ),

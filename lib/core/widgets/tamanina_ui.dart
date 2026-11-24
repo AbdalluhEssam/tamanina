@@ -9,13 +9,16 @@ IconData platformIcon(BuildContext context, IconData material, IconData ios) =>
     Theme.of(context).platform == TargetPlatform.iOS ? ios : material;
 
 IconData appChevron(BuildContext context, {bool backwards = false}) {
-  final pointsLeft =
-      (Directionality.of(context) == TextDirection.rtl) != backwards;
-  return platformIcon(
-    context,
-    pointsLeft ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
-    pointsLeft ? CupertinoIcons.chevron_left : CupertinoIcons.chevron_right,
-  );
+  if (Theme.of(context).platform == TargetPlatform.iOS) {
+    final pointsLeft =
+        (Directionality.of(context) == TextDirection.rtl) != backwards;
+    return pointsLeft
+        ? CupertinoIcons.chevron_left
+        : CupertinoIcons.chevron_right;
+  }
+  // Material chevron_*_rounded sets matchTextDirection: true, so Icon mirrors
+  // chevron_right_rounded into a left-pointing chevron in RTL automatically.
+  return backwards ? Icons.chevron_left_rounded : Icons.chevron_right_rounded;
 }
 
 class ContentFrame extends StatelessWidget {

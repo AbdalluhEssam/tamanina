@@ -304,7 +304,7 @@ class _NotificationSettingsScreenState
                                   'Word-by-word tracking with audio recitation',
                                 ),
                               ),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: Icon(appChevron(context)),
                               onTap: () {
                                 Navigator.of(context).pushNamed(
                                   AppRoutes.adhan,
