@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_prayer_cell"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="1dp"
+    android:layout_weight="1"
+    android:gravity="center_horizontal"
+    android:importantForAccessibility="yes"
+    android:orientation="vertical"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
+
+    <TextView
+        android:id="@+id/widget_prayer_name"
+        style="@style/WorshipWidget.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:textColor="@color/worship_widget_ink"
+        android:textSize="@dimen/worship_widget_cell" />
+
+    <TextView
+        android:id="@+id/widget_prayer_time"
+        style="@style/WorshipWidget.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:fontFeatureSettings="tnum"
+        android:textSize="@dimen/worship_widget_cell" />
+</LinearLayout>

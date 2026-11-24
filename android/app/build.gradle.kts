@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -8,10 +10,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val signingFile = rootProject.file("key.properties")
+val releaseSigning = Properties()
+if (signingFile.isFile) {
+    signingFile.inputStream().use(releaseSigning::load)
+}
+
 android {
     namespace = "com.abdalluh.tamanina"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,21 +32,34 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.abdalluh.tamanina"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    if (signingFile.isFile) {
+        fun signingProperty(name: String): String = requireNotNull(
+            releaseSigning.getProperty(name)?.takeIf { it.isNotBlank() }
+        ) { "android/key.properties is missing $name." }
+
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(signingProperty("storeFile"))
+            storePassword = signingProperty("storePassword")
+            keyAlias = signingProperty("keyAlias")
+            keyPassword = signingProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release")
+            // The Flutter CLI expects symbols in its AAB. The compact Gradle
+            // release keeps the stripped native libraries and omits that metadata.
+            if (providers.environmentVariable("TAMANINA_COMPACT_BUNDLE").orNull == "1") {
+                ndk.debugSymbolLevel = "NONE"
+            }
         }
     }
 }

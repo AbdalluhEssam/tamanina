@@ -1,0 +1,12 @@
+<resources>
+    <string name="worship_widget_name">مواقيت الصلاة</string>
+    <string name="worship_widget_next">الصلاة القادمة</string>
+    <string name="worship_widget_dhikr">الذِّكر</string>
+    <string name="worship_widget_setup">اختر مدينتك</string>
+    <string name="worship_widget_open">افتح طمأنينة</string>
+    <string name="worship_widget_moment">لحظة للذِّكر</string>
+    <string name="worship_widget_tasbeeh">السبحة</string>
+    <string name="worship_widget_morning">أذكار الصباح</string>
+    <string name="worship_widget_evening">أذكار المساء</string>
+    <string name="worship_widget_quran">القرآن</string>
+</resources>

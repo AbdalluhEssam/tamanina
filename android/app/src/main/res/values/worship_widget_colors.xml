@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="worship_widget_surface_top">#245247</color>
+    <color name="worship_widget_surface">#10382F</color>
+    <color name="worship_widget_surface_bottom">#061F1B</color>
+    <color name="worship_widget_ink">#F5F3EA</color>
+    <color name="worship_widget_secondary">#BACFC4</color>
+    <color name="worship_widget_gold">#F9C875</color>
+    <color name="worship_widget_button">#2A4D42</color>
+    <color name="worship_widget_pressed">#44BACFC4</color>
+    <color name="worship_widget_rule">#3DBACFC4</color>
+    <color name="worship_widget_edge">#6192A18B</color>
+    <color name="worship_widget_gold_border">#C8F9C875</color>
+    <color name="worship_widget_selection_top">#715C4223</color>
+    <color name="worship_widget_selection_bottom">#5A2D2B1C</color>
+</resources>

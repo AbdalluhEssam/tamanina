@@ -1,0 +1,4 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="64dp" android:height="64dp" android:viewportWidth="64" android:viewportHeight="64">
+    <path android:pathData="M16,45A16,16 0,0 1,48 45Z" android:fillColor="@color/worship_widget_gold" />
+    <path android:pathData="M5,46h54M13,52h38M32,10v10M12,18l7,8M52,18l-7,8M5,32l8,3M59,32l-8,3" android:strokeColor="@color/worship_widget_gold" android:strokeWidth="2.2" android:strokeLineCap="round" />
+</vector>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="worship_widget_surface_top">#20493E</color>
+    <color name="worship_widget_surface">#10352B</color>
+    <color name="worship_widget_surface_bottom">#061F1A</color>
+</resources>

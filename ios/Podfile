@@ -1,49 +1,74 @@
-platform :ios, '13.0'
+minimum_ios = '15.0'
+platform :ios, minimum_ios
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
+project 'Runner', { 'Debug' => :debug, 'Profile' => :release, 'Release' => :release }
 
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+    raise "#{generated_xcode_build_settings_path} must exist."
   end
   File.foreach(generated_xcode_build_settings_path) do |line|
     matches = line.match(/FLUTTER_ROOT\=(.*)/)
     return matches[1].strip if matches
   end
-  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+  raise "FLUTTER_ROOT not found"
 end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  use_modular_headers!
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
 
+pre_install do |installer|
+  # This pod imports its Swift header as <flutter_compass/flutter_compass-Swift.h>.
+  # Package it as a framework so CocoaPods puts the header at that path.
+  installer.pod_targets.select { |pod| pod.pod_name == 'flutter_compass' }.each do |pod|
+    def pod.build_type
+      Pod::BuildType.static_framework
+    end
+  end
+end
+
 post_install do |installer|
+  # First pass: Apply Firebase fixes BEFORE Flutter settings
   installer.pods_project.targets.each do |target|
-    if target.name.include?('firebase_messaging') || target.name.include?('FirebaseMessaging')
+    if target.name.downcase.include?('firebase')
       target.build_configurations.each do |config|
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        config.build_settings['DEFINES_MODULE'] = 'NO'
+        config.build_settings['CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'NO'
       end
     end
   end
   
+  # Second pass: Apply Flutter and other settings
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    if target.name == 'fllama'
+      # The model uses the CPU on the simulator and on physical devices.
+      target.source_build_phase.files.each do |file|
+        flags = file.settings&.fetch('COMPILER_FLAGS', nil)
+        if flags
+          file.settings['COMPILER_FLAGS'] = flags.split.reject { |flag| flag == '-DLM_GGML_USE_METAL' }.join(' ')
+        end
+      end
+    end
     target.build_configurations.each do |config|
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      if target.name == 'geolocator_apple'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'BYPASS_PERMISSION_LOCATION_ALWAYS=1'
+      end
+      if target.name == 'fllama'
+        config.build_settings['EXCLUDED_SOURCE_FILE_NAMES'] = '$(inherited) ggml-metal.m ggml-metal.metal'
+      end
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < minimum_ios.to_f
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_ios
       end
     end
   end

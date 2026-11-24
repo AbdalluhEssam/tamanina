@@ -1,0 +1,12 @@
+<resources>
+    <string name="worship_widget_name">Prayer times</string>
+    <string name="worship_widget_next">Next prayer</string>
+    <string name="worship_widget_dhikr">Dhikr</string>
+    <string name="worship_widget_setup">Choose your city</string>
+    <string name="worship_widget_open">Open Tamanina</string>
+    <string name="worship_widget_moment">Moment of dhikr</string>
+    <string name="worship_widget_tasbeeh">Tasbeeh</string>
+    <string name="worship_widget_morning">Morning adhkar</string>
+    <string name="worship_widget_evening">Evening adhkar</string>
+    <string name="worship_widget_quran">Quran</string>
+</resources>

@@ -1,0 +1,7 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="12dp" />
+    <gradient android:angle="270"
+        android:startColor="@color/worship_widget_selection_top"
+        android:endColor="@color/worship_widget_selection_bottom" />
+    <stroke android:width="1dp" android:color="@color/worship_widget_gold_border" />
+</shape>

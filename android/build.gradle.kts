@@ -1,3 +1,10 @@
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+
+plugins {
+    id("com.android.application") apply false
+}
+
 allprojects {
     repositories {
         google()
@@ -14,6 +21,19 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    plugins.withId("com.android.library") {
+        val appCompileSdk = rootProject.project(":app")
+            .extensions.getByType<ApplicationExtension>().compileSdk
+        extensions.getByType<LibraryAndroidComponentsExtension>().finalizeDsl { library ->
+            // Older plugins still resolve the app's current AndroidX dependencies.
+            if (appCompileSdk != null && (library.compileSdk ?: 0) < appCompileSdk) {
+                library.compileSdk = appCompileSdk
+            }
+            if (name == "fllama") {
+                library.externalNativeBuild.cmake.version = "3.31.6"
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

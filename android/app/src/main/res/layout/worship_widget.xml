@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/worship_widget_background"
+    android:clipToOutline="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/widget_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/widget_art_compact"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY" />
+
+        <ImageView
+            android:id="@+id/widget_art_wide"
+            android:layout_width="112dp"
+            android:layout_height="100dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="12dp"
+            android:layout_gravity="bottom|end"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/worship_widget_inset"
+            android:paddingEnd="@dimen/worship_widget_inset"
+            android:paddingTop="10dp"
+            android:paddingBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/widget_icon"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginEnd="5dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_widget_prayer" />
+
+                <TextView
+                    android:id="@+id/widget_title"
+                    style="@style/WorshipWidget.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:text="@string/worship_widget_next" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:id="@+id/widget_prayer_compact"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|start"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/widget_compact_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/worship_widget_ink"
+                        android:textSize="@dimen/worship_widget_name"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/widget_compact_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="2"
+                        android:text="@string/worship_widget_setup"
+                        android:textColor="@color/worship_widget_gold"
+                        android:textSize="@dimen/worship_widget_name"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/widget_prayer_wide"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|start"
+                    android:baselineAligned="true"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/widget_wide_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="7dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/worship_widget_ink"
+                        android:textSize="@dimen/worship_widget_name"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/widget_wide_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1"
+                        android:textColor="@color/worship_widget_gold"
+                        android:textSize="@dimen/worship_widget_time"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/widget_quote"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="@dimen/worship_widget_quote_min"
+                    android:autoSizeMaxTextSize="@dimen/worship_widget_quote_max"
+                    android:autoSizeStepGranularity="1sp"
+                    android:breakStrategy="simple"
+                    android:gravity="center_vertical|right"
+                    android:lineSpacingExtra="1dp"
+                    android:paddingLeft="16dp"
+                    android:shadowColor="@color/worship_widget_surface_bottom"
+                    android:shadowRadius="4"
+                    android:textColor="@color/worship_widget_ink"
+                    android:textDirection="rtl"
+                    android:textSize="@dimen/worship_widget_quote_min"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/widget_timer_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:layout_marginEnd="5dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/worship_icon_hourglass" />
+
+                <Chronometer
+                    android:id="@+id/widget_countdown"
+                    style="@style/WorshipWidget.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFeatureSettings="tnum"
+                    android:textDirection="ltr"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_footer"
+                style="@style/WorshipWidget.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="@string/worship_widget_open"
+                android:textColor="@color/worship_widget_gold" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_schedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/worship_widget_inset"
+        android:paddingEnd="@dimen/worship_widget_inset"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/worship_widget_rule"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:id="@+id/widget_schedule_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal"
+            android:paddingTop="4dp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="worship_widget_radius">24dp</dimen>
+    <dimen name="worship_widget_inset">12dp</dimen>
+    <dimen name="worship_widget_name">17sp</dimen>
+    <dimen name="worship_widget_time">28sp</dimen>
+    <dimen name="worship_widget_caption">11sp</dimen>
+    <dimen name="worship_widget_cell">11sp</dimen>
+    <dimen name="worship_widget_quote_min">12sp</dimen>
+    <dimen name="worship_widget_quote_max">25sp</dimen>
+
+    <style name="WorshipWidget" />
+    <style name="WorshipWidget.Caption">
+        <item name="android:textColor">@color/worship_widget_secondary</item>
+        <item name="android:textSize">@dimen/worship_widget_caption</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+    </style>
+</resources>
