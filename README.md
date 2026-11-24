@@ -1,4 +1,4 @@
-# تمانينة - Tamanina
+# طمأنينة - Tamanina
 
 A comprehensive Islamic companion app built with Flutter, providing prayer times, Quran, Azkar, Qibla direction, and more.
 
@@ -7,61 +7,35 @@ Created By **Abdalluh Essam** 🇪🇬
 
 ---
 
-## 📱 Features
+For store metadata, signing, and release builds, see the [production release guide](PRODUCTION_RELEASE.md).
 
-### 🕌 Prayer Times
-- **Offline Calculation**: Uses the `adhan` package for accurate prayer time calculation
-- **Multiple Calculation Methods**: Supports 12+ methods including:
-  - رابطة العالم الإسلامي (Muslim World League)
-  - أم القرى (Umm al-Qura)
-  - الهيئة المصرية للمساحة (Egyptian)
-  - ISNA (North America)
-  - And more...
-- **Madhab Selection**: Shafi or Hanafi for Asr time
-- **Location Detection**: GPS-based with manual city selection fallback
-- **Live Countdown**: Real-time countdown to next prayer
+## Features
 
-### 📖 Quran
-- Paginated Mushaf view
-- Surah and Juz index
-- Verse search capability
-- Bookmarking support
-- Resume from last read position
+- Read the full offline Quran in the standard 604-page order. The reader includes surah and juz indexes, verse search, bookmarks, and reading history. Download a page's recitation once for offline playback. Recitation can continue with the screen locked and is controllable from the system media controls.
+- Count tasbeeh, complete adhkar collections, and view your activity. Your progress and favorites are stored on the device.
+- Calculate prayer times and a Qibla bearing on the device using GPS or a selected city. Live direction depends on the device's compass.
+- Enable device notifications for prayer and adhkar alerts. Set morning, evening, bedtime, and Friday reminders, or choose daytime dhikr every one to four hours. Quiet hours mute prayer alerts and pause dhikr reminders. The app prepares up to 30 days of prayer times on the device. Android schedules them locally and plays the full bundled adhan with exact alarm access. iOS schedules the nearest alerts within its pending-notification limit and refills from the saved plan when iOS permits background refresh. Its short adhan alert opens the full recording when tapped.
+- Use the Tamanina assistant to find verses and get help with the app offline. Enable on-device AI for open-ended questions after downloading its model.
+- The interface supports Arabic and English, system theme, larger system text, phone and tablet navigation, and native Android and iOS app icons.
 
-### 📿 Azkar (أذكار)
-- Morning and evening adhkar
-- Various dhikr categories
-- Counter functionality
-- Favorites system
+The offline adhan recording is credited in [assets/audio/adhan/README.md](assets/audio/adhan/README.md).
 
-### 🧭 Qibla Direction
-- Compass-based direction finding
-- Distance to Kaaba calculation
-- Works offline
+## AI assistant
 
-### 🔔 Notifications
-- Prayer time reminders with per-prayer toggle
-- Pre-prayer reminders (5, 10, 15, 30 minutes)
-- Adhan playback support (Makkah, Madinah, Al-Aqsa, Egypt)
-- Do Not Disturb override capability
-- Customizable volume control
-- Auto-reschedule on boot
+Open the phone icon in the assistant to download the [Qwen2.5 0.5B model](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF) (491 MB). Tamanina verifies the model's SHA-256 checksum before making it available. The downloaded model processes questions on the device and can be removed from the same screen. Responses are general guidance. Quran verse search uses the bundled text.
 
-### ⚙️ Settings (Enhanced)
-- **Theme Management**: Light/Dark/System modes with real-time app-wide updates
-- **Prayer Calculation**: 10+ methods including Muslim World League, Umm al-Qura, ISNA
-- **Madhab Selection**: Shafi/Hanafi for Asr calculation
-- **Notification Controls**: 
-  - Global enable/disable
-  - Per-prayer toggles (Fajr, Dhuhr, Asr, Maghrib, Isha)
-  - Pre-prayer reminder timing
-- **Muadhin Mode**: Full adhan playback at prayer time
-- **Adhan Selection**: Choose from multiple mu'adhin recordings
-- **Volume Control**: Dedicated adhan volume slider
-- **Vibration**: Haptic feedback toggle
-- **Reset to Defaults**: One-tap settings reset
+Android builds use SDK CMake 3.31.6 for the local inference plugin. The optional test in `integration_test/local_assistant_smoke_test.dart` needs a simulator with the model already installed and `--dart-define=VERIFY_ON_DEVICE_ASSISTANT=true`. Use a dedicated simulator for this test because the Flutter test runner removes the test app and its local data.
 
----
+An HTTPS assistant service can also be configured for builds where the on-device model has not been installed.
+
+Run the Node 22+ service with `GROQ_API_KEY` set in the server environment and `node server/guide.mjs`. The service listens on `127.0.0.1:8080` by default and supports `PORT` and `GROQ_MODEL`. Publish `POST /guide` through your HTTPS reverse proxy with request rate limits, then build Flutter with `--dart-define=TAMANINA_GUIDE_URL=https://your-server.example/guide`. The request contains `message`, `language`, `model`, and up to six recent `history` turns. The endpoint returns `{"answer":"..."}`. The service chooses the model on the server and holds the provider key there.
+
+## Updates and Home Screen widgets
+
+- **Updates** — Tamanina checks the stores with `new_version_plus` from Settings and at most once per day after the home screen opens. A published store listing is required. The iOS lookup defaults to Egypt. Build overrides are `TAMANINA_IOS_STORE_BUNDLE_ID`, `TAMANINA_ANDROID_STORE_PACKAGE`, and `TAMANINA_STORE_COUNTRY` (iOS lookup region).
+- **Android** — Add Tamanina via Settings → Home-screen widgets, or from the launcher’s widget list. Tap the Dhikr or Prayer button to switch, and tap the content to open its screen. Exact prayer-alert timing can be enabled separately under Notifications.
+- **iOS** — Add Tamanina Prayer or Tamanina Dhikr in the Home Screen widget gallery. Both support small and medium sizes and can be stacked. For device and distribution builds, provision the App Group `group.com.abdalluh.tamanina` for both Runner and the `com.abdalluh.tamanina.Widgets` extension in the same Apple Developer team.
+- Widget prayer data is calculated on the device and shared for the next 35 days. Open Tamanina after selecting a city or if the widget asks to refresh. The system may adjust the exact timing of Home Screen refreshes.
 
 ## 🏗️ Architecture
 
@@ -121,8 +95,8 @@ ProductionSettingsScreen (UI)
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Flutter SDK >= 3.0.0
-- Dart >= 3.0.0
+- Flutter and Dart SDKs compatible with the lockfile. Verified tooling uses Flutter 3.47.2.
+- JDK 17 for Android and Xcode with CocoaPods for iOS. The iOS deployment target is 15.0.
 - Android Studio / VS Code
 - Git
 
