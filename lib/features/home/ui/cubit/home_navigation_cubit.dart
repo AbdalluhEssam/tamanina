@@ -18,10 +18,10 @@ class HomeNavigationCubit extends Cubit<int> {
   void navigateToHome() => navigateToTab(0);
 
   /// Navigate to Tasbeeh tab
-  void navigateToTasbeeh() => navigateToTab(1);
+  void navigateToTasbeeh() => navigateToTab(2);
 
   /// Navigate to Quran tab
-  void navigateToQuran() => navigateToTab(2);
+  void navigateToQuran() => navigateToTab(1);
 
   /// Navigate to Settings tab
   void navigateToSettings() => navigateToTab(3);

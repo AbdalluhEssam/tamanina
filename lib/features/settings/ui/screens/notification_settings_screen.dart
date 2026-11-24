@@ -1,11 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+import 'dart:io';
 
-/// صفحة إعدادات الإشعارات
-/// Notification Settings Screen
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/notification_service_enhanced.dart';
+import '../../../../core/services/reminder_schedule.dart';
+import '../../../../core/services/service_locator.dart';
+import '../../../../core/settings/settings_cubit.dart';
+import '../../../../core/settings/settings_repository.dart';
+import '../../../../core/widgets/tamanina_ui.dart';
+import '../../../prayer_times/ui/screens/adhan_screen.dart';
+import 'production_settings_screen.dart';
+
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
@@ -16,556 +25,455 @@ class NotificationSettingsScreen extends StatefulWidget {
 
 class _NotificationSettingsScreenState
     extends State<NotificationSettingsScreen> {
-  // إعدادات الإشعارات
-  bool _notificationsEnabled = true;
-  bool _prayerTimeNotifications = true;
-  bool _morningAdhkarReminder = true;
-  bool _eveningAdhkarReminder = true;
-  bool _sleepAdhkarReminder = false;
-  bool _fridayReminder = true;
-  bool _soundEnabled = true;
-  bool _vibrationEnabled = true;
+  final _prefs = sl<SharedPreferences>();
+  final _notifications = sl<NotificationServiceEnhanced>();
+  AudioPlayer? _preview;
+  bool _busy = false;
+  bool _playing = false;
 
-  // أوقات التذكير
-  TimeOfDay _morningReminderTime = const TimeOfDay(hour: 6, minute: 0);
-  TimeOfDay _eveningReminderTime = const TimeOfDay(hour: 17, minute: 0);
-  TimeOfDay _sleepReminderTime = const TimeOfDay(hour: 22, minute: 0);
+  Future<void> _toggle(bool enabled) async {
+    final settings = context.read<SettingsCubit>();
+    setState(() => _busy = true);
+    try {
+      if (enabled && !await _notifications.requestPermissions()) {
+        if (mounted) {
+          _status(
+            'اسمح بالإشعارات من إعدادات الجهاز.',
+            'Allow notifications in your device settings.',
+          );
+        }
+        return;
+      }
+      await settings.updateNotificationsEnabled(enabled);
+    } catch (_) {
+      if (mounted) {
+        _status(
+          'تعذّر ضبط التنبيهات.',
+          'Notifications could not be configured.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
-  bool _isLoading = true;
+  void _status(String ar, String en) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(appText(context, ar, en))));
+
+  Future<void> _previewAdhan(double volume) async {
+    final player = _preview ??= AudioPlayer();
+    if (_playing) {
+      setState(() => _playing = false);
+      await player.stop();
+      return;
+    }
+    setState(() => _playing = true);
+    try {
+      await player.setAsset(AdhanSound.local.assetPath);
+      await player.setVolume(volume);
+      if (mounted && _playing) await player.play();
+    } catch (_) {
+      if (mounted && _playing) {
+        _status('تعذّر تشغيل المعاينة.', 'The preview could not play.');
+      }
+    } finally {
+      if (mounted && _playing) setState(() => _playing = false);
+    }
+  }
+
+  Future<void> _store(String key, bool value) async {
+    await _prefs.setBool(key, value);
+    if (mounted) setState(() {});
+    await _notifications.refresh();
+  }
+
+  Future<void> _time(String key, TimeOfDay initial) async {
+    final value = await showTimePicker(context: context, initialTime: initial);
+    if (value == null || !mounted) return;
+    await _prefs.setInt('${key}_reminder_hour', value.hour);
+    await _prefs.setInt('${key}_reminder_minute', value.minute);
+    if (mounted) setState(() {});
+    await _notifications.refresh();
+  }
 
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-      _prayerTimeNotifications =
-          prefs.getBool('prayer_time_notifications') ?? true;
-      _morningAdhkarReminder = prefs.getBool('morning_adhkar_reminder') ?? true;
-      _eveningAdhkarReminder = prefs.getBool('evening_adhkar_reminder') ?? true;
-      _sleepAdhkarReminder = prefs.getBool('sleep_adhkar_reminder') ?? false;
-      _fridayReminder = prefs.getBool('friday_reminder') ?? true;
-      _soundEnabled = prefs.getBool('notification_sound') ?? true;
-      _vibrationEnabled = prefs.getBool('notification_vibration') ?? true;
-
-      // تحميل أوقات التذكير
-      final morningHour = prefs.getInt('morning_reminder_hour') ?? 6;
-      final morningMinute = prefs.getInt('morning_reminder_minute') ?? 0;
-      _morningReminderTime =
-          TimeOfDay(hour: morningHour, minute: morningMinute);
-
-      final eveningHour = prefs.getInt('evening_reminder_hour') ?? 17;
-      final eveningMinute = prefs.getInt('evening_reminder_minute') ?? 0;
-      _eveningReminderTime =
-          TimeOfDay(hour: eveningHour, minute: eveningMinute);
-
-      final sleepHour = prefs.getInt('sleep_reminder_hour') ?? 22;
-      final sleepMinute = prefs.getInt('sleep_reminder_minute') ?? 0;
-      _sleepReminderTime = TimeOfDay(hour: sleepHour, minute: sleepMinute);
-
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setBool('notifications_enabled', _notificationsEnabled);
-    await prefs.setBool('prayer_time_notifications', _prayerTimeNotifications);
-    await prefs.setBool('morning_adhkar_reminder', _morningAdhkarReminder);
-    await prefs.setBool('evening_adhkar_reminder', _eveningAdhkarReminder);
-    await prefs.setBool('sleep_adhkar_reminder', _sleepAdhkarReminder);
-    await prefs.setBool('friday_reminder', _fridayReminder);
-    await prefs.setBool('notification_sound', _soundEnabled);
-    await prefs.setBool('notification_vibration', _vibrationEnabled);
-
-    // حفظ أوقات التذكير
-    await prefs.setInt('morning_reminder_hour', _morningReminderTime.hour);
-    await prefs.setInt('morning_reminder_minute', _morningReminderTime.minute);
-    await prefs.setInt('evening_reminder_hour', _eveningReminderTime.hour);
-    await prefs.setInt('evening_reminder_minute', _eveningReminderTime.minute);
-    await prefs.setInt('sleep_reminder_hour', _sleepReminderTime.hour);
-    await prefs.setInt('sleep_reminder_minute', _sleepReminderTime.minute);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('تم حفظ الإعدادات بنجاح'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _selectTime(
-      TimeOfDay initialTime, Function(TimeOfDay) onSelect) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryGreen,
-              onPrimary: Colors.white,
-              surface: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.surfaceDark
-                  : Colors.white,
-              onSurface: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      onSelect(picked);
-    }
-  }
-
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.period == DayPeriod.am ? 'ص' : 'م';
-    return '$hour:$minute $period';
+  void dispose() {
+    _preview?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cubit = context.watch<SettingsCubit>();
+    final settings = cubit.currentSettings;
+    final prayers = _prefs.getBool('prayer_time_notifications') ?? true;
+    final adhan = settings.selectedAdhan == AdhanSound.system
+        ? AdhanSound.system
+        : AdhanSound.local;
+    final names = [
+      ('Fajr', 'الفجر'),
+      ('Sunrise', 'الشروق'),
+      ('Dhuhr', 'الظهر'),
+      ('Asr', 'العصر'),
+      ('Maghrib', 'المغرب'),
+      ('Isha', 'العشاء'),
+    ];
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        title: Text(
-          'إعدادات الإشعارات',
-          style: AppTypography.appBarTitle.copyWith(
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primaryGreen,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined, color: Colors.white),
-            onPressed: _saveSettings,
-            tooltip: 'حفظ الإعدادات',
-          ),
-        ],
+        title: Text(appText(context, 'التنبيهات', 'Notifications')),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // التحكم الرئيسي في الإشعارات
-                  _buildMainSwitch(isDark),
-                  SizedBox(height: 24.h),
-
-                  // إشعارات أوقات الصلاة
-                  if (_notificationsEnabled) ...[
-                    _buildSectionHeader(
-                        'أوقات الصلاة', Icons.access_time, isDark),
-                    SizedBox(height: 12.h),
-                    _buildSettingCard(
-                      children: [
-                        _buildSwitchTile(
-                          title: 'تنبيهات أوقات الصلاة',
-                          subtitle: 'إشعار عند دخول وقت كل صلاة',
-                          icon: Icons.mosque_outlined,
-                          value: _prayerTimeNotifications,
-                          onChanged: (value) {
-                            setState(() => _prayerTimeNotifications = value);
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // تذكيرات الأذكار
-                    _buildSectionHeader('تذكيرات الأذكار',
-                        Icons.notifications_active_outlined, isDark),
-                    SizedBox(height: 12.h),
-                    _buildSettingCard(
-                      children: [
-                        _buildSwitchTile(
-                          title: 'أذكار الصباح',
-                          subtitle: 'تذكير يومي بأذكار الصباح',
-                          icon: Icons.wb_sunny_outlined,
-                          value: _morningAdhkarReminder,
-                          onChanged: (value) {
-                            setState(() => _morningAdhkarReminder = value);
-                          },
-                          isDark: isDark,
-                        ),
-                        if (_morningAdhkarReminder)
-                          _buildTimePicker(
-                            label: 'وقت التذكير',
-                            time: _morningReminderTime,
-                            onTap: () =>
-                                _selectTime(_morningReminderTime, (time) {
-                              setState(() => _morningReminderTime = time);
-                            }),
-                            isDark: isDark,
-                          ),
-                        const Divider(),
-                        _buildSwitchTile(
-                          title: 'أذكار المساء',
-                          subtitle: 'تذكير يومي بأذكار المساء',
-                          icon: Icons.nights_stay_outlined,
-                          value: _eveningAdhkarReminder,
-                          onChanged: (value) {
-                            setState(() => _eveningAdhkarReminder = value);
-                          },
-                          isDark: isDark,
-                        ),
-                        if (_eveningAdhkarReminder)
-                          _buildTimePicker(
-                            label: 'وقت التذكير',
-                            time: _eveningReminderTime,
-                            onTap: () =>
-                                _selectTime(_eveningReminderTime, (time) {
-                              setState(() => _eveningReminderTime = time);
-                            }),
-                            isDark: isDark,
-                          ),
-                        const Divider(),
-                        _buildSwitchTile(
-                          title: 'أذكار النوم',
-                          subtitle: 'تذكير بأذكار قبل النوم',
-                          icon: Icons.bedtime_outlined,
-                          value: _sleepAdhkarReminder,
-                          onChanged: (value) {
-                            setState(() => _sleepAdhkarReminder = value);
-                          },
-                          isDark: isDark,
-                        ),
-                        if (_sleepAdhkarReminder)
-                          _buildTimePicker(
-                            label: 'وقت التذكير',
-                            time: _sleepReminderTime,
-                            onTap: () =>
-                                _selectTime(_sleepReminderTime, (time) {
-                              setState(() => _sleepReminderTime = time);
-                            }),
-                            isDark: isDark,
-                          ),
-                      ],
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // تذكيرات خاصة
-                    _buildSectionHeader(
-                        'تذكيرات خاصة', Icons.star_outline, isDark),
-                    SizedBox(height: 12.h),
-                    _buildSettingCard(
-                      children: [
-                        _buildSwitchTile(
-                          title: 'تذكير يوم الجمعة',
-                          subtitle:
-                              'تذكير بقراءة سورة الكهف والإكثار من الصلاة على النبي ﷺ',
-                          icon: Icons.calendar_today_outlined,
-                          value: _fridayReminder,
-                          onChanged: (value) {
-                            setState(() => _fridayReminder = value);
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // إعدادات الصوت والاهتزاز
-                    _buildSectionHeader(
-                        'الصوت والاهتزاز', Icons.volume_up_outlined, isDark),
-                    SizedBox(height: 12.h),
-                    _buildSettingCard(
-                      children: [
-                        _buildSwitchTile(
-                          title: 'صوت الإشعارات',
-                          subtitle: 'تشغيل صوت عند وصول الإشعار',
-                          icon: Icons.music_note_outlined,
-                          value: _soundEnabled,
-                          onChanged: (value) {
-                            setState(() => _soundEnabled = value);
-                          },
-                          isDark: isDark,
-                        ),
-                        const Divider(),
-                        _buildSwitchTile(
-                          title: 'الاهتزاز',
-                          subtitle: 'اهتزاز الجهاز عند وصول الإشعار',
-                          icon: Icons.vibration,
-                          value: _vibrationEnabled,
-                          onChanged: (value) {
-                            setState(() => _vibrationEnabled = value);
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                      isDark: isDark,
-                    ),
-                  ],
-
-                  SizedBox(height: 32.h),
-
-                  // معلومات إضافية
-                  _buildInfoCard(isDark),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildMainSwitch(bool isDark) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _notificationsEnabled
-              ? [
-                  AppColors.primaryGreen,
-                  AppColors.primaryGreen.withOpacity(0.8)
-                ]
-              : [Colors.grey, Colors.grey.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color:
-                (_notificationsEnabled ? AppColors.primaryGreen : Colors.grey)
-                    .withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              _notificationsEnabled
-                  ? Icons.notifications_active
-                  : Icons.notifications_off,
-              color: Colors.white,
-              size: 28.sp,
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'الإشعارات',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  _notificationsEnabled ? 'مفعّلة' : 'معطّلة',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _notificationsEnabled,
-            onChanged: (value) {
-              setState(() => _notificationsEnabled = value);
-            },
-            activeColor: Colors.white,
-            activeTrackColor: Colors.white.withOpacity(0.3),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: Colors.white.withOpacity(0.2),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: AppColors.primaryGreen,
-          size: 20.sp,
-        ),
-        SizedBox(width: 8.w),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettingCard({
-    required List<Widget> children,
-    required bool isDark,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required bool isDark,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: (value ? AppColors.primaryGreen : Colors.grey)
-                  .withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              icon,
-              color: value ? AppColors.primaryGreen : Colors.grey,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.primaryGreen,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimePicker({
-    required String label,
-    required TimeOfDay time,
-    required VoidCallback onTap,
-    required bool isDark,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w, right: 56.w, bottom: 12.h),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(
-              color: AppColors.primaryGreen.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        top: false,
+        child: ContentFrame(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Icon(
-                Icons.access_time,
-                color: AppColors.primaryGreen,
-                size: 18.sp,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                '$label: ${_formatTime(time)}',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.primaryGreen,
-                  fontWeight: FontWeight.w500,
+              Card(
+                child: SwitchListTile.adaptive(
+                  title: Text(
+                    appText(context, 'تفعيل التنبيهات', 'Enable notifications'),
+                  ),
+                  value: settings.notificationsEnabled,
+                  onChanged: _busy ? null : _toggle,
                 ),
               ),
-              SizedBox(width: 4.w),
-              Icon(
-                Icons.edit,
-                color: AppColors.primaryGreen,
-                size: 14.sp,
-              ),
+              if (settings.notificationsEnabled) ...[
+                const SizedBox(height: 14),
+                Card(
+                  child: Column(
+                    children: [
+                      SwitchListTile.adaptive(
+                        title: Text(
+                          appText(context, 'مواقيت الصلاة', 'Prayer alerts'),
+                        ),
+                        value: prayers,
+                        onChanged: (value) =>
+                            _store('prayer_time_notifications', value),
+                      ),
+                      if (prayers) ...[
+                        if (Platform.isAndroid)
+                          ListTile(
+                            leading: const Icon(Icons.alarm),
+                            title: Text(
+                              appText(
+                                context,
+                                'دقة موعد التنبيه',
+                                'Exact prayer alerts',
+                              ),
+                            ),
+                            subtitle: Text(
+                              appText(
+                                context,
+                                'اضبط إذن المنبّه في إعدادات الجهاز.',
+                                'Manage exact alarm access in device settings.',
+                              ),
+                            ),
+                            trailing: Icon(appChevron(context)),
+                            onTap: () async {
+                              try {
+                                final granted = await _notifications
+                                    .requestExactPrayerAlarms();
+                                if (!mounted) return;
+                                if (granted) {
+                                  _status(
+                                    'التنبيهات الدقيقة متاحة.',
+                                    'Exact alerts are available.',
+                                  );
+                                } else {
+                                  _status(
+                                    'هيستمر التنبيه في أقرب وقت يسمح به النظام.',
+                                    'Alerts will use the nearest time the system allows.',
+                                  );
+                                }
+                              } catch (_) {
+                                if (mounted) {
+                                  _status(
+                                    'تعذّر ضبط دقة التنبيه.',
+                                    'Could not change exact alerts.',
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        for (final (name, arabic) in names)
+                          SwitchListTile.adaptive(
+                            title: Text(appText(context, arabic, name)),
+                            value: settings.perPrayerEnabled.isEnabled(name),
+                            onChanged: (value) =>
+                                cubit.updatePrayerNotification(name, value),
+                          ),
+                        settingsChoice<int>(
+                          context,
+                          icon: Icons.timer_outlined,
+                          title: appText(
+                            context,
+                            'تذكير قبل الصلاة',
+                            'Before-prayer reminder',
+                          ),
+                          current: settings.prePrayerOffsetMinutes,
+                          values: const [0, 5, 10, 15, 20, 30, 45, 60],
+                          label: (minutes) => minutes == 0
+                              ? appText(context, 'متوقف', 'Off')
+                              : appText(
+                                  context,
+                                  '$minutes دقيقة',
+                                  '$minutes min',
+                                ),
+                          onSelected: cubit.updatePrePrayerOffset,
+                        ),
+                        SwitchListTile.adaptive(
+                          title: Text(
+                            appText(
+                              context,
+                              'صوت الأذان مع التنبيه',
+                              'Adhan sound for prayer alerts',
+                            ),
+                          ),
+                          subtitle: Text(
+                            Platform.isAndroid
+                                ? appText(
+                                    context,
+                                    'فعّل دقة التنبيه لتشغيل الأذان الكامل في الخلفية.',
+                                    'Enable exact alerts for the full adhan in the background.',
+                                  )
+                                : appText(
+                                    context,
+                                    'اضغط على التنبيه لسماع التسجيل الكامل بعد المقطع القصير.',
+                                    'Tap the short alert to hear the full recording.',
+                                  ),
+                          ),
+                          value: settings.muadhinMode,
+                          onChanged: cubit.updateMuadhinMode,
+                        ),
+                        if (settings.muadhinMode) ...[
+                          settingsChoice<AdhanSound>(
+                            context,
+                            icon: Icons.music_note_outlined,
+                            title: appText(
+                              context,
+                              'صوت التنبيه',
+                              'Alert sound',
+                            ),
+                            current: adhan,
+                            values: const [AdhanSound.local, AdhanSound.system],
+                            label: (sound) => appText(
+                              context,
+                              sound.displayName,
+                              sound == AdhanSound.local
+                                  ? 'Tamanina adhan'
+                                  : 'System sound',
+                            ),
+                            onSelected: cubit.updateSelectedAdhan,
+                          ),
+                          if (adhan == AdhanSound.local && settings.muadhinMode)
+                            ListTile(
+                              leading: Icon(
+                                _playing ? Icons.stop : Icons.play_arrow,
+                              ),
+                              title: Text(
+                                _playing
+                                    ? appText(
+                                        context,
+                                        'إيقاف المعاينة',
+                                        'Stop preview',
+                                      )
+                                    : appText(
+                                        context,
+                                        'معاينة الأذان',
+                                        'Preview adhan',
+                                      ),
+                              ),
+                              onTap: () => _previewAdhan(settings.adhanVolume),
+                            ),
+                          if (adhan == AdhanSound.local && settings.muadhinMode)
+                            ListTile(
+                              leading: const Icon(Icons.fullscreen),
+                              title: Text(
+                                appText(
+                                  context,
+                                  'شاشة الأذان الكاملة التفاعلية',
+                                  'Interactive full-screen Adhan',
+                                ),
+                              ),
+                              subtitle: Text(
+                                appText(
+                                  context,
+                                  'عرض الأذان مع تتبع الكلمات والتكبير التلقائي',
+                                  'Word-by-word tracking with audio recitation',
+                                ),
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  AppRoutes.adhan,
+                                  arguments: const AdhanScreenArgs(
+                                    prayerNameArabic: 'العصر',
+                                    prayerName: 'Asr',
+                                  ),
+                                );
+                              },
+                            ),
+                          if (adhan == AdhanSound.local)
+                            ListTile(
+                              title: Text(
+                                appText(
+                                  context,
+                                  'مستوى صوت المعاينة',
+                                  'Preview volume',
+                                ),
+                              ),
+                              subtitle: Slider(
+                                value: settings.adhanVolume.clamp(0, 1),
+                                onChanged: (value) {
+                                  cubit.updateAdhanVolume(value);
+                                  _preview?.setVolume(value);
+                                },
+                              ),
+                            ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Card(
+                  child: Column(
+                    children: [
+                      settingsChoice<int>(
+                        context,
+                        icon: Icons.wb_sunny_outlined,
+                        title: appText(
+                          context,
+                          'تذكير بالذِّكر خلال اليوم',
+                          'Dhikr throughout the day',
+                        ),
+                        current: _prefs.getInt('dhikr_interval_minutes') ?? 0,
+                        values: dhikrIntervals,
+                        label: (minutes) {
+                          if (minutes == 0) {
+                            return appText(context, 'متوقف', 'Off');
+                          }
+                          if (minutes == 60) {
+                            return appText(context, 'كل ساعة', 'Every hour');
+                          }
+                          if (minutes == 120) {
+                            return appText(
+                              context,
+                              'كل ساعتين',
+                              'Every 2 hours',
+                            );
+                          }
+                          return appText(
+                            context,
+                            'كل ${minutes ~/ 60} ساعات',
+                            'Every ${minutes ~/ 60} hours',
+                          );
+                        },
+                        onSelected: (minutes) async {
+                          await _prefs.setInt(
+                            'dhikr_interval_minutes',
+                            minutes,
+                          );
+                          if (mounted) setState(() {});
+                          await _notifications.refresh();
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          16,
+                          0,
+                          16,
+                          8,
+                        ),
+                        child: Text(
+                          appText(
+                            context,
+                            'بين التاسعة صباحًا والتاسعة مساءً، حسب ساعات الهدوء.',
+                            'Between 9 AM and 9 PM, outside your quiet hours.',
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      for (final (key, hour, arabic, english) in const [
+                        ('morning', 6, 'أذكار الصباح', 'Morning adhkar'),
+                        ('evening', 17, 'أذكار المساء', 'Evening adhkar'),
+                        ('sleep', 22, 'أذكار النوم', 'Bedtime adhkar'),
+                      ])
+                        _reminder(key, hour, appText(context, arabic, english)),
+                      SwitchListTile.adaptive(
+                        title: Text(
+                          appText(context, 'تذكير الجمعة', 'Friday reminder'),
+                        ),
+                        value: _prefs.getBool('friday_reminder') ?? false,
+                        onChanged: (value) => _store('friday_reminder', value),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Card(
+                  child: Column(
+                    children: [
+                      for (final (key, ar, en) in const [
+                        (
+                          'notification_sound',
+                          'صوت التنبيهات',
+                          'Notification sound',
+                        ),
+                        (
+                          'notification_vibration',
+                          'اهتزاز التنبيهات',
+                          'Notification vibration',
+                        ),
+                      ])
+                        SwitchListTile.adaptive(
+                          title: Text(appText(context, ar, en)),
+                          value: _prefs.getBool(key) ?? true,
+                          onChanged: (value) => _store(key, value),
+                        ),
+                      SwitchListTile.adaptive(
+                        title: Text(
+                          appText(context, 'ساعات الهدوء', 'Quiet hours'),
+                        ),
+                        subtitle: Text(
+                          appText(
+                            context,
+                            'تنبيهات الصلاة صامتة، وتذكيرات الذِّكر تتوقف خلالها.',
+                            'Prayer alerts are silent and dhikr reminders pause.',
+                          ),
+                        ),
+                        value: settings.quietHoursEnabled,
+                        onChanged: (value) =>
+                            cubit.updateQuietHours(enabled: value),
+                      ),
+                      if (settings.quietHoursEnabled)
+                        for (final (isStart, hour) in [
+                          (true, settings.quietHoursStart),
+                          (false, settings.quietHoursEnd),
+                        ])
+                          settingsChoice<int>(
+                            context,
+                            icon: Icons.bedtime_outlined,
+                            title: isStart
+                                ? appText(context, 'تبدأ', 'Starts')
+                                : appText(context, 'تنتهي', 'Ends'),
+                            current: hour,
+                            values: List.generate(24, (hour) => hour),
+                            label: (hour) => TimeOfDay(
+                              hour: hour,
+                              minute: 0,
+                            ).format(context),
+                            onSelected: (hour) => cubit.updateQuietHours(
+                              start: isStart ? hour : null,
+                              end: isStart ? null : hour,
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -573,51 +481,28 @@ class _NotificationSettingsScreenState
     );
   }
 
-  Widget _buildInfoCard(bool isDark) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.info.withOpacity(0.3),
+  Widget _reminder(String key, int defaultHour, String title) {
+    final preference = '${key}_adhkar_reminder';
+    final enabled = _prefs.getBool(preference) ?? false;
+    final time = TimeOfDay(
+      hour: _prefs.getInt('${key}_reminder_hour') ?? defaultHour,
+      minute: _prefs.getInt('${key}_reminder_minute') ?? 0,
+    );
+    return Column(
+      children: [
+        SwitchListTile.adaptive(
+          title: Text(title),
+          value: enabled,
+          onChanged: (value) => _store(preference, value),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: AppColors.info,
-            size: 24.sp,
+        if (enabled)
+          ListTile(
+            leading: const Icon(Icons.schedule_outlined),
+            title: Text(appText(context, 'موعد التذكير', 'Reminder time')),
+            trailing: Text(time.format(context)),
+            onTap: () => _time(key, time),
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ملاحظة',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.info,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'تأكد من السماح للتطبيق بإرسال الإشعارات في إعدادات جهازك. قد تختلف دقة التذكيرات حسب نظام التشغيل وإعدادات توفير الطاقة.',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: isDark ? Colors.white70 : AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

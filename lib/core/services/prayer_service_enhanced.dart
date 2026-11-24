@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:adhan/adhan.dart' as adhan;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
 import '../settings/settings_repository.dart' as settings_repo;
 import 'location_service.dart';
 
@@ -84,11 +86,22 @@ class DailyPrayerTimes {
     required this.longitude,
   });
 
-  List<PrayerTimeData> get allPrayers =>
-      [fajr, sunrise, dhuhr, asr, maghrib, isha];
+  List<PrayerTimeData> get allPrayers => [
+    fajr,
+    sunrise,
+    dhuhr,
+    asr,
+    maghrib,
+    isha,
+  ];
 
-  List<PrayerTimeData> get obligatoryPrayers =>
-      [fajr, dhuhr, asr, maghrib, isha];
+  List<PrayerTimeData> get obligatoryPrayers => [
+    fajr,
+    dhuhr,
+    asr,
+    maghrib,
+    isha,
+  ];
 
   PrayerTimeData? get nextPrayer {
     return allPrayers.where((p) => p.isNext).firstOrNull;
@@ -129,6 +142,17 @@ class DailyPrayerTimes {
   }
 }
 
+typedef _PrayerDayKey = ({
+  DateTime date,
+  String zone,
+  double latitude,
+  double longitude,
+  String city,
+  String country,
+  adhan.CalculationMethod method,
+  adhan.Madhab madhab,
+});
+
 /// خدمة أوقات الصلاة المحسّنة
 /// Enhanced Prayer Times Service - Integrates with Settings
 class PrayerServiceEnhanced {
@@ -142,17 +166,23 @@ class PrayerServiceEnhanced {
   settings_repo.SettingsRepository? _settingsRepository;
   StreamSubscription<settings_repo.AppSettings>? _settingsSubscription;
 
-  // Cached values
+  // Keep enough days for both the widget snapshot and the notification queue.
+  static const _cachedDayLimit = 64;
+  final _cachedDays = <_PrayerDayKey, DailyPrayerTimes>{};
   DailyPrayerTimes? _cachedTimes;
-  DateTime? _cacheDate;
 
   // Stream controllers
-  final _prayerTimesController = StreamController<DailyPrayerTimes>.broadcast();
+  final _prayerTimesController =
+      StreamController<DailyPrayerTimes?>.broadcast();
   final _nextPrayerController = StreamController<PrayerTimeData?>.broadcast();
+
+  /// الأوقات المخزنة مؤقتاً
+  /// Cached prayer times
+  DailyPrayerTimes? get cachedTimes => _cachedTimes;
 
   /// تيار أوقات الصلاة
   /// Prayer times stream
-  Stream<DailyPrayerTimes> get prayerTimesStream =>
+  Stream<DailyPrayerTimes?> get prayerTimesStream =>
       _prayerTimesController.stream;
 
   /// تيار الصلاة التالية
@@ -161,15 +191,17 @@ class PrayerServiceEnhanced {
 
   /// تهيئة الخدمة
   /// Initialize the service
-  Future<void> initialize(
-      {settings_repo.SettingsRepository? settingsRepository}) async {
+  Future<void> initialize({
+    settings_repo.SettingsRepository? settingsRepository,
+  }) async {
     _settingsRepository = settingsRepository;
     await _locationService.initialize();
 
     // Listen to settings changes
     if (_settingsRepository != null) {
-      _settingsSubscription =
-          _settingsRepository!.settingsStream.listen((settings) {
+      _settingsSubscription = _settingsRepository!.settingsStream.listen((
+        settings,
+      ) {
         // Recompute prayer times when settings change
         _invalidateCache();
         _notifyPrayerTimesChanged();
@@ -177,7 +209,10 @@ class PrayerServiceEnhanced {
     }
 
     // Start periodic updates
-    _startPeriodicUpdates();
+    if (_prayerTimesController.hasListener ||
+        _nextPrayerController.hasListener) {
+      _startPeriodicUpdates();
+    }
   }
 
   /// ربط مستودع الإعدادات
@@ -193,9 +228,53 @@ class PrayerServiceEnhanced {
 
   /// إبطال الذاكرة المؤقتة
   /// Invalidate cache
+  void refreshLocation() {
+    _invalidateCache();
+    unawaited(_notifyPrayerTimesChanged());
+  }
+
+  Future<void>? _activeAutoLocationRequest;
+
+  Future<bool> refreshDeviceTimeZone() async {
+    try {
+      final deviceZone = await FlutterTimezone.getLocalTimezone().timeout(
+        const Duration(seconds: 2),
+      );
+      if (deviceZone.identifier == tz.local.name) return false;
+      tz.setLocalLocation(tz.getLocation(deviceZone.identifier));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// طلب تحديث الموقع التلقائي من الـ GPS بمجرد فتح التطبيق (محمي بقفل منع التزامن)
+  Future<void> requestAutoLocation({bool promptForPermission = true}) async {
+    if (useManualLocation) return;
+    if (_activeAutoLocationRequest != null) {
+      return _activeAutoLocationRequest!;
+    }
+    return _activeAutoLocationRequest = () async {
+      try {
+        final result = await _locationService.getCurrentLocation(
+          promptForPermission: promptForPermission,
+        );
+        if (result.isSuccess) {
+          refreshLocation();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Auto location error: $e');
+        }
+      } finally {
+        _activeAutoLocationRequest = null;
+      }
+    }();
+  }
+
   void _invalidateCache() {
+    _cachedDays.clear();
     _cachedTimes = null;
-    _cacheDate = null;
   }
 
   /// إشعار المستمعين بتغير أوقات الصلاة
@@ -204,7 +283,7 @@ class PrayerServiceEnhanced {
     try {
       final times = await getTodayPrayerTimes();
       _prayerTimesController.add(times);
-      _nextPrayerController.add(times.nextPrayer);
+      _nextPrayerController.add(await _nextFrom(times));
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error notifying prayer times: $e');
@@ -227,7 +306,7 @@ class PrayerServiceEnhanced {
     if (_settingsRepository != null) {
       return _settingsRepository!.currentSettings.calculationMethod;
     }
-    return settings_repo.PrayerCalculationMethod.ummAlQura;
+    return settings_repo.PrayerCalculationMethod.automatic;
   }
 
   /// الحصول على المذهب الحالي
@@ -244,14 +323,16 @@ class PrayerServiceEnhanced {
   bool get useManualLocation {
     if (_settingsRepository != null) {
       return !_settingsRepository!
-          .currentSettings.locationSettings.useAutoLocation;
+          .currentSettings
+          .locationSettings
+          .useAutoLocation;
     }
     return false;
   }
 
   /// تحويل طريقة الحساب إلى معلمات adhan
   /// Convert calculation method to adhan parameters
-  adhan.CalculationMethod _getAdhanMethod() {
+  adhan.CalculationMethod _getAdhanMethod(String country, String zone) {
     switch (calculationMethod) {
       case settings_repo.PrayerCalculationMethod.muslimWorldLeague:
         return adhan.CalculationMethod.muslim_world_league;
@@ -273,6 +354,21 @@ class PrayerServiceEnhanced {
         return adhan.CalculationMethod.singapore;
       case settings_repo.PrayerCalculationMethod.turkey:
         return adhan.CalculationMethod.turkey;
+      case settings_repo.PrayerCalculationMethod.automatic:
+        return switch ((country, zone)) {
+          ('EG', _) || (_, 'Africa/Cairo') => adhan.CalculationMethod.egyptian,
+          ('SA', _) ||
+          (_, 'Asia/Riyadh') => adhan.CalculationMethod.umm_al_qura,
+          ('AE', _) || (_, 'Asia/Dubai') => adhan.CalculationMethod.dubai,
+          ('KW', _) || (_, 'Asia/Kuwait') => adhan.CalculationMethod.kuwait,
+          ('QA', _) || (_, 'Asia/Qatar') => adhan.CalculationMethod.qatar,
+          ('TR', _) || (_, 'Europe/Istanbul') => adhan.CalculationMethod.turkey,
+          ('PK', _) || (_, 'Asia/Karachi') => adhan.CalculationMethod.karachi,
+          ('SG', _) ||
+          (_, 'Asia/Singapore') => adhan.CalculationMethod.singapore,
+          ('US' || 'CA', _) => adhan.CalculationMethod.north_america,
+          _ => adhan.CalculationMethod.muslim_world_league,
+        };
     }
   }
 
@@ -289,90 +385,169 @@ class PrayerServiceEnhanced {
 
   /// الحصول على أوقات الصلاة لليوم
   /// Get prayer times for today
-  Future<DailyPrayerTimes> getTodayPrayerTimes() async {
-    return getPrayerTimes(DateTime.now());
+  static const _cityZones = {
+    'SA': 'Asia/Riyadh',
+    'EG': 'Africa/Cairo',
+    'AE': 'Asia/Dubai',
+    'QA': 'Asia/Qatar',
+    'KW': 'Asia/Kuwait',
+    'JO': 'Asia/Amman',
+    'LB': 'Asia/Beirut',
+    'SY': 'Asia/Damascus',
+    'IQ': 'Asia/Baghdad',
+    'TR': 'Europe/Istanbul',
+    'MA': 'Africa/Casablanca',
+    'DZ': 'Africa/Algiers',
+    'TN': 'Africa/Tunis',
+    'LY': 'Africa/Tripoli',
+    'SD': 'Africa/Khartoum',
+    'ID': 'Asia/Jakarta',
+    'MY': 'Asia/Kuala_Lumpur',
+    'GB': 'Europe/London',
+    'FR': 'Europe/Paris',
+    'US': 'America/New_York',
+    'CA': 'America/Toronto',
+  };
+
+  tz.Location get locationTimeZone {
+    if (!useManualLocation) return tz.local;
+    final settings = _settingsRepository!.currentSettings.locationSettings;
+    final selected =
+        _cityZones[settings.countryName] ??
+        _cityZones[popularCities
+            .where((city) => city.nameArabic == settings.cityName)
+            .firstOrNull
+            ?.country];
+    return selected == null ? tz.local : tz.getLocation(selected);
   }
+
+  Future<DailyPrayerTimes?> getTodayPrayerTimes() =>
+      getPrayerTimes(tz.TZDateTime.now(locationTimeZone));
 
   /// الحصول على أوقات الصلاة لتاريخ معين
   /// Get prayer times for a specific date
-  Future<DailyPrayerTimes> getPrayerTimes(DateTime date) async {
-    // Check cache
-    final today = DateTime(date.year, date.month, date.day);
-    final cacheToday = _cacheDate != null
-        ? DateTime(_cacheDate!.year, _cacheDate!.month, _cacheDate!.day)
-        : null;
+  Future<DailyPrayerTimes?> getPrayerTimes(DateTime date) async {
+    final zone = locationTimeZone;
+    final settings = _settingsRepository?.currentSettings;
+    final manual = settings?.locationSettings;
+    final double latitude;
+    final double longitude;
+    final String cityName;
+    final String countryName;
 
-    if (_cachedTimes != null && cacheToday == today) {
-      return _updateNextPrayer(_cachedTimes!);
+    if (manual != null && !manual.useAutoLocation) {
+      final lat = manual.manualLatitude;
+      final lng = manual.manualLongitude;
+      if (lat == null || lng == null) return null;
+      latitude = lat;
+      longitude = lng;
+      cityName = manual.cityName ?? '';
+      countryName = manual.countryName ?? '';
+    } else {
+      final location = _locationService.getLastKnownLocation();
+      if (location != null &&
+          location.latitude != null &&
+          location.longitude != null) {
+        latitude = location.latitude!;
+        longitude = location.longitude!;
+        cityName = location.cityName ?? '';
+        countryName = location.countryName ?? '';
+      } else {
+        // Fallback default city (Cairo) so the app and native widgets always have active prayer times
+        latitude = 30.0444;
+        longitude = 31.2357;
+        cityName = 'القاهرة';
+        countryName = 'EG';
+      }
+    }
+
+    final key = (
+      date: DateTime(date.year, date.month, date.day),
+      zone: zone.name,
+      latitude: latitude,
+      longitude: longitude,
+      city: cityName,
+      country: countryName,
+      method: _getAdhanMethod(countryName, zone.name),
+      madhab: _getAdhanMadhab(),
+    );
+    if (_cachedDays[key] case final cached?) {
+      _cachedTimes = cached;
+      return _updateNextPrayer(cached);
     }
 
     try {
-      // Get location
-      double latitude;
-      double longitude;
-      String cityName;
-      String countryName;
-
-      if (useManualLocation && _settingsRepository != null) {
-        final locSettings =
-            _settingsRepository!.currentSettings.locationSettings;
-        latitude = locSettings.manualLatitude ?? 21.4225;
-        longitude = locSettings.manualLongitude ?? 39.8262;
-        cityName = locSettings.cityName ?? 'مكة المكرمة';
-        countryName = locSettings.countryName ?? 'المملكة العربية السعودية';
-      } else {
-        final locationResult = await _locationService.getCurrentLocation();
-        if (locationResult.isSuccess) {
-          latitude = locationResult.latitude!;
-          longitude = locationResult.longitude!;
-          cityName = locationResult.cityName ?? 'موقعك الحالي';
-          countryName = locationResult.countryName ?? '';
-        } else {
-          // Fallback to Makkah
-          latitude = 21.4225;
-          longitude = 39.8262;
-          cityName = 'مكة المكرمة';
-          countryName = 'المملكة العربية السعودية';
-        }
+      final coordinates = adhan.Coordinates(
+        latitude,
+        longitude,
+        validate: true,
+      );
+      final params = key.method.getParameters();
+      params.madhab = key.madhab;
+      if (latitude.abs() > 48) {
+        params.highLatitudeRule = adhan.HighLatitudeRule.seventh_of_the_night;
       }
 
-      // Calculate prayer times using adhan
-      final coordinates = adhan.Coordinates(latitude, longitude);
-      final params = _getAdhanMethod().getParameters();
-      params.madhab = _getAdhanMadhab();
+      final dateComponents = adhan.DateComponents(
+        date.year,
+        date.month,
+        date.day,
+      );
+      final prayerTimes = adhan.PrayerTimes(
+        coordinates,
+        dateComponents,
+        params,
+      );
 
-      final dateComponents =
-          adhan.DateComponents(date.year, date.month, date.day);
-      final prayerTimes =
-          adhan.PrayerTimes(coordinates, dateComponents, params);
-
-      final now = DateTime.now();
-
-      // Determine next prayer
-      adhan.Prayer? nextPrayerEnum;
-      if (date.day == now.day &&
-          date.month == now.month &&
-          date.year == now.year) {
-        nextPrayerEnum = prayerTimes.nextPrayer();
-      }
+      final now = tz.TZDateTime.now(zone);
 
       // Calculate Hijri date
       final hijriDate = _calculateHijriDate(date);
       final gregorianDate = DateFormat('EEEE, d MMMM yyyy', 'ar').format(date);
 
       final result = DailyPrayerTimes(
-        fajr: _createPrayerTimeData('Fajr', 'الفجر', prayerTimes.fajr, now,
-            nextPrayerEnum == adhan.Prayer.fajr),
-        sunrise: _createPrayerTimeData('Sunrise', 'الشروق', prayerTimes.sunrise,
-            now, nextPrayerEnum == adhan.Prayer.sunrise),
-        dhuhr: _createPrayerTimeData('Dhuhr', 'الظهر', prayerTimes.dhuhr, now,
-            nextPrayerEnum == adhan.Prayer.dhuhr),
-        asr: _createPrayerTimeData('Asr', 'العصر', prayerTimes.asr, now,
-            nextPrayerEnum == adhan.Prayer.asr),
-        maghrib: _createPrayerTimeData('Maghrib', 'المغرب', prayerTimes.maghrib,
-            now, nextPrayerEnum == adhan.Prayer.maghrib),
-        isha: _createPrayerTimeData('Isha', 'العشاء', prayerTimes.isha, now,
-            nextPrayerEnum == adhan.Prayer.isha),
+        fajr: _createPrayerTimeData(
+          'Fajr',
+          'الفجر',
+          tz.TZDateTime.from(prayerTimes.fajr, zone),
+          now,
+          false,
+        ),
+        sunrise: _createPrayerTimeData(
+          'Sunrise',
+          'الشروق',
+          tz.TZDateTime.from(prayerTimes.sunrise, zone),
+          now,
+          false,
+        ),
+        dhuhr: _createPrayerTimeData(
+          'Dhuhr',
+          'الظهر',
+          tz.TZDateTime.from(prayerTimes.dhuhr, zone),
+          now,
+          false,
+        ),
+        asr: _createPrayerTimeData(
+          'Asr',
+          'العصر',
+          tz.TZDateTime.from(prayerTimes.asr, zone),
+          now,
+          false,
+        ),
+        maghrib: _createPrayerTimeData(
+          'Maghrib',
+          'المغرب',
+          tz.TZDateTime.from(prayerTimes.maghrib, zone),
+          now,
+          false,
+        ),
+        isha: _createPrayerTimeData(
+          'Isha',
+          'العشاء',
+          tz.TZDateTime.from(prayerTimes.isha, zone),
+          now,
+          false,
+        ),
         date: date,
         hijriDate: hijriDate,
         gregorianDate: gregorianDate,
@@ -382,14 +557,16 @@ class PrayerServiceEnhanced {
         longitude: longitude,
       );
 
-      // Cache result
+      if (_cachedDays.length >= _cachedDayLimit) {
+        _cachedDays.remove(_cachedDays.keys.first);
+      }
+      _cachedDays[key] = result;
       _cachedTimes = result;
-      _cacheDate = date;
 
-      return result;
+      return _updateNextPrayer(result);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error calculating prayer times: $e');
+        debugPrint('Prayer time calculation failed: ${e.runtimeType}');
       }
       rethrow;
     }
@@ -397,22 +574,25 @@ class PrayerServiceEnhanced {
 
   /// حساب أوقات الصلاة لتاريخ معين
   /// Compute prayer times for a specific date
-  Future<DailyPrayerTimes> computeForDate(DateTime date) async {
+  Future<DailyPrayerTimes?> computeForDate(DateTime date) async {
     return getPrayerTimes(date);
   }
 
   /// الحصول على وقت الصلاة التالية
   /// Get next prayer time
-  Future<DateTime?> nextPrayerTime() async {
-    final times = await getTodayPrayerTimes();
-    return times.nextPrayer?.time;
-  }
+  Future<DateTime?> nextPrayerTime() async => (await nextPrayer())?.time;
 
-  /// الحصول على الصلاة التالية
-  /// Get next prayer
-  Future<PrayerTimeData?> nextPrayer() async {
-    final times = await getTodayPrayerTimes();
-    return times.nextPrayer;
+  Future<PrayerTimeData?> nextPrayer() async =>
+      _nextFrom(await getTodayPrayerTimes());
+
+  Future<PrayerTimeData?> _nextFrom(DailyPrayerTimes? times) async {
+    if (times == null) return null;
+    final current = times.nextPrayer;
+    if (current != null) return current;
+    final date = times.date;
+    final tomorrow = DateTime(date.year, date.month, date.day + 1);
+    final fajr = (await getPrayerTimes(tomorrow))?.fajr;
+    return fajr?.copyWith(isNext: true);
   }
 
   /// تحديث الصلاة التالية في البيانات المؤقتة
@@ -420,52 +600,48 @@ class PrayerServiceEnhanced {
   DailyPrayerTimes _updateNextPrayer(DailyPrayerTimes times) {
     final now = DateTime.now();
 
-    // Find next prayer
-    PrayerTimeData? nextPrayerData;
-    for (final prayer in times.allPrayers) {
-      if (prayer.time.isAfter(now)) {
-        nextPrayerData = prayer;
-        break;
-      }
-    }
-
-    if (nextPrayerData == null) {
-      // All prayers passed, next is tomorrow's Fajr
-      return times;
-    }
+    final nextPrayerData = times.obligatoryPrayers
+        .where((prayer) => prayer.time.isAfter(now))
+        .firstOrNull;
 
     // Update isNext flag
     return DailyPrayerTimes(
       fajr: times.fajr.copyWith(
-          isNext: nextPrayerData.name == 'Fajr',
-          timeUntil: times.fajr.time.isAfter(now)
-              ? times.fajr.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Fajr',
+        timeUntil: times.fajr.time.isAfter(now)
+            ? times.fajr.time.difference(now)
+            : null,
+      ),
       sunrise: times.sunrise.copyWith(
-          isNext: nextPrayerData.name == 'Sunrise',
-          timeUntil: times.sunrise.time.isAfter(now)
-              ? times.sunrise.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Sunrise',
+        timeUntil: times.sunrise.time.isAfter(now)
+            ? times.sunrise.time.difference(now)
+            : null,
+      ),
       dhuhr: times.dhuhr.copyWith(
-          isNext: nextPrayerData.name == 'Dhuhr',
-          timeUntil: times.dhuhr.time.isAfter(now)
-              ? times.dhuhr.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Dhuhr',
+        timeUntil: times.dhuhr.time.isAfter(now)
+            ? times.dhuhr.time.difference(now)
+            : null,
+      ),
       asr: times.asr.copyWith(
-          isNext: nextPrayerData.name == 'Asr',
-          timeUntil: times.asr.time.isAfter(now)
-              ? times.asr.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Asr',
+        timeUntil: times.asr.time.isAfter(now)
+            ? times.asr.time.difference(now)
+            : null,
+      ),
       maghrib: times.maghrib.copyWith(
-          isNext: nextPrayerData.name == 'Maghrib',
-          timeUntil: times.maghrib.time.isAfter(now)
-              ? times.maghrib.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Maghrib',
+        timeUntil: times.maghrib.time.isAfter(now)
+            ? times.maghrib.time.difference(now)
+            : null,
+      ),
       isha: times.isha.copyWith(
-          isNext: nextPrayerData.name == 'Isha',
-          timeUntil: times.isha.time.isAfter(now)
-              ? times.isha.time.difference(now)
-              : null),
+        isNext: nextPrayerData?.name == 'Isha',
+        timeUntil: times.isha.time.isAfter(now)
+            ? times.isha.time.difference(now)
+            : null,
+      ),
       date: times.date,
       hijriDate: times.hijriDate,
       gregorianDate: times.gregorianDate,
@@ -518,7 +694,7 @@ class PrayerServiceEnhanced {
         'رمضان',
         'شوال',
         'ذو القعدة',
-        'ذو الحجة'
+        'ذو الحجة',
       ];
 
       final jd = _gregorianToJulian(date.year, date.month, date.day);
@@ -548,9 +724,11 @@ class PrayerServiceEnhanced {
     final l = jd - 1948440 + 10632;
     final n = ((l - 1) / 10631).floor();
     final l2 = l - 10631 * n + 354;
-    final j = ((10985 - l2) / 5316).floor() * ((50 * l2) / 17719).floor() +
+    final j =
+        ((10985 - l2) / 5316).floor() * ((50 * l2) / 17719).floor() +
         (l2 / 5670).floor() * ((43 * l2) / 15238).floor();
-    final l3 = l2 -
+    final l3 =
+        l2 -
         ((30 - j) / 15).floor() * ((17719 * j) / 50).floor() -
         (j / 16).floor() * ((15238 * j) / 43).floor() +
         29;
@@ -588,8 +766,7 @@ class PrayerServiceEnhanced {
   /// Countdown stream to next prayer
   Stream<Duration?> get countdownStream async* {
     while (true) {
-      final times = await getTodayPrayerTimes();
-      final next = times.nextPrayer;
+      final next = await nextPrayer();
       if (next != null && next.timeUntil != null) {
         yield next.timeUntil;
       } else {

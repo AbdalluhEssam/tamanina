@@ -153,7 +153,7 @@ class _TypingAnimationWidgetState extends State<TypingAnimationWidget>
                   text: '│',
                   style: TextStyle(
                     color: (widget.cursorColor ?? AppColors.primaryGreen)
-                        .withOpacity(_cursorAnimation.value),
+                        .withValues(alpha: _cursorAnimation.value),
                     fontSize: (widget.textStyle?.fontSize ?? 15.sp) * 1.1,
                     fontWeight: FontWeight.w300,
                   ),

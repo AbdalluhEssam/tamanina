@@ -28,16 +28,16 @@ class ChatbotCubit extends Cubit<ChatbotState> {
     required DeleteChatSessionUseCase deleteChatSessionUseCase,
     required ClearChatHistoryUseCase clearChatHistoryUseCase,
     required SearchMessagesUseCase searchMessagesUseCase,
-  })  : _sendMessageUseCase = sendMessageUseCase,
-        _sendStreamingMessageUseCase = sendStreamingMessageUseCase,
-        _getChatHistoryUseCase = getChatHistoryUseCase,
-        _getChatSessionUseCase = getChatSessionUseCase,
-        _createChatSessionUseCase = createChatSessionUseCase,
-        _saveChatSessionUseCase = saveChatSessionUseCase,
-        _deleteChatSessionUseCase = deleteChatSessionUseCase,
-        _clearChatHistoryUseCase = clearChatHistoryUseCase,
-        _searchMessagesUseCase = searchMessagesUseCase,
-        super(ChatbotInitial());
+  }) : _sendMessageUseCase = sendMessageUseCase,
+       _sendStreamingMessageUseCase = sendStreamingMessageUseCase,
+       _getChatHistoryUseCase = getChatHistoryUseCase,
+       _getChatSessionUseCase = getChatSessionUseCase,
+       _createChatSessionUseCase = createChatSessionUseCase,
+       _saveChatSessionUseCase = saveChatSessionUseCase,
+       _deleteChatSessionUseCase = deleteChatSessionUseCase,
+       _clearChatHistoryUseCase = clearChatHistoryUseCase,
+       _searchMessagesUseCase = searchMessagesUseCase,
+       super(ChatbotInitial());
 
   String? _currentUserId;
   ChatSession? _currentSession;
@@ -54,6 +54,7 @@ class ChatbotCubit extends Cubit<ChatbotState> {
 
       // Load chat history
       _chatHistory = await _getChatHistoryUseCase(userId);
+      if (isClosed) return;
 
       // If no active session, create a new one
       if (_chatHistory.isEmpty) {
@@ -61,12 +62,15 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       } else {
         // Load the most recent session
         _currentSession = _chatHistory.first;
-        emit(ChatbotLoaded(
-          currentSession: _currentSession!,
-          chatHistory: _chatHistory,
-        ));
+        emit(
+          ChatbotLoaded(
+            currentSession: _currentSession!,
+            chatHistory: _chatHistory,
+          ),
+        );
       }
     } catch (e) {
+      if (isClosed) return;
       emit(ChatbotError('فشل في تهيئة المساعد الذكي: ${e.toString()}'));
     }
   }
@@ -96,57 +100,68 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       String streamingText = '';
 
       _streamingSubscription?.cancel();
-      _streamingSubscription = _sendStreamingMessageUseCase(
-        sessionId: _currentSession!.id,
-        userMessage: messageText.trim(),
-        userId: _currentUserId!,
-      ).listen(
-        (chunk) {
-          // chunk from repository is cumulative; use it directly to avoid duplication
-          streamingText = chunk;
-          _lastStreamingText = streamingText;
-          emit(ChatbotStreamingResponse(
-            currentSession: _currentSession!,
-            currentStreamText: streamingText,
-            isComplete: false,
-            chatHistory: _chatHistory,
-          ));
-        },
-        onDone: () async {
-          // Mark complete but keep streaming UI until typing animation finishes
-          _awaitingFinalize = true;
-          emit(ChatbotStreamingResponse(
-            currentSession: _currentSession!,
-            currentStreamText: streamingText,
-            isComplete: true,
-            chatHistory: _chatHistory,
-          ));
-        },
-        onError: (error) {
-          final message = error?.toString() ?? 'فشل في إرسال الرسالة.';
-          emit(ChatbotLoaded(
-            currentSession: _currentSession!,
-            chatHistory: _chatHistory,
-            isTyping: false,
-            error: message,
-          ));
-        },
-      );
+      _streamingSubscription =
+          _sendStreamingMessageUseCase(
+            sessionId: _currentSession!.id,
+            userMessage: messageText.trim(),
+            userId: _currentUserId!,
+          ).listen(
+            (chunk) {
+              // chunk from repository is cumulative; use it directly to avoid duplication
+              streamingText = chunk;
+              _lastStreamingText = streamingText;
+              emit(
+                ChatbotStreamingResponse(
+                  currentSession: _currentSession!,
+                  currentStreamText: streamingText,
+                  isComplete: false,
+                  chatHistory: _chatHistory,
+                ),
+              );
+            },
+            onDone: () async {
+              // Mark complete but keep streaming UI until typing animation finishes
+              _awaitingFinalize = true;
+              emit(
+                ChatbotStreamingResponse(
+                  currentSession: _currentSession!,
+                  currentStreamText: streamingText,
+                  isComplete: true,
+                  chatHistory: _chatHistory,
+                ),
+              );
+            },
+            onError: (error) {
+              final message = error?.toString() ?? 'فشل في إرسال الرسالة.';
+              emit(
+                ChatbotLoaded(
+                  currentSession: _currentSession!,
+                  chatHistory: _chatHistory,
+                  isTyping: false,
+                  error: message,
+                ),
+              );
+            },
+          );
 
       // Show initial streaming state with user message
-      emit(ChatbotStreamingResponse(
-        currentSession: _currentSession!,
-        currentStreamText: '',
-        isComplete: false,
-        chatHistory: _chatHistory,
-      ));
+      emit(
+        ChatbotStreamingResponse(
+          currentSession: _currentSession!,
+          currentStreamText: '',
+          isComplete: false,
+          chatHistory: _chatHistory,
+        ),
+      );
     } catch (e) {
-      emit(ChatbotLoaded(
-        currentSession: _currentSession!,
-        chatHistory: _chatHistory,
-        isTyping: false,
-        error: 'فشل في إرسال الرسالة: ${e.toString()}',
-      ));
+      emit(
+        ChatbotLoaded(
+          currentSession: _currentSession!,
+          chatHistory: _chatHistory,
+          isTyping: false,
+          error: 'فشل في إرسال الرسالة: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -170,11 +185,13 @@ class ChatbotCubit extends Cubit<ChatbotState> {
     _awaitingFinalize = false;
     _lastStreamingText = '';
 
-    emit(ChatbotLoaded(
-      currentSession: _currentSession!,
-      chatHistory: _chatHistory,
-      isTyping: false,
-    ));
+    emit(
+      ChatbotLoaded(
+        currentSession: _currentSession!,
+        chatHistory: _chatHistory,
+        isTyping: false,
+      ),
+    );
   }
 
   /// Create a new chat session
@@ -188,10 +205,12 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       final session = await _getChatSessionUseCase(sessionId);
       if (session != null) {
         _currentSession = session;
-        emit(ChatbotLoaded(
-          currentSession: _currentSession!,
-          chatHistory: _chatHistory,
-        ));
+        emit(
+          ChatbotLoaded(
+            currentSession: _currentSession!,
+            chatHistory: _chatHistory,
+          ),
+        );
       }
     } catch (e) {
       emit(ChatbotError('فشل في تحميل الجلسة: ${e.toString()}'));
@@ -215,10 +234,12 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       }
 
       if (_currentSession != null) {
-        emit(ChatbotLoaded(
-          currentSession: _currentSession!,
-          chatHistory: _chatHistory,
-        ));
+        emit(
+          ChatbotLoaded(
+            currentSession: _currentSession!,
+            chatHistory: _chatHistory,
+          ),
+        );
       }
     } catch (e) {
       emit(ChatbotError('فشل في حذف الجلسة: ${e.toString()}'));
@@ -284,11 +305,13 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       );
       _currentSession = _currentSession!.addMessage(userMessage);
 
-      emit(ChatbotLoaded(
-        currentSession: _currentSession!,
-        chatHistory: _chatHistory,
-        isTyping: true,
-      ));
+      emit(
+        ChatbotLoaded(
+          currentSession: _currentSession!,
+          chatHistory: _chatHistory,
+          isTyping: true,
+        ),
+      );
 
       // Use non-streaming use case
       final aiMessage = await _sendMessageUseCase(
@@ -297,21 +320,27 @@ class ChatbotCubit extends Cubit<ChatbotState> {
         userId: _currentUserId!,
       );
 
+      if (isClosed) return;
       _currentSession = _currentSession!.addMessage(aiMessage);
       _updateChatHistory(_currentSession!);
 
-      emit(ChatbotLoaded(
-        currentSession: _currentSession!,
-        chatHistory: _chatHistory,
-        isTyping: false,
-      ));
+      emit(
+        ChatbotLoaded(
+          currentSession: _currentSession!,
+          chatHistory: _chatHistory,
+          isTyping: false,
+        ),
+      );
     } catch (e) {
-      emit(ChatbotLoaded(
-        currentSession: _currentSession!,
-        chatHistory: _chatHistory,
-        isTyping: false,
-        error: 'فشل في إرسال الرسالة: ${e.toString()}',
-      ));
+      if (isClosed) return;
+      emit(
+        ChatbotLoaded(
+          currentSession: _currentSession!,
+          chatHistory: _chatHistory,
+          isTyping: false,
+          error: 'فشل في إرسال الرسالة: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -324,13 +353,17 @@ class ChatbotCubit extends Cubit<ChatbotState> {
         userId: _currentUserId!,
       );
 
+      if (isClosed) return;
       _chatHistory.insert(0, _currentSession!);
 
-      emit(ChatbotLoaded(
-        currentSession: _currentSession!,
-        chatHistory: _chatHistory,
-      ));
+      emit(
+        ChatbotLoaded(
+          currentSession: _currentSession!,
+          chatHistory: _chatHistory,
+        ),
+      );
     } catch (e) {
+      if (isClosed) return;
       emit(ChatbotError('فشل في إنشاء جلسة جديدة: ${e.toString()}'));
     }
   }

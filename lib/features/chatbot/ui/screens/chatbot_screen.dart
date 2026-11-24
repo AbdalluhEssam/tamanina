@@ -1,753 +1,519 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/theme/app_typography.dart';
+
+import '../../../../core/config/api_config.dart';
+import '../../../../core/widgets/tamanina_ui.dart';
 import '../../data/model/chat_message.dart';
+import '../../data/services/local_assistant_model.dart';
 import '../cubit/chatbot_cubit.dart';
 import '../cubit/chatbot_state.dart';
-import '../widgets/chat_input_widget.dart';
-import '../widgets/chat_message_bubble.dart';
 
-/// Main chatbot screen with Islamic assistant interface
 class ChatbotScreen extends StatefulWidget {
-  final String? userId;
+  const ChatbotScreen({super.key, this.userId, this.localModel});
 
-  const ChatbotScreen({
-    super.key,
-    this.userId,
-  });
+  final String? userId;
+  final LocalAssistantModel? localModel;
 
   @override
   State<ChatbotScreen> createState() => _ChatbotScreenState();
 }
 
-class _ChatbotScreenState extends State<ChatbotScreen>
-    with TickerProviderStateMixin {
-  final ScrollController _scrollController = ScrollController();
-  late AnimationController _titleAnimationController;
-  late Animation<double> _titleFadeAnimation;
-  late Animation<Offset> _titleSlideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Initialize title animations
-    _titleAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _titleFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _titleAnimationController,
-      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-    ));
-
-    _titleSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, -0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _titleAnimationController,
-      curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
-    ));
-
-    // Start title animation
-    _titleAnimationController.forward();
-  }
+class _ChatbotScreenState extends State<ChatbotScreen> {
+  final _input = TextEditingController();
+  final _scroll = ScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
-    _titleAnimationController.dispose();
+    _input.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  void _send(String raw) {
+    final cubit = context.read<ChatbotCubit>();
+    final state = cubit.state;
+    final text = raw.trim();
+    if (text.isEmpty || state is! ChatbotLoaded || state.isTyping) return;
+    _input.clear();
+    cubit.sendMessage(text);
+  }
+
+  Future<void> _manageLocalModel(LocalAssistantModel model) async {
+    await model.check();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 520),
+      builder: (context) => ListenableBuilder(
+        listenable: model,
+        builder: (context, _) {
+          final status = model.status;
+          return SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    appText(
+                      context,
+                      'الذكاء الاصطناعي على الجهاز',
+                      'On-device AI',
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    status == LocalModelStatus.ready
+                        ? appText(
+                            context,
+                            'النموذج جاهز. الأسئلة المفتوحة تُعالَج على جهازك من غير اتصال.',
+                            'The model is ready. Open-ended questions run on your device without a connection.',
+                          )
+                        : appText(
+                            context,
+                            'نزّل النموذج مرة واحدة (491 ميجابايت) عشان تسأل من غير إنترنت.',
+                            'Download the model once (491 MB) to ask questions offline.',
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (status == LocalModelStatus.downloading) ...[
+                    LinearProgressIndicator(value: model.percent / 100),
+                    const SizedBox(height: 8),
+                    Text(
+                      model.percent == 100
+                          ? appText(
+                              context,
+                              'جارٍ التحقق من الملف',
+                              'Verifying the file',
+                            )
+                          : appText(
+                              context,
+                              'تم تنزيل ${model.percent}٪',
+                              '${model.percent}% downloaded',
+                            ),
+                    ),
+                    TextButton(
+                      onPressed: model.cancelDownload,
+                      child: Text(
+                        appText(context, 'إلغاء التنزيل', 'Cancel download'),
+                      ),
+                    ),
+                  ] else if (status == LocalModelStatus.ready)
+                    OutlinedButton(
+                      onPressed: model.remove,
+                      child: Text(
+                        appText(
+                          context,
+                          'إزالة النموذج من الجهاز',
+                          'Remove model from this device',
+                        ),
+                      ),
+                    )
+                  else ...[
+                    if (status == LocalModelStatus.failed)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          appText(
+                            context,
+                            'تعذّر إكمال العملية. جرّب مرة تانية.',
+                            'Could not complete the operation. Try again.',
+                          ),
+                        ),
+                      ),
+                    FilledButton.icon(
+                      onPressed: model.download,
+                      icon: const Icon(Icons.download_rounded),
+                      label: Text(
+                        appText(context, 'تنزيل النموذج', 'Download model'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _history() async {
+    final cubit = context.read<ChatbotCubit>();
+    var query = '';
+    final selection = await showModalBottomSheet<(String?, bool)>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) {
+          final term = query.trim().toLowerCase();
+          final sessions = cubit.chatHistory.where(
+            (session) => session.messages.any(
+              (message) => message.content.toLowerCase().contains(term),
+            ),
+          );
+          return FractionallySizedBox(
+            heightFactor: .75,
+            child: ContentFrame(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  ListTile(
+                    title: Text(
+                      appText(
+                        context,
+                        'المحادثات السابقة',
+                        'Past conversations',
+                      ),
+                    ),
+                    trailing: IconButton(
+                      tooltip: appText(
+                        context,
+                        'حذف سجل المحادثات',
+                        'Clear chat history',
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed:
+                          cubit.chatHistory.any(
+                            (session) => session.messages.isNotEmpty,
+                          )
+                          ? () => Navigator.pop(context, (null, true))
+                          : null,
+                    ),
+                  ),
+                  TextField(
+                    onChanged: (value) => update(() => query = value),
+                    decoration: InputDecoration(
+                      labelText: appText(
+                        context,
+                        'ابحث في المحادثات',
+                        'Search conversations',
+                      ),
+                      prefixIcon: const Icon(Icons.search),
+                    ),
+                  ),
+                  if (sessions.isEmpty)
+                    ListTile(
+                      title: Text(
+                        appText(
+                          context,
+                          'لا توجد محادثات مطابقة.',
+                          'No matching conversations.',
+                        ),
+                      ),
+                    ),
+                  for (final session in sessions)
+                    ListTile(
+                      title: Text(
+                        session.messages
+                            .firstWhere(
+                              (message) =>
+                                  message.content.toLowerCase().contains(term),
+                            )
+                            .content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => Navigator.pop(context, (session.id, false)),
+                      trailing: IconButton(
+                        tooltip: appText(
+                          context,
+                          'حذف المحادثة',
+                          'Delete conversation',
+                        ),
+                        onPressed: () =>
+                            Navigator.pop(context, (session.id, true)),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    if (!mounted || selection == null) return;
+    final (id, remove) = selection;
+    if (!remove && id != null) {
+      await cubit.switchToSession(id);
+      return;
+    }
+    final confirmed = await showAdaptiveDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog.adaptive(
+        title: Text(
+          id == null
+              ? appText(context, 'حذف المحادثات؟', 'Clear conversations?')
+              : appText(
+                  context,
+                  'حذف هذه المحادثة؟',
+                  'Delete this conversation?',
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(appText(context, 'إلغاء', 'Cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(appText(context, 'حذف', 'Delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (id == null) {
+      await cubit.clearHistory();
+    } else {
+      await cubit.deleteSession(id);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: BlocConsumer<ChatbotCubit, ChatbotState>(
-        listener: (context, state) {
-          if (state is ChatbotLoaded && state.error != null) {
-            _showErrorSnackBar(context, state.error!);
-            context.read<ChatbotCubit>().clearError();
+    final theme = Theme.of(context);
+    return BlocConsumer<ChatbotCubit, ChatbotState>(
+      listener: (context, state) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _scroll.hasClients) {
+            _scroll.jumpTo(_scroll.position.maxScrollExtent);
           }
-
-          // Auto scroll to bottom when new message arrives or during streaming
-          if ((state is ChatbotLoaded &&
-                  state.currentSession.messages.isNotEmpty) ||
-              (state is ChatbotStreamingResponse &&
-                  state.currentStreamText.isNotEmpty)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToBottom();
-            });
-          }
-        },
-        builder: (context, state) {
-          if (state is ChatbotInitial || state is ChatbotLoading) {
-            return _buildLoadingView();
-          } else if (state is ChatbotError) {
-            return _buildErrorView(context, state.message);
-          } else if (state is ChatbotStreamingResponse) {
-            return _buildStreamingChatView(context, state);
-          } else if (state is ChatbotLoaded) {
-            return _buildChatView(context, state);
-          }
-
-          return _buildLoadingView();
-        },
-      ),
-    );
-  }
-
-  /// Build app bar with Islamic styling
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: AppColors.primaryGreen,
-      foregroundColor: Colors.white,
-      title: AnimatedBuilder(
-        animation:
-            Listenable.merge([_titleFadeAnimation, _titleSlideAnimation]),
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _titleFadeAnimation,
-            child: SlideTransition(
-              position: _titleSlideAnimation,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32.w,
-                    height: 32.w,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.mosque_rounded,
-                      color: Colors.white,
-                      size: AppSizing.iconSM,
+        });
+      },
+      builder: (context, state) {
+        final cubit = context.read<ChatbotCubit>();
+        final session = cubit.currentSession;
+        final busy = state is ChatbotLoaded && state.isTyping;
+        final ready = session != null;
+        final messages =
+            session?.messages
+                .where((message) => message.type != MessageType.greeting)
+                .toList() ??
+            const <ChatMessage>[];
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              appText(context, 'مساعد طمأنينة', 'Tamanina assistant'),
+            ),
+            actions: [
+              if (widget.localModel case final model? when model.supported)
+                IconButton(
+                  tooltip: appText(
+                    context,
+                    'الذكاء الاصطناعي على الجهاز',
+                    'On-device AI',
+                  ),
+                  icon: Icon(
+                    platformIcon(
+                      context,
+                      Icons.smartphone_outlined,
+                      CupertinoIcons.device_phone_portrait,
                     ),
                   ),
-                  AppSpacing.horizontalSpaceSM,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'المساعد الإسلامي الذكي',
-                        style: AppTypography.h6Arabic.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'AI Islamic Assistant',
-                        style: AppTypography.captionEnglish.copyWith(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 11.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      actions: [
-        // More options menu
-        PopupMenuButton<String>(
-          icon: Icon(
-            Icons.more_vert_rounded,
-            color: Colors.white,
-          ),
-          color: Colors.white,
-          onSelected: (value) => _handleMenuAction(context, value),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'new_chat',
-              child: Row(
-                children: [
-                  Icon(Icons.add_comment_rounded,
-                      color: AppColors.primaryGreen),
-                  AppSpacing.horizontalSpaceSM,
-                  Text('محادثة جديدة', style: AppTypography.bodyMediumArabic),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'clear_history',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_sweep_rounded, color: AppColors.error),
-                  AppSpacing.horizontalSpaceSM,
-                  Text('مسح التاريخ', style: AppTypography.bodyMediumArabic),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-      systemOverlayStyle: Theme.of(context).appBarTheme.systemOverlayStyle,
-    );
-  }
-
-  /// Build loading view
-  Widget _buildLoadingView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: AppColors.primaryGreen,
-          ),
-          AppSpacing.verticalSpaceLG,
-          Text(
-            'جاري تهيئة المساعد...',
-            style: AppTypography.bodyLargeArabic.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build error view
-  Widget _buildErrorView(BuildContext context, String error) {
-    return Center(
-      child: Padding(
-        padding: AppSpacing.paddingLG,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64.w,
-              color: AppColors.error,
-            ),
-            AppSpacing.verticalSpaceLG,
-            Text(
-              'عذراً، حدث خطأ',
-              style: AppTypography.h5Arabic.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            AppSpacing.verticalSpaceSM,
-            Text(
-              error,
-              style: AppTypography.bodyMediumArabic.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            AppSpacing.verticalSpaceXL,
-            ElevatedButton.icon(
-              onPressed: () => context.read<ChatbotCubit>().initialize(
-                    widget.userId ?? 'anonymous_user',
-                  ),
-              icon: Icon(Icons.refresh_rounded),
-              label: Text('إعادة المحاولة'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.lg,
+                  onPressed: busy ? null : () => _manageLocalModel(model),
                 ),
+              IconButton(
+                tooltip: appText(context, 'سجل المحادثات', 'Chat history'),
+                icon: Icon(
+                  platformIcon(context, Icons.history, CupertinoIcons.clock),
+                ),
+                onPressed: ready && !busy ? _history : null,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build main chat view
-  Widget _buildChatView(BuildContext context, ChatbotLoaded state) {
-    final messages = state.currentSession.messages;
-
-    return Column(
-      children: [
-        // Messages list with improved scrolling
-        Expanded(
-          child: messages.isEmpty
-              ? _buildEmptyState(context)
-              : Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).scaffoldBackgroundColor,
-                        Theme.of(context)
-                            .scaffoldBackgroundColor
-                            .withOpacity(0.98),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    padding: EdgeInsets.only(
-                      top: 16.h,
-                      bottom: 20.h,
-                      left: 8.w,
-                      right: 8.w,
-                    ),
-                    itemCount: messages.length,
-                    reverse: false,
-                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      return ChatMessageBubble(
-                        key: ValueKey('msg_${message.id}'),
-                        message: message,
-                        isStreaming: false,
-                        onLongPress: () {
-                          // Handle message long press if needed
-                        },
-                      );
-                    },
+              IconButton(
+                tooltip: appText(context, 'محادثة جديدة', 'New conversation'),
+                icon: Icon(
+                  platformIcon(
+                    context,
+                    Icons.add_comment_outlined,
+                    CupertinoIcons.square_pencil,
                   ),
                 ),
-        ),
-
-        // Chat input with better design
-        ChatInputWidget(
-          onSendMessage: (message) {
-            context.read<ChatbotCubit>().sendStreamingMessage(message);
-          },
-          isEnabled: !state.isTyping,
-        ),
-      ],
-    );
-  }
-
-  /// Build streaming chat view with real-time typing effect
-  Widget _buildStreamingChatView(
-      BuildContext context, ChatbotStreamingResponse state) {
-    final messages = List<ChatMessage>.from(state.currentSession.messages);
-
-    // Add a temporary streaming message if we have streaming text
-    if (state.currentStreamText.isNotEmpty) {
-      final streamingMessage = ChatMessage.assistant(
-        id: 'streaming_temp',
-        content: state.currentStreamText,
-        type: MessageType.text,
-      );
-      messages.add(streamingMessage);
-    }
-
-    return Column(
-      children: [
-        // Messages list with streaming support
-        Expanded(
-          child: messages.isEmpty
-              ? _buildEmptyState(context)
-              : Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).scaffoldBackgroundColor,
-                        Theme.of(context)
-                            .scaffoldBackgroundColor
-                            .withOpacity(0.98),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    padding: EdgeInsets.only(
-                      top: 16.h,
-                      bottom: 20.h,
-                      left: 8.w,
-                      right: 8.w,
-                    ),
-                    itemCount: messages.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 8.h),
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final isStreaming = message.id == 'streaming_temp';
-
-                      return ChatMessageBubble(
-                        key: ValueKey('msg_${message.id}'),
-                        message: message,
-                        isStreaming: isStreaming,
-                        onTypingComplete: isStreaming && state.isComplete
-                            ? () =>
-                                context.read<ChatbotCubit>().finalizeStreaming()
-                            : null,
-                        onLongPress: () {
-                          // Handle message long press if needed
-                        },
-                      );
-                    },
-                  ),
-                ),
-        ),
-
-        // Chat input (disabled during streaming)
-        ChatInputWidget(
-          onSendMessage: (message) {
-            context.read<ChatbotCubit>().sendStreamingMessage(message);
-          },
-          isEnabled: false, // Disabled during streaming
-        ),
-      ],
-    );
-  }
-
-  /// Build empty state when no messages
-  Widget _buildEmptyState(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor,
-            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Islamic greeting icon with enhanced design
-              TweenAnimationBuilder<double>(
-                duration: Duration(milliseconds: 1200),
-                tween: Tween(begin: 0.0, end: 1.0),
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 0.5 + (value * 0.5),
-                    child: Opacity(
-                      opacity: value,
-                      child: Container(
-                        width: 120.w,
-                        height: 120.w,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(0xFF4CAF50).withOpacity(0.1),
-                              Color(0xFFFFB74D).withOpacity(0.1),
-                              Color(0xFF2196F3).withOpacity(0.1),
+                onPressed: ready && !busy ? cubit.createNewSession : null,
+              ),
+            ],
+          ),
+          body: SafeArea(
+            top: false,
+            child: ContentFrame(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: state is ChatbotError
+                        ? Center(
+                            child: OutlinedButton(
+                              onPressed: () => cubit.initialize(
+                                widget.userId ?? 'anonymous_user',
+                              ),
+                              child: Text(
+                                appText(context, 'إعادة المحاولة', 'Try again'),
+                              ),
+                            ),
+                          )
+                        : !ready
+                        ? const ListSkeleton(rows: 3)
+                        : ListView(
+                            controller: _scroll,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: const EdgeInsets.all(16),
+                            children: [
+                              if (messages.isEmpty) ...[
+                                Text(
+                                  appText(
+                                    context,
+                                    'كيف أساعدك؟',
+                                    'How can I help?',
+                                  ),
+                                  style: theme.textTheme.headlineMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  ApiConfig.guideUri == null
+                                      ? appText(
+                                          context,
+                                          'ابحث في القرآن أو اسأل عن التطبيق. البحث وسجل المحادثات محفوظان على جهازك.',
+                                          'Find verses or ask about the app. Quran search and chat history stay on this device.',
+                                        )
+                                      : appText(
+                                          context,
+                                          'البحث في القرآن واستخدام التطبيق متاحان محليًا. أسئلة الذكاء الاصطناعي تُرسل لخدمة الإجابة مع بعض الرسائل الأخيرة.',
+                                          'Quran search and app help are available offline. AI questions and recent chat messages are shared with the answering service.',
+                                        ),
+                                ),
+                                const SizedBox(height: 18),
+                                for (final question in [
+                                  appText(
+                                    context,
+                                    'ابحث عن آية: إن مع العسر يسرا',
+                                    'Find a verse: إن مع العسر يسرا',
+                                  ),
+                                  appText(
+                                    context,
+                                    'كيف أتابع قراءة القرآن؟',
+                                    'How do I continue reading Quran?',
+                                  ),
+                                  appText(
+                                    context,
+                                    'كيف أضبط مواقيت الصلاة؟',
+                                    'How do I set prayer times?',
+                                  ),
+                                  appText(
+                                    context,
+                                    'كيف أستخدم السبحة؟',
+                                    'How do I use tasbeeh?',
+                                  ),
+                                ])
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: OutlinedButton(
+                                      onPressed: busy
+                                          ? null
+                                          : () => _send(question),
+                                      child: Text(question),
+                                    ),
+                                  ),
+                              ],
+                              for (final message in messages)
+                                _Bubble(message: message),
+                              if (busy)
+                                const AppSkeleton(
+                                  child: ListTile(
+                                    title: Text('                    '),
+                                  ),
+                                ),
+                              if (state is ChatbotLoaded && state.error != null)
+                                Text(
+                                  appText(
+                                    context,
+                                    'تعذّر إرسال الرسالة.',
+                                    'Message could not be sent.',
+                                  ),
+                                ),
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
                           ),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primaryGreen.withOpacity(0.2),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryGreen.withOpacity(0.2),
-                              blurRadius: 20,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.mosque_rounded,
-                          size: 60.w,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              SizedBox(height: 32.h),
-
-              TweenAnimationBuilder<double>(
-                duration: Duration(milliseconds: 1500),
-                tween: Tween(begin: 0.0, end: 1.0),
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)),
-                    child: Opacity(
-                      opacity: value,
-                      child: Column(
+                  ),
+                  if (ready)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                      child: Row(
                         children: [
-                          Text(
-                            'السلام عليكم ورحمة الله وبركاته',
-                            style: AppTypography.h5Arabic.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20.sp,
+                          Expanded(
+                            child: TextField(
+                              controller: _input,
+                              maxLength: 1000,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: _send,
+                              decoration: InputDecoration(
+                                labelText: appText(
+                                  context,
+                                  'اكتب سؤالك',
+                                  'Type a question',
+                                ),
+                                counterText: '',
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          SizedBox(height: 16.h),
-                          Text(
-                            'مرحباً بك في المساعد الإسلامي الذكي\nيمكنني مساعدتك في أسئلتك الإسلامية بحكمة وعلم',
-                            style: AppTypography.bodyMediumArabic.copyWith(
-                              color: AppColors.textSecondary,
-                              height: 1.6,
-                              fontSize: 16.sp,
+                          const SizedBox(width: 8),
+                          IconButton.filled(
+                            onPressed: busy ? null : () => _send(_input.text),
+                            tooltip: appText(context, 'إرسال', 'Send'),
+                            icon: Icon(
+                              platformIcon(
+                                context,
+                                Icons.send,
+                                CupertinoIcons.arrow_up,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                ],
               ),
-
-              SizedBox(height: 40.h),
-
-              // Quick suggestions with animation
-              TweenAnimationBuilder<double>(
-                duration: Duration(milliseconds: 1800),
-                tween: Tween(begin: 0.0, end: 1.0),
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 30 * (1 - value)),
-                    child: Opacity(
-                      opacity: value,
-                      child: _buildQuickSuggestions(context),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build quick suggestion buttons
-  Widget _buildQuickSuggestions(BuildContext context) {
-    final suggestions = [
-      {
-        'icon': Icons.menu_book_rounded,
-        'text': 'آية من القرآن',
-        'query': 'أريد آية من القرآن',
-        'color': Color(0xFF4CAF50),
-      },
-      {
-        'icon': Icons.star_rounded,
-        'text': 'حديث شريف',
-        'query': 'أريد حديث نبوي شريف',
-        'color': Color(0xFFFFB74D),
-      },
-      {
-        'icon': Icons.favorite_rounded,
-        'text': 'دعاء مأثور',
-        'query': 'أريد دعاء من السنة',
-        'color': Color(0xFF2196F3),
-      },
-      {
-        'icon': Icons.schedule_rounded,
-        'text': 'عن الصلاة',
-        'query': 'أخبرني عن الصلاة',
-        'color': Color(0xFF9C27B0),
-      },
-    ];
-
-    return Column(
-      children: [
-        Text(
-          'اقتراحات سريعة:',
-          style: AppTypography.captionArabic.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 20.h),
-        Wrap(
-          spacing: 12.w,
-          runSpacing: 12.h,
-          alignment: WrapAlignment.center,
-          children: suggestions.asMap().entries.map((entry) {
-            final index = entry.key;
-            final suggestion = entry.value;
-
-            return TweenAnimationBuilder<double>(
-              duration: Duration(milliseconds: 600 + (index * 200)),
-              tween: Tween(begin: 0.0, end: 1.0),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: 0.5 + (value * 0.5),
-                  child: Opacity(
-                    opacity: value,
-                    child: InkWell(
-                      onTap: () =>
-                          context.read<ChatbotCubit>().sendStreamingMessage(
-                                suggestion['query'] as String,
-                              ),
-                      borderRadius: BorderRadius.circular(20.r),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              (suggestion['color'] as Color).withOpacity(0.1),
-                              (suggestion['color'] as Color).withOpacity(0.05),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color:
-                                (suggestion['color'] as Color).withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (suggestion['color'] as Color)
-                                  .withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(6.w),
-                              decoration: BoxDecoration(
-                                color: (suggestion['color'] as Color)
-                                    .withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                suggestion['icon'] as IconData,
-                                size: 18.w,
-                                color: suggestion['color'] as Color,
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              suggestion['text'] as String,
-                              style: AppTypography.captionArabic.copyWith(
-                                color: suggestion['color'] as Color,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  /// Handle menu actions
-  void _handleMenuAction(BuildContext context, String action) {
-    switch (action) {
-      case 'new_chat':
-        context.read<ChatbotCubit>().createNewSession();
-        break;
-      case 'clear_history':
-        _showClearHistoryDialog(context);
-        break;
-    }
-  }
-
-  /// Show clear history confirmation dialog
-  void _showClearHistoryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'مسح تاريخ المحادثات',
-          style: AppTypography.h6Arabic,
-        ),
-        content: Text(
-          'هل أنت متأكد من رغبتك في مسح جميع المحادثات؟ لا يمكن التراجع عن هذا الإجراء.',
-          style: AppTypography.bodyMediumArabic,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<ChatbotCubit>().clearHistory();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
             ),
-            child: Text('مسح'),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
 
-  /// Show error snack bar
-  void _showErrorSnackBar(BuildContext context, String error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(error),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.sm,
-        ),
-        action: SnackBarAction(
-          label: 'موافق',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
+class _Bubble extends StatelessWidget {
+  const _Bubble({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Align(
+      alignment: message.isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 530),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: message.isUser ? colors.primaryContainer : colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.outlineVariant),
+          ),
+          child: SelectableText(message.content),
         ),
       ),
     );
-  }
-
-  /// Scroll to bottom of chat
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-          );
-        }
-      });
-    }
   }
 }

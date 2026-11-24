@@ -18,8 +18,11 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
 
   @override
   Future<void> completeOnboarding() async {
-    await sharedPreferences.setBool(
-        AppConstants.prefKeyOnboardingCompleted, true);
+    final saved = await sharedPreferences.setBool(
+      AppConstants.prefKeyOnboardingCompleted,
+      true,
+    );
+    if (!saved) throw StateError('Could not save onboarding progress');
   }
 
   @override

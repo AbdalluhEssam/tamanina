@@ -43,7 +43,7 @@ class MushafLauncherScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(25.r),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.goldAccent.withOpacity(0.3),
+                        color: AppColors.goldAccent.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -73,7 +73,7 @@ class MushafLauncherScreen extends StatelessWidget {
                   'تجربة قراءة رقمية تحاكي المصحف التقليدي',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyLargeArabic.copyWith(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
 
@@ -87,13 +87,13 @@ class MushafLauncherScreen extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.goldAccent,
-                        AppColors.goldAccent.withOpacity(0.8),
+                        AppColors.goldAccent.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(30.r),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.goldAccent.withOpacity(0.4),
+                        color: AppColors.goldAccent.withValues(alpha: 0.4),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -201,10 +201,10 @@ class MushafLauncherScreen extends StatelessWidget {
         width: 80.w,
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15.r),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -219,7 +219,7 @@ class MushafLauncherScreen extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: AppTypography.captionArabic.copyWith(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 10.sp,
               ),
             ),

@@ -1,745 +1,606 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:permission_handler/permission_handler.dart';
+
+import '../constants/app_constants.dart';
 import '../settings/settings_repository.dart';
 import 'prayer_service_enhanced.dart';
+import 'reminder_schedule.dart';
+import 'worship_shortcuts.dart';
 
-/// خدمة الإشعارات المحسنة - تدعم جدولة إشعارات الصلاة والأذان
-/// Enhanced Notification Service - Supports prayer notifications and adhan
+typedef _Alert = ({
+  int id,
+  tz.TZDateTime at,
+  String title,
+  String? body,
+  String channel,
+  String channelLabel,
+  String route,
+  bool sound,
+  bool vibrate,
+  bool adhan,
+  DateTimeComponents? repeat,
+});
+
 class NotificationServiceEnhanced {
-  static final NotificationServiceEnhanced _instance =
-      NotificationServiceEnhanced._internal();
   factory NotificationServiceEnhanced() => _instance;
-  NotificationServiceEnhanced._internal();
+  NotificationServiceEnhanced._();
+  static final _instance = NotificationServiceEnhanced._();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
-  final AudioPlayer _adhanPlayer = AudioPlayer();
+  static const _prayerId = 20000;
+  static const _prayerDays = 30;
+  static const _prayerSlots = _prayerDays * 12;
+  static const _nativeAdhan = MethodChannel(
+    'com.abdalluh.tamanina/adhan_alarms',
+  );
+  static const _iosPrayerQueue = MethodChannel(
+    'com.abdalluh.tamanina/prayer_queue',
+  );
+  static const _reminderId = 21000;
+  static const _dhikrId = 21100;
+  static const _dhikrSlots = 12;
+  static const _reminders = [
+    (key: 'morning', hour: 6, title: 'أذكار الصباح'),
+    (key: 'evening', hour: 17, title: 'أذكار المساء'),
+    (key: 'sleep', hour: 22, title: 'أذكار النوم'),
+  ];
 
-  SettingsRepository? _settingsRepository;
-  StreamSubscription<AppSettings>? _settingsSubscription;
+  final _local = FlutterLocalNotificationsPlugin();
+  late SettingsRepository _settings;
+  Future<void>? _initialization;
+  Future<void>? _scheduled;
+  Future<bool>? _permissionRequest;
+  DateTime? _lastAuthorizedSync;
+  bool? _lastExact;
+  final _scheduledAlerts = <int, _Alert>{};
+  bool _needsRefresh = false;
 
-  bool _isInitialized = false;
+  bool get _isIOS => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-  // قنوات الإشعارات
-  static const String _prayerChannelId = 'prayer_notifications';
-  static const String _prayerChannelName = 'إشعارات الصلاة';
-  static const String _prayerChannelDesc = 'إشعارات أوقات الصلاة';
+  IOSFlutterLocalNotificationsPlugin? get _ios => _local
+      .resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin
+      >();
 
-  static const String _adhanChannelId = 'adhan_notifications';
-  static const String _adhanChannelName = 'الأذان';
-  static const String _adhanChannelDesc = 'إشعارات الأذان مع الصوت';
+  AndroidFlutterLocalNotificationsPlugin? get _android => _local
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
 
-  static const String _reminderChannelId = 'reminder_notifications';
-  static const String _reminderChannelName = 'تذكيرات قبل الصلاة';
-  static const String _reminderChannelDesc = 'تذكيرات قبل وقت الصلاة';
-
-  static const String _dhikrChannelId = 'dhikr_notifications';
-  static const String _dhikrChannelName = 'تذكيرات الذكر';
-  static const String _dhikrChannelDesc = 'تذكيرات بأذكار';
-
-  // معرفات الإشعارات
-  static const int _fajrId = 1001;
-  static const int _sunriseId = 1002;
-  static const int _dhuhrId = 1003;
-  static const int _asrId = 1004;
-  static const int _maghribId = 1005;
-  static const int _ishaId = 1006;
-
-  static const int _fajrReminderId = 2001;
-  static const int _dhuhrReminderId = 2003;
-  static const int _asrReminderId = 2004;
-  static const int _maghribReminderId = 2005;
-  static const int _ishaReminderId = 2006;
-
-  /// تهيئة الخدمة
-  /// Initialize the service
-  Future<void> initialize({SettingsRepository? settingsRepository}) async {
-    if (_isInitialized) return;
-
-    try {
-      _settingsRepository = settingsRepository;
-
-      await _requestPermissions();
-      await _initializeLocalNotifications();
-      await _initializeFCM();
-      _setupMessageHandlers();
-
-      // الاستماع لتغييرات الإعدادات
-      if (_settingsRepository != null) {
-        _settingsSubscription =
-            _settingsRepository!.settingsStream.listen((settings) {
-          _rescheduleNotifications();
-        });
-      }
-
-      _isInitialized = true;
-
-      if (kDebugMode) {
-        print('✅ NotificationServiceEnhanced initialized');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error initializing NotificationServiceEnhanced: $e');
-      }
-    }
+  Future<void> initialize({required SettingsRepository settingsRepository}) {
+    return _initialization ??= _initialize(settingsRepository);
   }
 
-  /// ربط مستودع الإعدادات
-  /// Attach settings repository
-  void attachSettingsRepository(SettingsRepository repository) {
-    _settingsRepository = repository;
-    _settingsSubscription?.cancel();
-    _settingsSubscription = repository.settingsStream.listen((settings) {
-      _rescheduleNotifications();
-    });
-  }
-
-  /// طلب صلاحيات الإشعارات
-  /// Request notification permissions
-  Future<bool> _requestPermissions() async {
-    bool granted = true;
-
-    // طلب صلاحية FCM
-    final fcmSettings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      criticalAlert: true,
+  Future<void> _initialize(SettingsRepository repository) async {
+    _settings = repository;
+    await _local.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('ic_notification'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        WorshipShortcuts.instance.open(response.payload);
+      },
     );
-    granted = fcmSettings.authorizationStatus == AuthorizationStatus.authorized;
+    final launch = await _local.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      WorshipShortcuts.instance.open(launch?.notificationResponse?.payload);
+    }
+    _settings.settingsStream.listen((_) => refresh());
+    PrayerServiceEnhanced().prayerTimesStream.listen((_) => refresh());
+    // Retire reminders that used fixed clock times or an unconditional interval.
+    for (final id in [
+      1,
+      2,
+      100,
+      101,
+      102,
+      103,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      2001,
+      2003,
+      2004,
+      2005,
+      2006,
+    ]) {
+      await _local.cancel(id);
+    }
+    unawaited(refresh());
+  }
 
-    // صلاحيات النظام
-    if (Platform.isIOS) {
-      final iosGranted = await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
+  Future<void> connectPushNotifications() async {
+    await _initialization;
+    if (_isIOS) {
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
             alert: true,
             badge: true,
             sound: true,
-            critical: true,
           );
-      granted = granted && (iosGranted ?? false);
+    } else {
+      FirebaseMessaging.onMessage.listen((message) async {
+        final notification = message.notification;
+        if (notification == null ||
+            !_settings.currentSettings.notificationsEnabled) {
+          return;
+        }
+        try {
+          if (!await _canDeliverNotifications()) return;
+          await _local.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            _details('updates', 'App updates', sound: true, vibrate: true),
+          );
+        } catch (error) {
+          if (kDebugMode) debugPrint('Could not show app update: $error');
+        }
+      });
     }
+  }
 
-    if (Platform.isAndroid) {
-      final androidPlugin =
-          _localNotifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+  Future<bool> requestPermissions() => _permissionRequest ??=
+      _requestPermissions().whenComplete(() => _permissionRequest = null);
 
-      await androidPlugin?.requestNotificationsPermission();
-      await androidPlugin?.requestExactAlarmsPermission();
+  Future<bool> _requestPermissions() async {
+    await _initialization;
+    final granted = _isIOS
+        ? await _ios?.requestPermissions(alert: true, badge: true, sound: true)
+        : await _android?.requestNotificationsPermission();
+    final canDeliver = granted == true || await _canDeliverNotifications();
+    if (canDeliver) unawaited(refresh());
+    return canDeliver;
+  }
+
+  Future<bool> _canDeliverNotifications() async {
+    if (_isIOS) {
+      final permissions = await _ios?.checkPermissions();
+      return permissions?.isEnabled == true ||
+          permissions?.isProvisionalEnabled == true;
     }
+    return _isAndroid && await _android?.areNotificationsEnabled() == true;
+  }
 
+  bool _isAuthorizationError(Object error) =>
+      _isIOS &&
+      error is PlatformException &&
+      error.details == 'UNErrorDomain' &&
+      (error.code == 'Error 2003' || error.code == 'Error 1');
+
+  Future<bool> requestExactPrayerAlarms() async {
+    await _initialization;
+    final android = _android;
+    if (android == null) return false;
+    final granted =
+        await android.canScheduleExactNotifications() == true ||
+        await android.requestExactAlarmsPermission() == true;
+    if (granted) await refresh();
     return granted;
   }
 
-  /// تهيئة الإشعارات المحلية
-  /// Initialize local notifications
-  Future<void> _initializeLocalNotifications() async {
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    final iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-      requestCriticalPermission: true,
-      onDidReceiveLocalNotification: (id, title, body, payload) async {},
-    );
-
-    final initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _handleNotificationResponse,
-    );
-
-    // إنشاء قنوات Android
-    if (Platform.isAndroid) {
-      await _createNotificationChannels();
-    }
-  }
-
-  /// إنشاء قنوات إشعارات Android
-  /// Create Android notification channels
-  Future<void> _createNotificationChannels() async {
-    final androidPlugin =
-        _localNotifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    // قناة إشعارات الصلاة
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _prayerChannelId,
-        _prayerChannelName,
-        description: _prayerChannelDesc,
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-      ),
-    );
-
-    // قناة الأذان
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _adhanChannelId,
-        _adhanChannelName,
-        description: _adhanChannelDesc,
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-      ),
-    );
-
-    // قناة التذكيرات
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _reminderChannelId,
-        _reminderChannelName,
-        description: _reminderChannelDesc,
-        importance: Importance.defaultImportance,
-        playSound: true,
-      ),
-    );
-
-    // قناة الأذكار
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _dhikrChannelId,
-        _dhikrChannelName,
-        description: _dhikrChannelDesc,
-        importance: Importance.defaultImportance,
-        playSound: true,
-      ),
-    );
-  }
-
-  /// تهيئة FCM
-  /// Initialize FCM
-  Future<void> _initializeFCM() async {
-    await _firebaseMessaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-  }
-
-  /// إعداد معالجات الرسائل
-  /// Setup message handlers
-  void _setupMessageHandlers() {
-    FirebaseMessaging.onMessage.listen((message) {
-      _showFCMNotification(message);
-    });
-
-    FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      _handleNotificationTap(message.data);
-    });
-  }
-
-  /// عرض إشعار FCM
-  /// Show FCM notification
-  Future<void> _showFCMNotification(RemoteMessage message) async {
-    final notification = message.notification;
-    if (notification != null) {
-      await showNotification(
-        id: notification.hashCode,
-        title: notification.title ?? '',
-        body: notification.body ?? '',
-        payload: message.data.toString(),
-      );
-    }
-  }
-
-  /// معالجة استجابة الإشعار
-  /// Handle notification response
-  void _handleNotificationResponse(NotificationResponse response) {
-    _handleNotificationTap({'payload': response.payload});
-  }
-
-  /// معالجة النقر على الإشعار
-  /// Handle notification tap
-  void _handleNotificationTap(Map<String, dynamic> data) {
-    if (kDebugMode) {
-      print('📱 Notification tapped: $data');
-    }
-  }
-
-  /// جدولة إشعارات الصلاة اليومية
-  /// Schedule daily prayer notifications
-  Future<void> scheduleDailyPrayerNotifications(DailyPrayerTimes times) async {
-    if (_settingsRepository == null) return;
-
-    final settings = _settingsRepository!.currentSettings;
-
-    if (!settings.notificationsEnabled) {
-      await cancelAllPrayerNotifications();
-      return;
-    }
-
-    final perPrayer = settings.perPrayerEnabled;
-    final muadhinMode = settings.muadhinMode;
-
-    // جدولة إشعار الفجر
-    if (perPrayer.fajr) {
-      await _schedulePrayerNotification(
-        id: _fajrId,
-        title: '🌙 حان وقت صلاة الفجر',
-        body: 'الصلاة خير من النوم',
-        time: times.fajr.time,
-        playAdhan: muadhinMode,
-      );
-    }
-
-    // جدولة إشعار الظهر
-    if (perPrayer.dhuhr) {
-      await _schedulePrayerNotification(
-        id: _dhuhrId,
-        title: '☀️ حان وقت صلاة الظهر',
-        body: 'حي على الصلاة',
-        time: times.dhuhr.time,
-        playAdhan: muadhinMode,
-      );
-    }
-
-    // جدولة إشعار العصر
-    if (perPrayer.asr) {
-      await _schedulePrayerNotification(
-        id: _asrId,
-        title: '🌤️ حان وقت صلاة العصر',
-        body: 'حافظوا على الصلوات والصلاة الوسطى',
-        time: times.asr.time,
-        playAdhan: muadhinMode,
-      );
-    }
-
-    // جدولة إشعار المغرب
-    if (perPrayer.maghrib) {
-      await _schedulePrayerNotification(
-        id: _maghribId,
-        title: '🌅 حان وقت صلاة المغرب',
-        body: 'حي على الصلاة',
-        time: times.maghrib.time,
-        playAdhan: muadhinMode,
-      );
-    }
-
-    // جدولة إشعار العشاء
-    if (perPrayer.isha) {
-      await _schedulePrayerNotification(
-        id: _ishaId,
-        title: '🌙 حان وقت صلاة العشاء',
-        body: 'حي على الفلاح',
-        time: times.isha.time,
-        playAdhan: muadhinMode,
-      );
-    }
-
-    if (kDebugMode) {
-      print('✅ Prayer notifications scheduled');
-    }
-  }
-
-  /// جدولة تذكيرات ما قبل الصلاة
-  /// Schedule pre-prayer reminders
-  Future<void> schedulePrePrayerReminders(
-    DailyPrayerTimes times,
-    int offsetMinutes,
-  ) async {
-    if (_settingsRepository == null || offsetMinutes <= 0) return;
-
-    final settings = _settingsRepository!.currentSettings;
-    if (!settings.notificationsEnabled) return;
-
-    final perPrayer = settings.perPrayerEnabled;
-
-    // تذكير الفجر
-    if (perPrayer.fajr) {
-      await _scheduleReminder(
-        id: _fajrReminderId,
-        title: '⏰ قريباً: صلاة الفجر',
-        body: 'صلاة الفجر بعد $offsetMinutes دقيقة',
-        time: times.fajr.time.subtract(Duration(minutes: offsetMinutes)),
-      );
-    }
-
-    // تذكير الظهر
-    if (perPrayer.dhuhr) {
-      await _scheduleReminder(
-        id: _dhuhrReminderId,
-        title: '⏰ قريباً: صلاة الظهر',
-        body: 'صلاة الظهر بعد $offsetMinutes دقيقة',
-        time: times.dhuhr.time.subtract(Duration(minutes: offsetMinutes)),
-      );
-    }
-
-    // تذكير العصر
-    if (perPrayer.asr) {
-      await _scheduleReminder(
-        id: _asrReminderId,
-        title: '⏰ قريباً: صلاة العصر',
-        body: 'صلاة العصر بعد $offsetMinutes دقيقة',
-        time: times.asr.time.subtract(Duration(minutes: offsetMinutes)),
-      );
-    }
-
-    // تذكير المغرب
-    if (perPrayer.maghrib) {
-      await _scheduleReminder(
-        id: _maghribReminderId,
-        title: '⏰ قريباً: صلاة المغرب',
-        body: 'صلاة المغرب بعد $offsetMinutes دقيقة',
-        time: times.maghrib.time.subtract(Duration(minutes: offsetMinutes)),
-      );
-    }
-
-    // تذكير العشاء
-    if (perPrayer.isha) {
-      await _scheduleReminder(
-        id: _ishaReminderId,
-        title: '⏰ قريباً: صلاة العشاء',
-        body: 'صلاة العشاء بعد $offsetMinutes دقيقة',
-        time: times.isha.time.subtract(Duration(minutes: offsetMinutes)),
-      );
-    }
-
-    if (kDebugMode) {
-      print('✅ Pre-prayer reminders scheduled with $offsetMinutes min offset');
-    }
-  }
-
-  /// جدولة إشعار صلاة واحدة
-  /// Schedule a single prayer notification
-  Future<void> _schedulePrayerNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime time,
-    bool playAdhan = false,
-  }) async {
-    if (time.isBefore(DateTime.now())) {
-      // الوقت مر، جدول ليوم غد
-      time = time.add(const Duration(days: 1));
-    }
-
-    final tzTime = tz.TZDateTime.from(time, tz.local);
-
-    await _localNotifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tzTime,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          playAdhan ? _adhanChannelId : _prayerChannelId,
-          playAdhan ? _adhanChannelName : _prayerChannelName,
-          channelDescription:
-              playAdhan ? _adhanChannelDesc : _prayerChannelDesc,
-          importance: Importance.max,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-          fullScreenIntent: playAdhan,
-          category: AndroidNotificationCategory.alarm,
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.timeSensitive,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: playAdhan ? 'play_adhan' : null,
-    );
-  }
-
-  /// جدولة تذكير
-  /// Schedule a reminder
-  Future<void> _scheduleReminder({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime time,
-  }) async {
-    if (time.isBefore(DateTime.now())) return;
-
-    final tzTime = tz.TZDateTime.from(time, tz.local);
-
-    await _localNotifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tzTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _reminderChannelId,
-          _reminderChannelName,
-          channelDescription: _reminderChannelDesc,
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
-  }
-
-  /// تشغيل الأذان
-  /// Play adhan
-  Future<void> playAdhan({AdhanSound? sound}) async {
-    if (_settingsRepository == null) return;
-
-    final settings = _settingsRepository!.currentSettings;
-    final adhanSound = sound ?? settings.selectedAdhan;
-
-    if (adhanSound == AdhanSound.system) {
-      // استخدم صوت النظام
-      return;
-    }
-
+  Future<void> refreshOnResume() async {
     try {
-      // التحقق من وضع عدم الإزعاج
-      if (settings.muadhinMode) {
-        // طلب تجاوز DND إذا لزم الأمر
-        await _requestDNDOverride();
+      await _initialization;
+      if (!_settings.currentSettings.notificationsEnabled) return;
+      if (!await _canDeliverNotifications()) {
+        _lastAuthorizedSync = null;
+        return;
       }
-
-      await _adhanPlayer.setVolume(settings.adhanVolume);
-      await _adhanPlayer.setAsset(adhanSound.assetPath);
-      await _adhanPlayer.play();
-
-      if (kDebugMode) {
-        print('🔊 Playing adhan: ${adhanSound.displayName}');
+      final last = _lastAuthorizedSync;
+      final exact = await _android?.canScheduleExactNotifications() ?? false;
+      if (last == null ||
+          exact != _lastExact ||
+          DateTime.now().difference(last) >= const Duration(minutes: 10)) {
+        await refresh();
       }
-    } catch (e) {
+    } catch (error) {
       if (kDebugMode) {
-        print('❌ Error playing adhan: $e');
+        debugPrint('Could not read notification permission: $error');
       }
     }
   }
 
-  /// إيقاف الأذان
-  /// Stop adhan
-  Future<void> stopAdhan() async {
-    await _adhanPlayer.stop();
-  }
-
-  /// طلب تجاوز وضع عدم الإزعاج
-  /// Request DND override
-  Future<bool> _requestDNDOverride() async {
-    if (Platform.isAndroid) {
-      final status = await Permission.accessNotificationPolicy.status;
-      if (!status.isGranted) {
-        final result = await Permission.accessNotificationPolicy.request();
-        return result.isGranted;
+  Future<void> refresh() {
+    _needsRefresh = true;
+    return _scheduled ??= Future<void>.microtask(() async {
+      try {
+        while (_needsRefresh) {
+          _needsRefresh = false;
+          try {
+            await _initialization;
+            await _sync();
+          } catch (error) {
+            _lastAuthorizedSync = null;
+            if (kDebugMode && !_isAuthorizationError(error)) {
+              debugPrint('Local notification sync notice: $error');
+            }
+          }
+        }
+      } finally {
+        _scheduled = null;
       }
-      return true;
-    }
-    return false;
+    });
   }
 
-  /// عرض مربع حوار طلب DND للمستخدم
-  /// Show DND permission dialog to user
-  Future<void> showDNDPermissionDialog(BuildContext context) async {
-    if (!Platform.isAndroid) return;
+  bool _isManaged(int id) =>
+      (id >= _prayerId && id < _prayerId + _prayerSlots) ||
+      (id >= _reminderId && id <= _reminderId + 3) ||
+      (id >= _dhikrId && id < _dhikrId + _dhikrSlots);
 
-    final status = await Permission.accessNotificationPolicy.status;
-    if (status.isGranted) return;
-
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('السماح بتجاوز وضع عدم الإزعاج'),
-        content: const Text(
-          'لتشغيل الأذان في وضع عدم الإزعاج، يرجى السماح للتطبيق بتجاوز إعدادات الصوت.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('لاحقاً'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await Permission.accessNotificationPolicy.request();
+  Future<Set<int>> _syncNativeAdhan(
+    Iterable<_Alert> alerts, {
+    required bool exact,
+    required double volume,
+    required bool arabic,
+  }) async {
+    if (!_isAndroid) return {};
+    final payload = [
+      if (exact && volume > 0)
+        for (final alert in alerts)
+          if (alert.adhan)
+            {
+              'id': alert.id,
+              'at': alert.at.millisecondsSinceEpoch,
+              'title': alert.title,
+              'stopLabel': arabic ? 'إيقاف الأذان' : 'Stop adhan',
+              'volume': volume,
+              'vibrate': alert.vibrate,
             },
-            child: const Text('السماح'),
-          ),
-        ],
-      ),
-    );
+    ];
+    try {
+      return (await _nativeAdhan.invokeListMethod<int>(
+                'replace',
+                jsonEncode(payload),
+              ) ??
+              const <int>[])
+          .toSet();
+    } on PlatformException catch (error) {
+      if (kDebugMode) {
+        debugPrint('Native adhan schedule unavailable: ${error.code}');
+      }
+      return {};
+    } on MissingPluginException {
+      return {};
+    }
   }
 
-  /// إعادة جدولة الإشعارات
-  /// Reschedule notifications
-  Future<void> _rescheduleNotifications() async {
+  Future<void> _sync() async {
+    final settings = _settings.currentSettings;
+    if (settings.notificationsEnabled && !await _canDeliverNotifications()) {
+      _lastAuthorizedSync = null;
+      return;
+    }
+
+    final pending = await _local.pendingNotificationRequests();
+    final available = _isIOS
+        ? 64 - pending.where((request) => !_isManaged(request.id)).length
+        : null;
+    final prefs = await SharedPreferences.getInstance();
+    final arabic = (prefs.getString('locale') ?? 'ar').startsWith('ar');
+    final exact =
+        settings.notificationsEnabled &&
+        (await _android?.canScheduleExactNotifications() ?? false);
+    final planned = settings.notificationsEnabled
+        ? await _planAlerts(settings, prefs, arabic, available)
+        : const <_Alert>[];
+    if (_needsRefresh) return;
+    if (_isIOS) await _saveIOSPrayerQueue(planned);
+    final alerts = available == null
+        ? planned
+        : planned.take(available.clamp(0, 64)).toList();
+    final nativeIds = await _syncNativeAdhan(
+      alerts,
+      exact: exact,
+      volume: settings.adhanVolume,
+      arabic: arabic,
+    );
+    final local = {
+      for (final alert in alerts)
+        if (!nativeIds.contains(alert.id)) alert.id: alert,
+    };
+    for (final request in pending) {
+      final id = request.id;
+      if (_isManaged(id) && !local.containsKey(id)) {
+        await _local.cancel(id);
+        _scheduledAlerts.remove(id);
+      }
+    }
+
+    final pendingIds = pending.map((request) => request.id).toSet();
+    var effectiveExact = exact;
+    for (final alert in local.values) {
+      if (pendingIds.contains(alert.id) &&
+          _scheduledAlerts[alert.id] == alert &&
+          exact == _lastExact) {
+        continue;
+      }
+      if (alert.repeat == null &&
+          !alert.at.isAfter(tz.TZDateTime.now(tz.local))) {
+        continue;
+      }
+      final isExact = effectiveExact && alert.repeat == null;
+      try {
+        await _schedule(alert, exact: isExact);
+      } on PlatformException catch (error) {
+        if (!isExact || error.code != 'exact_alarms_not_permitted') rethrow;
+        await _schedule(alert, exact: false);
+        effectiveExact = false;
+      }
+      _scheduledAlerts[alert.id] = alert;
+    }
+    _scheduledAlerts.removeWhere((id, _) => !local.containsKey(id));
+    _lastExact = effectiveExact;
+    _lastAuthorizedSync = settings.notificationsEnabled ? DateTime.now() : null;
+  }
+
+  Future<void> _saveIOSPrayerQueue(Iterable<_Alert> alerts) async {
+    final queue = [
+      for (final alert in alerts)
+        if (alert.channel == 'prayer')
+          {
+            'id': alert.id,
+            'at': alert.at.millisecondsSinceEpoch,
+            'title': alert.title,
+            'route': alert.route,
+            'sound': alert.sound,
+            'adhan': alert.adhan,
+          },
+    ];
     try {
-      final prayerService = PrayerServiceEnhanced();
-      final times = await prayerService.getTodayPrayerTimes();
+      await _iosPrayerQueue.invokeMethod<void>('replace', jsonEncode(queue));
+    } on PlatformException catch (error) {
+      if (kDebugMode) debugPrint('iOS prayer queue unavailable: ${error.code}');
+    } on MissingPluginException {
+      // The foreground scheduler works independently of background refresh.
+    }
+  }
 
-      await cancelAllPrayerNotifications();
-      await scheduleDailyPrayerNotifications(times);
+  Future<void> _schedule(_Alert alert, {required bool exact}) =>
+      _local.zonedSchedule(
+        alert.id,
+        alert.title,
+        alert.body,
+        alert.at,
+        _details(
+          alert.channel,
+          alert.channelLabel,
+          sound: alert.sound,
+          vibrate: alert.vibrate,
+          adhan: alert.adhan,
+        ),
+        androidScheduleMode: exact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: alert.repeat,
+        payload: alert.route,
+      );
 
-      if (_settingsRepository != null) {
-        final offset =
-            _settingsRepository!.currentSettings.prePrayerOffsetMinutes;
-        if (offset > 0) {
-          await schedulePrePrayerReminders(times, offset);
+  Future<List<_Alert>> _planAlerts(
+    AppSettings settings,
+    SharedPreferences prefs,
+    bool arabic,
+    int? available,
+  ) async {
+    final sound = prefs.getBool('notification_sound') ?? true;
+    final vibrate = prefs.getBool('notification_vibration') ?? true;
+    final now = tz.TZDateTime.now(tz.local);
+    final quietStart = settings.quietHoursEnabled
+        ? settings.quietHoursStart
+        : null;
+    final quietEnd = settings.quietHoursEnabled ? settings.quietHoursEnd : null;
+    bool quiet(int hour) => isQuietHour(hour, quietStart, quietEnd);
+    final reminders = <_Alert>[];
+    final reminderTimes = <(int, int)>{};
+
+    void addReminder(
+      int id,
+      String title,
+      String? body,
+      int hour,
+      int minute, {
+      bool weekly = false,
+      String route = AppRoutes.azkar,
+    }) {
+      if ((available != null && reminders.length >= available) ||
+          quiet(hour) ||
+          !reminderTimes.add((hour, minute))) {
+        return;
+      }
+      final offset = weekly ? (DateTime.friday - now.weekday + 7) % 7 : 0;
+      var next = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day + offset,
+        hour,
+        minute,
+      );
+      if (!next.isAfter(now)) {
+        next = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day + offset + (weekly ? 7 : 1),
+          hour,
+          minute,
+        );
+      }
+      reminders.add((
+        id: id,
+        at: next,
+        title: title,
+        body: body,
+        channel: 'adhkar',
+        channelLabel: 'Adhkar reminders',
+        route: route,
+        sound: sound,
+        vibrate: vibrate,
+        adhan: false,
+        repeat: weekly
+            ? DateTimeComponents.dayOfWeekAndTime
+            : DateTimeComponents.time,
+      ));
+    }
+
+    const english = ['Morning adhkar', 'Evening adhkar', 'Bedtime adhkar'];
+    for (final (i, reminder) in _reminders.indexed) {
+      if (prefs.getBool('${reminder.key}_adhkar_reminder') != true) continue;
+      addReminder(
+        _reminderId + i,
+        arabic ? reminder.title : english[i],
+        null,
+        prefs.getInt('${reminder.key}_reminder_hour') ?? reminder.hour,
+        prefs.getInt('${reminder.key}_reminder_minute') ?? 0,
+        route: switch (reminder.key) {
+          'morning' => AppRoutes.morningAdhkar,
+          'evening' => AppRoutes.eveningAdhkar,
+          _ => AppRoutes.azkar,
+        },
+      );
+    }
+    if (prefs.getBool('friday_reminder') == true) {
+      addReminder(
+        _reminderId + 3,
+        arabic ? 'تذكير يوم الجمعة' : 'Friday reminder',
+        arabic ? 'اقرأ من سورة الكهف' : 'Read from Surah Al-Kahf',
+        12,
+        0,
+        weekly: true,
+        route: AppRoutes.alKahfReader,
+      );
+    }
+    final interval = prefs.getInt('dhikr_interval_minutes') ?? 0;
+    for (final (index, hour) in dhikrReminderHours(
+      interval,
+      quietStart: quietStart,
+      quietEnd: quietEnd,
+    ).indexed) {
+      final message = dhikrMessages[index % dhikrMessages.length];
+      addReminder(
+        _dhikrId + index,
+        arabic ? 'لحظة للذِّكر' : 'A moment for dhikr',
+        arabic ? message.ar : message.en,
+        hour,
+        0,
+      );
+    }
+
+    if (prefs.getBool('prayer_time_notifications') == false) return reminders;
+    final prayerService = PrayerServiceEnhanced();
+    final zone = prayerService.locationTimeZone;
+    final today = tz.TZDateTime.from(now, zone);
+    final prayers = <_Alert>[];
+    for (var day = 0; day < _prayerDays; day++) {
+      final date = tz.TZDateTime(
+        zone,
+        today.year,
+        today.month,
+        today.day + day,
+      );
+      final times = await prayerService.getPrayerTimes(date);
+      if (times == null) break;
+      final civilDay =
+          DateTime.utc(
+            date.year,
+            date.month,
+            date.day,
+          ).millisecondsSinceEpoch ~/
+          Duration.millisecondsPerDay;
+      for (final (index, prayer) in times.allPrayers.indexed) {
+        if (!settings.perPrayerEnabled.isEnabled(prayer.name)) continue;
+        final name = arabic ? prayer.nameArabic : prayer.name;
+        final id = _prayerId + (civilDay % _prayerDays) * 12 + index * 2;
+        for (final (reminder, minutes) in [
+          (false, 0),
+          (true, settings.prePrayerOffsetMinutes),
+        ]) {
+          if (reminder && minutes == 0) continue;
+          final at = tz.TZDateTime.from(
+            prayer.time.subtract(Duration(minutes: minutes)),
+            tz.local,
+          );
+          if (!at.isAfter(now)) continue;
+          final muted = quiet(at.hour);
+          final adhanSelected =
+              !reminder &&
+              settings.muadhinMode &&
+              settings.selectedAdhan != AdhanSound.system &&
+              prayer.name != 'Sunrise';
+          final audible =
+              sound && !muted && (!adhanSelected || settings.adhanVolume > 0);
+          final useAdhan = adhanSelected && audible;
+          prayers.add((
+            id: reminder ? id + 1 : id,
+            at: at,
+            title: reminder
+                ? arabic
+                      ? '$name بعد $minutes دقيقة'
+                      : '$name in $minutes minutes'
+                : arabic
+                ? 'حان وقت $name'
+                : 'It’s time for $name',
+            body: null,
+            channel: 'prayer',
+            channelLabel: 'Prayer alerts',
+            route: useAdhan
+                ? '${AppRoutes.adhan}?prayer=${prayer.name}&arabic=${Uri.encodeComponent(name)}&fajr=${prayer.name == 'Fajr'}'
+                : AppRoutes.prayerTimes,
+            sound: audible,
+            vibrate: vibrate && !muted,
+            adhan: useAdhan,
+            repeat: null,
+          ));
         }
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error rescheduling notifications: $e');
-      }
     }
+    prayers.sort((a, b) => a.at.compareTo(b.at));
+    return [...reminders, ...prayers];
   }
 
-  /// إعادة جدولة الإشعارات عند إعادة تشغيل الجهاز
-  /// Reschedule notifications on device boot
-  /// Note: This should be called from a boot receiver on Android
-  static Future<void> onBootComplete() async {
-    final service = NotificationServiceEnhanced();
-    await service.initialize();
-    await service._rescheduleNotifications();
-  }
-
-  /// عرض إشعار عام
-  /// Show a general notification
-  Future<void> showNotification({
-    required int id,
-    required String title,
-    required String body,
-    String? payload,
-    String channelId = _prayerChannelId,
-  }) async {
-    await _localNotifications.show(
-      id,
-      title,
-      body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channelId,
-          _prayerChannelName,
-          channelDescription: _prayerChannelDesc,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: const DarwinNotificationDetails(),
-      ),
-      payload: payload,
-    );
-  }
-
-  /// جدولة إشعار يومي
-  /// Schedule a daily notification
-  Future<void> scheduleDailyNotification({
-    required int id,
-    required int hour,
-    required int minute,
-    required String title,
-    required String body,
-  }) async {
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
-
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-
-    await _localNotifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _dhikrChannelId,
-          _dhikrChannelName,
-          channelDescription: _dhikrChannelDesc,
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
-  }
-
-  /// إلغاء جميع إشعارات الصلاة
-  /// Cancel all prayer notifications
-  Future<void> cancelAllPrayerNotifications() async {
-    await _localNotifications.cancel(_fajrId);
-    await _localNotifications.cancel(_sunriseId);
-    await _localNotifications.cancel(_dhuhrId);
-    await _localNotifications.cancel(_asrId);
-    await _localNotifications.cancel(_maghribId);
-    await _localNotifications.cancel(_ishaId);
-
-    await _localNotifications.cancel(_fajrReminderId);
-    await _localNotifications.cancel(_dhuhrReminderId);
-    await _localNotifications.cancel(_asrReminderId);
-    await _localNotifications.cancel(_maghribReminderId);
-    await _localNotifications.cancel(_ishaReminderId);
-  }
-
-  /// إلغاء جميع الإشعارات
-  /// Cancel all notifications
-  Future<void> cancelAllNotifications() async {
-    await _localNotifications.cancelAll();
-  }
-
-  /// الحصول على رمز FCM
-  /// Get FCM token
-  Future<String?> getFCMToken() async {
-    return await _firebaseMessaging.getToken();
-  }
-
-  /// تنظيف الموارد
-  /// Dispose resources
-  void dispose() {
-    _settingsSubscription?.cancel();
-    _adhanPlayer.dispose();
-  }
-}
-
-/// Background message handler - Must be a top-level function
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  if (kDebugMode) {
-    print('📨 Background Message: ${message.messageId}');
-  }
+  NotificationDetails _details(
+    String channel,
+    String label, {
+    required bool sound,
+    required bool vibrate,
+    bool adhan = false,
+  }) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      'tamanina_${channel}_${adhan
+          ? 'adhan'
+          : sound
+          ? 'sound'
+          : 'silent'}_${vibrate ? 'vibration' : 'still'}',
+      label,
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: sound,
+      enableVibration: vibrate,
+      sound: adhan
+          ? const RawResourceAndroidNotificationSound('adhan_alert')
+          : null,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentSound: sound,
+      sound: adhan ? 'adhan_alert.caf' : null,
+    ),
+  );
 }

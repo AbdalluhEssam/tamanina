@@ -86,19 +86,19 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
       // height: 70.h,
       decoration: BoxDecoration(
         color: isDark
-            ? colorScheme.surface.withOpacity(0.95)
-            : Colors.white.withOpacity(0.95),
+            ? colorScheme.surface.withValues(alpha: 0.95)
+            : Colors.white.withValues(alpha: 0.95),
         border: Border(
           top: BorderSide(
             color: isDark
-                ? AppColors.dividerDark.withOpacity(0.3)
-                : AppColors.goldAccent.withOpacity(0.2),
+                ? AppColors.dividerDark.withValues(alpha: 0.3)
+                : AppColors.goldAccent.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black38 : Colors.black.withOpacity(0.1),
+            color: isDark ? Colors.black38 : Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -137,7 +137,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
     final activeColor =
         isDark ? AppColors.primaryGreenLight : AppColors.primaryGreen;
     final inactiveColor = isDark
-        ? colorScheme.onSurface.withOpacity(0.6)
+        ? colorScheme.onSurface.withValues(alpha: 0.6)
         : AppColors.textSecondary;
 
     return Expanded(
@@ -162,8 +162,8 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
                   gradient: isActive
                       ? LinearGradient(
                           colors: [
-                            activeColor.withOpacity(0.2),
-                            AppColors.goldAccent.withOpacity(0.1),
+                            activeColor.withValues(alpha: 0.2),
+                            AppColors.goldAccent.withValues(alpha: 0.1),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -172,7 +172,7 @@ class _ModernBottomNavBarState extends State<ModernBottomNavBar>
                   borderRadius: BorderRadius.circular(18.r),
                   border: isActive
                       ? Border.all(
-                          color: AppColors.goldAccent.withOpacity(0.3),
+                          color: AppColors.goldAccent.withValues(alpha: 0.3),
                           width: 1,
                         )
                       : null,

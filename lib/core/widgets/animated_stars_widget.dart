@@ -158,7 +158,7 @@ class StarsPainter extends CustomPainter {
       final currentOpacity = opacity * twinkleValue;
 
       final paint = Paint()
-        ..color = color.withOpacity(currentOpacity)
+        ..color = color.withValues(alpha: currentOpacity)
         ..style = PaintingStyle.fill;
 
       // رسم النجمة

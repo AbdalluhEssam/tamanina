@@ -74,7 +74,7 @@ class _WelcomeCardState extends State<WelcomeCard>
                 borderRadius: AppRadius.xl,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryGreen.withOpacity(0.3),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                     spreadRadius: 2,
@@ -108,7 +108,7 @@ class _WelcomeCardState extends State<WelcomeCard>
                                 widget.greeting,
                                 style: AppTypography.bodyLargeArabic.copyWith(
                                   color:
-                                      AppColors.textOnPrimary.withOpacity(0.9),
+                                      AppColors.textOnPrimary.withValues(alpha: 0.9),
                                 ),
                               ),
                             ],
@@ -120,10 +120,10 @@ class _WelcomeCardState extends State<WelcomeCard>
                           width: 50.w,
                           height: 50.w,
                           decoration: BoxDecoration(
-                            color: AppColors.textOnPrimary.withOpacity(0.2),
+                            color: AppColors.textOnPrimary.withValues(alpha: 0.2),
                             borderRadius: AppRadius.circular,
                             border: Border.all(
-                              color: AppColors.textOnPrimary.withOpacity(0.3),
+                              color: AppColors.textOnPrimary.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -152,7 +152,7 @@ class _WelcomeCardState extends State<WelcomeCard>
                     Text(
                       'رفيقك في رحلة الإيمان',
                       style: AppTypography.bodyMediumArabic.copyWith(
-                        color: AppColors.textOnPrimary.withOpacity(0.8),
+                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
                       ),
                     ),
 
@@ -197,7 +197,7 @@ class _WelcomeCardState extends State<WelcomeCard>
         Text(
           label,
           style: AppTypography.captionArabic.copyWith(
-            color: AppColors.textOnPrimary.withOpacity(0.8),
+            color: AppColors.textOnPrimary.withValues(alpha: 0.8),
             fontSize: 10.sp,
           ),
         ),

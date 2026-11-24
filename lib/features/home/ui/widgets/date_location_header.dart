@@ -30,15 +30,15 @@ class DateLocationHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.goldAccent.withOpacity(0.15),
-            AppColors.primaryGreen.withOpacity(0.1),
+            AppColors.goldAccent.withValues(alpha: 0.15),
+            AppColors.primaryGreen.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.3),
+          color: AppColors.goldAccent.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -93,8 +93,8 @@ class DateLocationHeader extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.white.withOpacity(0.8),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Row(

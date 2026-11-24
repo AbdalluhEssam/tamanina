@@ -1,22 +1,27 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tamanina/features/quran/ui/screens/quran_tab_screen.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_dimensions.dart';
-import '../../data/repo/home_usecases.dart';
-import '../../data/repo/home_repository_impl.dart';
-import '../cubit/home_navigation_cubit.dart';
-import '../cubit/home_cubit.dart';
-import 'enhanced_home_screen.dart';
-import '../widgets/home_app_bar.dart';
-import '../widgets/modern_bottom_nav_bar.dart';
-import '../../../tasbeeh/ui/screens/tasbeeh_screen.dart';
-import '../../../quran/ui/cubit/quran_cubit.dart';
-import '../../../../core/services/service_locator.dart' as di;
-import '../../../settings/ui/screens/enhanced_settings_screen.dart';
+import 'dart:async';
 
-/// Main Home Layout with Bottom Navigation and AppBar
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/settings/settings_repository.dart';
+import '../../../../core/theme/worship_palette.dart';
+import '../../../../core/services/app_update_service.dart';
+import '../../../../core/services/home_widgets_service.dart';
+import '../../../../core/services/notification_service_enhanced.dart';
+import '../../../../core/services/prayer_service_enhanced.dart';
+import '../../../../core/services/service_locator.dart';
+import '../../../../core/services/worship_shortcuts.dart';
+import '../../../../core/widgets/tamanina_ui.dart';
+import '../../../quran/ui/screens/quran_tab_screen.dart';
+import '../../../settings/ui/screens/production_settings_screen.dart';
+import '../../../tasbeeh/ui/screens/tasbeeh_screen.dart';
+import '../cubit/home_navigation_cubit.dart';
+import '../widgets/home_visuals.dart';
+import 'enhanced_home_screen.dart';
+
 class HomeLayout extends StatefulWidget {
   const HomeLayout({super.key});
 
@@ -24,221 +29,281 @@ class HomeLayout extends StatefulWidget {
   State<HomeLayout> createState() => _HomeLayoutState();
 }
 
-class _HomeLayoutState extends State<HomeLayout> with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
+class _HomeLayoutState extends State<HomeLayout> {
+  late final AppLifecycleListener _lifecycle;
+  StreamSubscription<DailyPrayerTimes?>? _prayerUpdates;
+  String? _language;
 
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
+    if (sl.isRegistered<HomeWidgetsService>()) {
+      _prayerUpdates = sl<PrayerServiceEnhanced>().prayerTimesStream.listen((
+        _,
+      ) {
+        _publishWidgets();
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WorshipShortcuts.instance.setHomeReady(true);
+      if (sl.isRegistered<HomeWidgetsService>()) {
+        unawaited(AppUpdateService().checkForUpdates(context));
+      }
+      unawaited(_setUpHomePermissions());
+    });
+  }
 
-    // Initialize animations for center FAB
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat();
+  Future<void> _setUpHomePermissions() async {
+    if (sl.isRegistered<PrayerServiceEnhanced>()) {
+      await sl<PrayerServiceEnhanced>().requestAutoLocation(
+        promptForPermission: true,
+      );
+    }
+    if (!mounted || !sl.isRegistered<NotificationServiceEnhanced>()) return;
+    if (!sl<SettingsRepository>().currentSettings.notificationsEnabled) return;
+    try {
+      await sl<NotificationServiceEnhanced>().requestPermissions();
+    } catch (error) {
+      debugPrint('Notification permission unavailable: ${error.runtimeType}');
+    }
+  }
 
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (_language == language) return;
+    final languageChanged = _language != null;
+    _language = language;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _language != language) return;
+      _publishWidgets();
+      if (languageChanged && sl.isRegistered<NotificationServiceEnhanced>()) {
+        unawaited(sl<NotificationServiceEnhanced>().refresh());
+      }
+    });
+  }
 
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
+  void _publishWidgets() {
+    if (_language case final language?) {
+      if (sl.isRegistered<HomeWidgetsService>()) {
+        unawaited(sl<HomeWidgetsService>().refresh(language));
+      }
+    }
+  }
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeInOut,
-    ));
+  Future<void> _onResume() async {
+    final prayers = sl.isRegistered<PrayerServiceEnhanced>()
+        ? sl<PrayerServiceEnhanced>()
+        : null;
+    final changed = await prayers?.refreshDeviceTimeZone() ?? false;
+    if (!mounted) return;
+    if (changed) prayers?.refreshLocation();
+    _publishWidgets();
+    unawaited(prayers?.requestAutoLocation(promptForPermission: false));
+    if (sl.isRegistered<NotificationServiceEnhanced>()) {
+      final notifications = sl<NotificationServiceEnhanced>();
+      await (changed
+          ? notifications.refresh()
+          : notifications.refreshOnResume());
+    }
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
-    _scaleController.dispose();
+    _lifecycle.dispose();
+    _prayerUpdates?.cancel();
+    WorshipShortcuts.instance.setHomeReady(false);
     super.dispose();
   }
 
-  String _getAppBarTitle(int currentIndex) {
-    final titles = [
-      'الرئيسية',
-      'القرآن الكريم',
-      'التسبيح',
-      'الإعدادات',
-    ];
-    return titles[currentIndex];
-  }
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => HomeNavigationCubit(),
+    child: const _HomeNavigation(),
+  );
+}
+
+class _HomeNavigation extends StatelessWidget {
+  const _HomeNavigation();
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => HomeNavigationCubit()),
-        // Provide QuranCubit so QuranScreen can access it via context.read/watch
-        BlocProvider(create: (context) => di.sl<QuranCubit>()),
-        BlocProvider(
-          create: (context) {
-            final repository = HomeRepositoryImpl();
-            return HomeCubit(
-              getHomeFeaturesUseCase: GetHomeFeaturesUseCase(repository),
-              getGreetingUseCase: GetGreetingUseCase(repository),
-              getUserStatsUseCase: GetUserStatsUseCase(repository),
-            )..loadHomeData();
-          },
-        ),
+    final index = context.watch<HomeNavigationCubit>().state;
+    final onSelect = context.read<HomeNavigationCubit>().navigateToTab;
+    const assistantPosition = 2;
+    final selectedDestination = index < assistantPosition ? index : index + 1;
+    void navigate(int destination) {
+      if (destination == assistantPosition) {
+        Navigator.pushNamed(context, AppRoutes.chatbot);
+        return;
+      }
+      onSelect(destination < assistantPosition ? destination : destination - 1);
+    }
+
+    final assistant = appText(context, 'المساعد', 'Assistant');
+    final isHome = index == 0;
+    final theme = Theme.of(context);
+    final useHomePalette = isHome || theme.brightness == Brightness.dark;
+    final colors = HomePalette.of(context);
+    final labels = [
+      appText(context, 'الرئيسية', 'Today'),
+      appText(context, 'القرآن', 'Quran'),
+      appText(context, 'السبحة', 'Tasbeeh'),
+      appText(context, 'الإعدادات', 'Settings'),
+    ];
+    final icons = [
+      platformIcon(context, Icons.home_outlined, CupertinoIcons.house),
+      platformIcon(context, Icons.menu_book_outlined, CupertinoIcons.book),
+      platformIcon(context, Icons.fingerprint, CupertinoIcons.hand_draw),
+      platformIcon(context, Icons.settings_outlined, CupertinoIcons.gear_alt),
+    ];
+    final destinations = [
+      for (var slot = 0; slot < labels.length + 1; slot++)
+        if (slot == assistantPosition)
+          (
+            assistant,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: useHomePalette ? colors.raised : WorshipPalette.pine,
+                shape: BoxShape.circle,
+                border: useHomePalette
+                    ? Border.all(color: colors.accent)
+                    : null,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  platformIcon(
+                    context,
+                    Icons.chat_bubble_outline,
+                    CupertinoIcons.chat_bubble,
+                  ),
+                  color: useHomePalette ? colors.accent : WorshipPalette.ivory,
+                  size: 22,
+                ),
+              ),
+            ),
+          )
+        else
+          (
+            labels[slot < assistantPosition ? slot : slot - 1],
+            Icon(icons[slot < assistantPosition ? slot : slot - 1]),
+          ),
+    ];
+    final wide = MediaQuery.sizeOf(context).width >= 760;
+    final pages = [
+      EnhancedHomeScreen(openTasbeeh: () => onSelect(2)),
+      const QuranTabScreen(),
+      const TasbeehScreen(),
+      const ProductionSettingsScreen(embedded: true),
+    ];
+
+    final bar = NavigationBar(
+      selectedIndex: selectedDestination,
+      onDestinationSelected: navigate,
+      destinations: [
+        for (final (label, icon) in destinations)
+          NavigationDestination(icon: icon, label: label),
       ],
-      child: BlocBuilder<HomeNavigationCubit, int>(
-        builder: (context, currentIndex) {
-          final theme = Theme.of(context);
+    );
 
-          return Scaffold(
-            backgroundColor: theme.scaffoldBackgroundColor,
-            // extendBody: true,
-            // extendBodyBehindAppBar: true,
-
-            // Custom AppBar
-            appBar: HomeAppBar(
-              title: _getAppBarTitle(currentIndex),
-              onMenuPressed: () {
-                // Navigate to Azkar/Adhkar screen
-                Navigator.pushNamed(context, '/azkar');
-              },
-              onNotificationPressed: () {
-                // Navigate to notification settings
-                Navigator.pushNamed(context, '/notification-settings');
-              },
-            ),
-
-            // Body with different screens
-            body: _buildBody(currentIndex),
-
-            // Floating Action Button in center
-            floatingActionButton: _buildCenterFloatingButton(),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.centerDocked,
-
-            // Bottom Navigation Bar
-            bottomNavigationBar: ModernBottomNavBar(
-              currentIndex: currentIndex,
-              onTap: (index) {
-                context.read<HomeNavigationCubit>().navigateToTab(index);
-              },
-            ),
-          );
-        },
+    return Scaffold(
+      backgroundColor: isHome ? colors.background : null,
+      appBar: isHome ? null : AppBar(title: Text(labels[index])),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: theme.brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        child: SafeArea(
+          top: isHome,
+          bottom: wide,
+          child: Row(
+            children: [
+              if (wide)
+                NavigationRail(
+                  backgroundColor: useHomePalette ? colors.surface : null,
+                  selectedIndex: selectedDestination,
+                  onDestinationSelected: navigate,
+                  labelType: NavigationRailLabelType.all,
+                  scrollable: true,
+                  destinations: [
+                    for (final (label, icon) in destinations)
+                      NavigationRailDestination(icon: icon, label: Text(label)),
+                  ],
+                ),
+              if (wide)
+                VerticalDivider(
+                  width: 1,
+                  color: useHomePalette ? colors.border : null,
+                ),
+              Expanded(child: pages[index]),
+            ],
+          ),
+        ),
       ),
+      bottomNavigationBar: wide
+          ? null
+          : useHomePalette
+          ? _HomeNavigationBar(child: bar)
+          : bar,
     );
   }
+}
 
-  Widget _buildBody(int currentIndex) {
-    switch (currentIndex) {
-      case 0:
-        return const EnhancedHomeScreen();
-      case 2:
-        return const TasbeehScreen();
-      case 1:
-        return const QuranTabScreen();
-      case 3:
-        return const EnhancedSettingsScreen();
-      default:
-        return const EnhancedHomeScreen();
-    }
-  }
+class _HomeNavigationBar extends StatelessWidget {
+  const _HomeNavigationBar({required this.child});
 
-  /// Center Floating Action Button
-  Widget _buildCenterFloatingButton() {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/chatbot'),
-      onTapDown: (_) => _scaleController.forward(),
-      onTapUp: (_) => _scaleController.reverse(),
-      onTapCancel: () => _scaleController.reverse(),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_pulseAnimation, _scaleAnimation]),
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _pulseAnimation.value * _scaleAnimation.value,
-            child: Container(
-              width: 65.w,
-              height: 65.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primaryGreen,
-                    AppColors.primaryGreen.withOpacity(0.8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withOpacity(0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                  // Glow effect
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withOpacity(0.2),
-                    blurRadius: 25,
-                    spreadRadius: 2,
-                  ),
-                ],
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = Theme.of(context).textTheme;
+    final bigText = MediaQuery.textScalerOf(context).scale(12) > 17;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.border,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(1, 1, 1, 0),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              height: bigText ? 76 : 66,
+              backgroundColor: colors.surface,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              indicatorColor: HomePalette.gold,
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background pulse circle
-                  Container(
-                    width: 55.w,
-                    height: 55.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  // Main icon
-                  Icon(
-                    Icons.mosque_rounded, // Islamic mosque icon
-                    color: Colors.white,
-                    size: AppSizing.iconLG,
-                  ),
-                  // Chat indicator
-                  Positioned(
-                    top: 10.w,
-                    right: 10.w,
-                    child: Container(
-                      width: 14.w,
-                      height: 14.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.goldAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.chat_bubble,
-                        color: Colors.white,
-                        size: 8.w,
-                      ),
-                    ),
-                  ),
-                ],
+              iconTheme: WidgetStateProperty.resolveWith(
+                (states) => IconThemeData(
+                  size: 22,
+                  color: states.contains(WidgetState.selected)
+                      ? HomePalette.onGold
+                      : colors.ink,
+                ),
+              ),
+              labelTextStyle: WidgetStateProperty.resolveWith(
+                (states) => text.labelSmall?.copyWith(
+                  color: states.contains(WidgetState.selected)
+                      ? colors.accent
+                      : colors.ink,
+                  fontWeight: states.contains(WidgetState.selected)
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                ),
               ),
             ),
-          );
-        },
+            child: child,
+          ),
+        ),
       ),
     );
   }

@@ -1,312 +1,112 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 
-/// صفحة سياسة الخصوصية
-/// Privacy Policy Screen
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/tamanina_ui.dart';
+
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
+  static const _sections = [
+    (
+      'البيانات على جهازك',
+      'On-device data',
+      'تُحفظ إعداداتك وعلامات المصحف وتقدّم القراءة والعبادات والمحادثات '
+          'والملفات التي تنزّلها على جهازك. يمكنك استخدام التطبيق بدون حساب.',
+      'Your settings, bookmarks, reading and worship progress, conversations '
+          'and downloads are stored on your device. You can use the app without '
+          'an account.',
+    ),
+    (
+      'الموقع والتنبيهات',
+      'Location and reminders',
+      'إذا سمحت بالموقع، يستخدم التطبيق الإحداثيات لحساب مواقيت الصلاة '
+          'واتجاه القبلة على جهازك. قد تستخدم خدمة الموقع في نظام التشغيل '
+          'الإحداثيات لمعرفة اسم المدينة. يمكنك اختيار المدينة يدويًا. '
+          'يجدول التطبيق تنبيهات الصلاة والأذكار محليًا حسب إعداداتك.',
+      'With your permission, the app uses coordinates to calculate prayer times '
+          'and Qibla direction on your device. Your operating system’s location '
+          'service may use the coordinates to look up the city name. You can '
+          'choose a city manually. Prayer and adhkar reminders are scheduled '
+          'on your device according to your settings.',
+    ),
+    (
+      'الخدمات التي تستخدم الإنترنت',
+      'Online services',
+      'تستخدم رسائل التطبيق عبر Firebase معرّف تثبيت لإيصال الإشعارات '
+          'وبيانات فنية عن التطبيق والجهاز لتشغيل الخدمة. '
+          'قد يتصل التطبيق بمتجر جهازك للتحقق من التحديثات. يتصل التطبيق '
+          'بمزودي الملفات عند تنزيل التلاوات أو نموذج المساعد. قد يتلقى '
+          'مزودو هذه الطلبات عنوان IP ومعلومات الاتصال اللازمة لتنفيذها.',
+      'Firebase Cloud Messaging uses an installation identifier to deliver app '
+          'messages and technical app and device information to operate the '
+          'service. The app may check your device’s app store for updates. '
+          'Downloading recitations or the assistant model contacts the file '
+          'providers, who may receive your IP address and other connection data '
+          'needed to handle these requests.',
+    ),
+    (
+      'المساعد',
+      'Assistant',
+      'يعمل بحث القرآن ومحتوى المساعدة على جهازك. بعد تنزيل نموذج المساعد '
+          'المحلي تُعالَج أسئلتك على جهازك. إذا كانت الإجابة عبر الإنترنت '
+          'متاحة واخترت استخدامها، يُرسل سؤالك وبعض الرسائل الأخيرة إلى '
+          'مزود الإجابة.',
+      'Quran search and in-app help run on your device. After the local model is '
+          'downloaded, it processes your questions on your device. If online '
+          'answers are available and you choose them, the answer provider '
+          'receives your question and some recent messages.',
+    ),
+    (
+      'إدارة بياناتك',
+      'Managing your data',
+      'يمكنك تغيير أذونات الموقع والإشعارات من إعدادات الجهاز. يمكنك حذف '
+          'نموذج المساعد من داخل التطبيق أو حذف بيانات التطبيق من جهازك. قد '
+          'تحتفظ النسخ الاحتياطية التي يديرها جهازك بنسخ حسب إعداداتك.',
+      'You can change location and notification permissions in your device '
+          'settings. You can remove the assistant model in the app or remove '
+          'app data from your device. System-managed backups may retain copies '
+          'according to your preferences.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        title: Text(
-          'سياسة الخصوصية',
-          style: AppTypography.appBarTitle.copyWith(
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primaryGreen,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(appText(context, 'سياسة الخصوصية', 'Privacy policy')),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // العنوان الرئيسي
-            _buildHeader(isDark),
-            SizedBox(height: 24.h),
-
-            // آخر تحديث
-            _buildLastUpdated(isDark),
-            SizedBox(height: 24.h),
-
-            // المقدمة
-            _buildSection(
-              title: 'مقدمة',
-              content: '''
-مرحباً بك في تطبيق "طمأنينة" للأذكار والقرآن الكريم. نحن نقدر ثقتك بنا ونلتزم بحماية خصوصيتك وبياناتك الشخصية.
-
-توضح سياسة الخصوصية هذه كيفية جمع واستخدام وحماية المعلومات التي قد نحصل عليها منك أثناء استخدام تطبيقنا.
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'المعلومات التي نجمعها',
-              content: '''
-• **معلومات الاستخدام**: نجمع معلومات حول كيفية استخدامك للتطبيق، مثل الأذكار المفضلة وآخر موضع قراءة في القرآن الكريم.
-
-• **بيانات الجهاز**: قد نجمع معلومات عامة عن جهازك مثل نوع الجهاز ونظام التشغيل لتحسين تجربة المستخدم.
-
-• **بيانات الموقع**: نستخدم موقعك الجغرافي فقط لتحديد اتجاه القبلة وأوقات الصلاة، ولا نخزن هذه البيانات على خوادمنا.
-
-• **الإشعارات**: إذا سمحت بذلك، نرسل إشعارات لتذكيرك بالأذكار وأوقات الصلاة.
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'كيف نستخدم معلوماتك',
-              content: '''
-نستخدم المعلومات التي نجمعها للأغراض التالية:
-
-• تحسين تجربة المستخدم وتخصيص المحتوى
-• حفظ تقدمك في قراءة القرآن والأذكار
-• إرسال تذكيرات بأوقات الصلاة والأذكار
-• تحليل استخدام التطبيق لتحسين خدماتنا
-• الامتثال للمتطلبات القانونية
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'حماية البيانات',
-              content: '''
-نتخذ إجراءات أمنية مناسبة لحماية بياناتك من الوصول غير المصرح به أو التعديل أو الإفصاح أو الإتلاف.
-
-• **التخزين المحلي**: معظم بياناتك تُخزن محلياً على جهازك فقط
-• **التشفير**: نستخدم تقنيات التشفير لحماية البيانات المنقولة
-• **عدم المشاركة**: لا نبيع أو نشارك بياناتك الشخصية مع أطراف ثالثة
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'خدمات الطرف الثالث',
-              content: '''
-قد يستخدم التطبيق خدمات من أطراف ثالثة لبعض الوظائف:
-
-• **Firebase**: لخدمات الإشعارات والتحليلات
-• **خدمات الموقع**: لتحديد اتجاه القبلة وأوقات الصلاة
-
-هذه الخدمات لها سياسات خصوصية خاصة بها، وننصحك بمراجعتها.
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'حقوقك',
-              content: '''
-لديك الحق في:
-
-• الوصول إلى بياناتك الشخصية المخزنة
-• طلب تصحيح أو حذف بياناتك
-• إلغاء الاشتراك في الإشعارات في أي وقت
-• حذف التطبيق وجميع البيانات المرتبطة به
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'خصوصية الأطفال',
-              content: '''
-تطبيق "طمأنينة" مناسب لجميع الأعمار ولا نجمع معلومات شخصية بشكل متعمد من الأطفال دون سن 13 عاماً بدون موافقة الوالدين.
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'التغييرات على السياسة',
-              content: '''
-قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. سنقوم بإعلامك بأي تغييرات جوهرية عن طريق نشر السياسة الجديدة في التطبيق.
-
-ننصحك بمراجعة هذه السياسة بشكل دوري للاطلاع على أي تحديثات.
-''',
-              isDark: isDark,
-            ),
-
-            _buildSection(
-              title: 'اتصل بنا',
-              content: '''
-إذا كان لديك أي أسئلة أو استفسارات حول سياسة الخصوصية هذه، يرجى التواصل معنا عبر:
-
-📧 البريد الإلكتروني: support@tamanina-app.com
-🌐 الموقع الإلكتروني: www.tamanina-app.com
-''',
-              isDark: isDark,
-            ),
-
-            SizedBox(height: 32.h),
-
-            // التأكيد
-            _buildConfirmation(isDark),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryGreen.withOpacity(0.1),
-            AppColors.primaryBlue.withOpacity(0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppColors.primaryGreen.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              Icons.privacy_tip_outlined,
-              color: AppColors.primaryGreen,
-              size: 32.sp,
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      body: SafeArea(
+        top: false,
+        child: ContentFrame(
+          maxWidth: 680,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              for (final (titleAr, titleEn, bodyAr, bodyEn) in _sections) ...[
                 Text(
-                  'خصوصيتك تهمنا',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
-                  ),
+                  appText(context, titleAr, titleEn),
+                  style: theme.textTheme.titleMedium,
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  'نلتزم بحماية بياناتك الشخصية',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                  ),
+                const SizedBox(height: 6),
+                SelectableText(
+                  appText(context, bodyAr, bodyEn),
+                  style: theme.textTheme.bodyLarge,
                 ),
+                const SizedBox(height: 20),
               ],
-            ),
+              if (AppConstants.supportEmail.isNotEmpty)
+                SelectableText(
+                  appText(
+                    context,
+                    'التواصل بشأن الخصوصية: ${AppConstants.supportEmail}',
+                    'Privacy contact: ${AppConstants.supportEmail}',
+                  ),
+                  style: theme.textTheme.bodyLarge,
+                ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLastUpdated(bool isDark) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.update,
-            color: AppColors.info,
-            size: 16.sp,
-          ),
-          SizedBox(width: 8.w),
-          Text(
-            'آخر تحديث: ديسمبر 2024',
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.info,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required String content,
-    required bool isDark,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 20.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryGreen,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            content.trim(),
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDark ? Colors.white70 : AppColors.textSecondary,
-              height: 1.7,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConfirmation(bool isDark) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.creamAccent,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            color: AppColors.primaryGreen,
-            size: 24.sp,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              'باستخدامك لتطبيق طمأنينة، فإنك توافق على سياسة الخصوصية هذه.',
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: isDark ? Colors.white70 : AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

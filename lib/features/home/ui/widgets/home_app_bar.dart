@@ -64,7 +64,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Text(
                     'Tamanina',
                     style: AppTypography.labelMediumEnglish.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 10.sp,
                       letterSpacing: 1,
                     ),

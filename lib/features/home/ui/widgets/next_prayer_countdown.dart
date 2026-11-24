@@ -105,7 +105,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                 gradient: LinearGradient(
                   colors: [
                     AppColors.primaryGreen,
-                    AppColors.primaryGreen.withOpacity(0.8),
+                    AppColors.primaryGreen.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -113,7 +113,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                 borderRadius: BorderRadius.circular(24.r),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryGreen.withOpacity(0.4),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -128,14 +128,14 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                       children: [
                         Icon(
                           Icons.check_circle_outline_rounded,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           size: 16.w,
                         ),
                         SizedBox(width: 6.w),
                         Text(
                           'الوقت الحالي: ${widget.currentPrayer!.nameArabic}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12.sp,
                           ),
                         ),
@@ -148,7 +148,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                   Text(
                     'الصلاة القادمة',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14.sp,
                     ),
                   ),
@@ -179,7 +179,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                   Text(
                     widget.nextPrayer!.formattedTime,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w500,
                     ),
@@ -192,7 +192,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                     padding:
                         EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: FittedBox(
@@ -221,7 +221,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                     padding:
                         EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: FittedBox(
@@ -231,14 +231,14 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
                         children: [
                           Icon(
                             Icons.timer_outlined,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             size: 18.w,
                           ),
                           SizedBox(width: 8.w),
                           Text(
                             'باقي ${_formatTimeRemaining()}',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
@@ -271,7 +271,7 @@ class _NextPrayerCountdownState extends State<NextPrayerCountdown>
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 10.sp,
           ),
         ),

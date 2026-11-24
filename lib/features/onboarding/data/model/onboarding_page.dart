@@ -8,8 +8,6 @@ class OnboardingPageModel extends Equatable {
   final String descriptionAr;
   final String descriptionEn;
   final String imagePath;
-  final String lottieAnimation;
-  final String iconEmoji;
 
   const OnboardingPageModel({
     required this.titleAr,
@@ -17,18 +15,14 @@ class OnboardingPageModel extends Equatable {
     required this.descriptionAr,
     required this.descriptionEn,
     required this.imagePath,
-    required this.lottieAnimation,
-    required this.iconEmoji,
   });
 
   @override
   List<Object?> get props => [
-        titleAr,
-        titleEn,
-        descriptionAr,
-        descriptionEn,
-        imagePath,
-        lottieAnimation,
-        iconEmoji,
-      ];
+    titleAr,
+    titleEn,
+    descriptionAr,
+    descriptionEn,
+    imagePath,
+  ];
 }

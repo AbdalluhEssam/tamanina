@@ -122,7 +122,7 @@ class _GlowEffectWidgetState extends State<GlowEffectWidget>
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: widget.glowColor.withOpacity(opacity),
+            color: widget.glowColor.withValues(alpha: opacity),
             blurRadius: radius,
             spreadRadius: radius * 0.3,
           ),
@@ -223,9 +223,9 @@ class GlowPainter extends CustomPainter {
     final paint = Paint()
       ..shader = RadialGradient(
         colors: [
-          glowColor.withOpacity(glowOpacity),
-          glowColor.withOpacity(glowOpacity * 0.7),
-          glowColor.withOpacity(glowOpacity * 0.3),
+          glowColor.withValues(alpha: glowOpacity),
+          glowColor.withValues(alpha: glowOpacity * 0.7),
+          glowColor.withValues(alpha: glowOpacity * 0.3),
           Colors.transparent,
         ],
         stops: const [0.0, 0.4, 0.7, 1.0],

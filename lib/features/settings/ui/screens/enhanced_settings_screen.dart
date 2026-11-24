@@ -57,8 +57,9 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           'الإعدادات',
@@ -76,9 +77,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
           _buildSection(
             title: 'المظهر',
             icon: Icons.palette_rounded,
-            children: [
-              _buildThemeSelector(isDark),
-            ],
+            children: [_buildThemeSelector(isDark)],
           ),
 
           SizedBox(height: 16.h),
@@ -100,9 +99,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
           _buildSection(
             title: 'الموقع',
             icon: Icons.location_on_rounded,
-            children: [
-              _buildLocationSettings(isDark),
-            ],
+            children: [_buildLocationSettings(isDark)],
           ),
 
           SizedBox(height: 16.h),
@@ -223,7 +220,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -239,7 +236,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
                 Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Icon(icon, color: AppColors.primaryGreen, size: 20.w),
@@ -257,7 +254,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
               ],
             ),
           ),
-          Divider(height: 1, color: AppColors.divider.withOpacity(0.3)),
+          Divider(height: 1, color: AppColors.divider.withValues(alpha: 0.3)),
           Padding(
             padding: EdgeInsets.all(16.w),
             child: Column(children: children),
@@ -327,7 +324,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryGreen.withOpacity(0.15)
+              ? AppColors.primaryGreen.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
@@ -339,8 +336,9 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
           children: [
             Icon(
               icon,
-              color:
-                  isSelected ? AppColors.primaryGreen : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.textSecondary,
               size: 24.w,
             ),
             SizedBox(height: 4.h),
@@ -430,7 +428,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primaryGreen.withOpacity(0.15)
+                        ? AppColors.primaryGreen.withValues(alpha: 0.15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
@@ -448,8 +446,9 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
                         color: isSelected
                             ? AppColors.primaryGreen
                             : AppColors.textSecondary,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -472,7 +471,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
           isDark: isDark,
           trailing: Switch(
             value: !_prayerService.useManualLocation,
-            activeColor: AppColors.primaryGreen,
+            activeThumbColor: AppColors.primaryGreen,
             onChanged: (v) async {
               await _prayerService.setUseManualLocation(!v);
               setState(() {});
@@ -521,8 +520,10 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
                 itemBuilder: (context, index) {
                   final city = popularCities[index];
                   return ListTile(
-                    leading: Icon(Icons.location_city_rounded,
-                        color: AppColors.primaryGreen),
+                    leading: Icon(
+                      Icons.location_city_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
                     title: Text(city.nameArabic),
                     subtitle: Text(city.nameEnglish),
                     onTap: () async {
@@ -561,18 +562,36 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
           spacing: 8.w,
           runSpacing: 8.h,
           children: [
-            _buildPrayerChip('الفجر', _fajrNotification,
-                (v) => setState(() => _fajrNotification = v)),
-            _buildPrayerChip('الشروق', _sunriseNotification,
-                (v) => setState(() => _sunriseNotification = v)),
-            _buildPrayerChip('الظهر', _dhuhrNotification,
-                (v) => setState(() => _dhuhrNotification = v)),
-            _buildPrayerChip('العصر', _asrNotification,
-                (v) => setState(() => _asrNotification = v)),
-            _buildPrayerChip('المغرب', _maghribNotification,
-                (v) => setState(() => _maghribNotification = v)),
-            _buildPrayerChip('العشاء', _ishaNotification,
-                (v) => setState(() => _ishaNotification = v)),
+            _buildPrayerChip(
+              'الفجر',
+              _fajrNotification,
+              (v) => setState(() => _fajrNotification = v),
+            ),
+            _buildPrayerChip(
+              'الشروق',
+              _sunriseNotification,
+              (v) => setState(() => _sunriseNotification = v),
+            ),
+            _buildPrayerChip(
+              'الظهر',
+              _dhuhrNotification,
+              (v) => setState(() => _dhuhrNotification = v),
+            ),
+            _buildPrayerChip(
+              'العصر',
+              _asrNotification,
+              (v) => setState(() => _asrNotification = v),
+            ),
+            _buildPrayerChip(
+              'المغرب',
+              _maghribNotification,
+              (v) => setState(() => _maghribNotification = v),
+            ),
+            _buildPrayerChip(
+              'العشاء',
+              _ishaNotification,
+              (v) => setState(() => _ishaNotification = v),
+            ),
           ],
         ),
       ],
@@ -584,7 +603,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
       label: Text(label),
       selected: value,
       onSelected: onChanged,
-      selectedColor: AppColors.primaryGreen.withOpacity(0.2),
+      selectedColor: AppColors.primaryGreen.withValues(alpha: 0.2),
       checkmarkColor: AppColors.primaryGreen,
       labelStyle: TextStyle(
         color: value ? AppColors.primaryGreen : AppColors.textSecondary,
@@ -615,7 +634,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
                   padding: EdgeInsets.symmetric(vertical: 8.h),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primaryGreen.withOpacity(0.15)
+                        ? AppColors.primaryGreen.withValues(alpha: 0.15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8.r),
                     border: Border.all(
@@ -717,7 +736,7 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
         ),
         Switch(
           value: value,
-          activeColor: AppColors.primaryGreen,
+          activeThumbColor: AppColors.primaryGreen,
           onChanged: onChanged,
         ),
       ],
@@ -768,8 +787,11 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
             if (trailing != null)
               trailing
             else if (onTap != null)
-              Icon(Icons.arrow_forward_ios_rounded,
-                  color: AppColors.textSecondary, size: 16.w),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.textSecondary,
+                size: 16.w,
+              ),
           ],
         ),
       ),
@@ -779,7 +801,10 @@ class _EnhancedSettingsScreenState extends State<EnhancedSettingsScreen> {
   Widget _buildDivider() {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Divider(height: 1, color: AppColors.divider.withOpacity(0.3)),
+      child: Divider(
+        height: 1,
+        color: AppColors.divider.withValues(alpha: 0.3),
+      ),
     );
   }
 }

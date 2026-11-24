@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTypography {
@@ -14,65 +13,78 @@ class AppTypography {
   // Base text styles with Google Fonts
 
   // Arabic Titles (Reem Kufi)
-  static TextStyle get reemKufiBold => GoogleFonts.reemKufi(
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get reemKufiSemiBold => GoogleFonts.reemKufi(
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get reemKufiMedium => GoogleFonts.reemKufi(
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get reemKufiRegular => GoogleFonts.reemKufi(
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get reemKufiBold => TextStyle(
+    fontFamily: 'Reem Kufi',
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get reemKufiSemiBold => TextStyle(
+    fontFamily: 'Reem Kufi',
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get reemKufiMedium => TextStyle(
+    fontFamily: 'Reem Kufi',
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get reemKufiRegular => TextStyle(
+    fontFamily: 'Reem Kufi',
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
   // Arabic Body (Amiri)
-  static TextStyle get amiriRegular => GoogleFonts.amiri(
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get amiriBold => GoogleFonts.amiri(
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get amiriSemiBold => GoogleFonts.amiri(
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
-  static TextStyle get amiriLight => GoogleFonts.amiri(
-        fontWeight: FontWeight.w300,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get amiriRegular => TextStyle(
+    fontFamily: 'Amiri',
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get amiriBold => TextStyle(
+    fontFamily: 'Amiri',
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get amiriSemiBold => TextStyle(
+    fontFamily: 'Amiri',
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+  static TextStyle get amiriLight => TextStyle(
+    fontFamily: 'Amiri',
+    fontWeight: FontWeight.w300,
+    color: AppColors.textPrimary,
+  );
 
   // English Typography (Poppins)
-  static TextStyle get poppinsBold => GoogleFonts.poppins(
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get poppinsBold => TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
 
-  static TextStyle get poppinsSemiBold => GoogleFonts.poppins(
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get poppinsSemiBold => TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
 
-  static TextStyle get poppinsMedium => GoogleFonts.poppins(
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get poppinsMedium => TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
 
-  static TextStyle get poppinsRegular => GoogleFonts.poppins(
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get poppinsRegular => TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
 
-  static TextStyle get poppinsLight => GoogleFonts.poppins(
-        fontWeight: FontWeight.w300,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle get poppinsLight => TextStyle(
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.w300,
+    color: AppColors.textPrimary,
+  );
 
   // Headline styles (mixed usage based on content language)
   static TextStyle get h1Arabic =>
@@ -118,16 +130,16 @@ class AppTypography {
 
   // Caption and label styles
   static TextStyle get captionArabic => amiriLight.copyWith(
-        fontSize: 12,
-        height: 1.4,
-        color: AppColors.textSecondary,
-      );
+    fontSize: 12,
+    height: 1.4,
+    color: AppColors.textSecondary,
+  );
 
   static TextStyle get captionEnglish => poppinsLight.copyWith(
-        fontSize: 12,
-        height: 1.4,
-        color: AppColors.textSecondary,
-      );
+    fontSize: 12,
+    height: 1.4,
+    color: AppColors.textSecondary,
+  );
 
   static TextStyle get labelLargeArabic =>
       reemKufiMedium.copyWith(fontSize: 14, height: 1.4);
@@ -145,65 +157,61 @@ class AppTypography {
 
   // Special Islamic text styles
   static TextStyle get quranText => amiriBold.copyWith(
-        fontSize: 18,
-        height: 2.0,
-        color: AppColors.primaryGreen,
-        letterSpacing: 0.5,
-      );
+    fontSize: 18,
+    height: 2.0,
+    color: AppColors.primaryGreen,
+    letterSpacing: 0.5,
+  );
 
   static TextStyle get azkarText => amiriRegular.copyWith(
-        fontSize: 16,
-        height: 1.8,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 16,
+    height: 1.8,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get prayerTimeText => reemKufiBold.copyWith(
-        fontSize: 20,
-        height: 1.2,
-        color: AppColors.primaryGreen,
-      );
+    fontSize: 20,
+    height: 1.2,
+    color: AppColors.primaryGreen,
+  );
 
   static TextStyle get bismillahText => amiriBold.copyWith(
-        fontSize: 22,
-        height: 1.5,
-        color: AppColors.goldAccent,
-      );
+    fontSize: 22,
+    height: 1.5,
+    color: AppColors.goldAccent,
+  );
 
   // Button text styles
   static TextStyle get buttonTextLarge => poppinsSemiBold.copyWith(
-        fontSize: 16,
-        height: 1.2,
-        color: AppColors.textOnPrimary,
-      );
+    fontSize: 16,
+    height: 1.2,
+    color: AppColors.textOnPrimary,
+  );
 
   static TextStyle get buttonTextMedium => poppinsMedium.copyWith(
-        fontSize: 14,
-        height: 1.2,
-        color: AppColors.textOnPrimary,
-      );
+    fontSize: 14,
+    height: 1.2,
+    color: AppColors.textOnPrimary,
+  );
 
   static TextStyle get buttonTextSmall => poppinsMedium.copyWith(
-        fontSize: 12,
-        height: 1.2,
-        color: AppColors.textOnPrimary,
-      );
+    fontSize: 12,
+    height: 1.2,
+    color: AppColors.textOnPrimary,
+  );
 
   // App bar and navigation styles
   static TextStyle get appBarTitle => reemKufiSemiBold.copyWith(
-        fontSize: 20,
-        height: 1.2,
-        color: AppColors.textOnPrimary,
-      );
+    fontSize: 20,
+    height: 1.2,
+    color: AppColors.textOnPrimary,
+  );
 
-  static TextStyle get tabBarText => poppinsMedium.copyWith(
-        fontSize: 14,
-        height: 1.2,
-      );
+  static TextStyle get tabBarText =>
+      poppinsMedium.copyWith(fontSize: 14, height: 1.2);
 
-  static TextStyle get navigationText => poppinsRegular.copyWith(
-        fontSize: 12,
-        height: 1.2,
-      );
+  static TextStyle get navigationText =>
+      poppinsRegular.copyWith(fontSize: 12, height: 1.2);
 
   // Adaptive styles that choose font based on locale
   static TextStyle adaptiveHeadline1(Locale locale) {
@@ -236,7 +244,9 @@ class AppTypography {
   }
 
   static TextStyle onDarkSurfaceSecondary(TextStyle style) {
-    return style.copyWith(color: AppColors.textOnSurfaceDark.withOpacity(0.7));
+    return style.copyWith(
+      color: AppColors.textOnSurfaceDark.withValues(alpha: 0.7),
+    );
   }
 }
 
@@ -250,7 +260,6 @@ extension TextStyleExtensions on TextStyle {
   TextStyle get error => copyWith(color: AppColors.error);
   TextStyle get success => copyWith(color: AppColors.success);
 
-  TextStyle withOpacity(double opacity) => copyWith(
-        color: color?.withOpacity(opacity),
-      );
+  TextStyle withOpacity(double opacity) =>
+      copyWith(color: color?.withValues(alpha: opacity));
 }

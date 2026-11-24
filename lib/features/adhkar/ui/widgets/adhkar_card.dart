@@ -1,203 +1,185 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/services/service_locator.dart';
+import '../../../../core/settings/settings_cubit.dart';
+import '../../../../core/widgets/tamanina_ui.dart';
+import '../../../statistics/data/worship_activity.dart';
 import '../../data/models/adhkar_model.dart';
 
-class AdhkarCard extends StatelessWidget {
-  final AdhkarModel adhkar;
-  final VoidCallback onCopy;
-  final VoidCallback onShare;
-  final VoidCallback onFavorite;
-
+class AdhkarCard extends StatefulWidget {
   const AdhkarCard({
     super.key,
     required this.adhkar,
-    required this.onCopy,
-    required this.onShare,
     required this.onFavorite,
+    this.collection = 'default',
+    this.onCopy,
+    this.onShare,
   });
+
+  final AdhkarModel adhkar;
+  final String collection;
+  final VoidCallback onFavorite;
+  final VoidCallback? onCopy;
+  final VoidCallback? onShare;
+
+  @override
+  State<AdhkarCard> createState() => _AdhkarCardState();
+}
+
+class _AdhkarCardState extends State<AdhkarCard> {
+  late final SharedPreferences _prefs;
+  late final String _key;
+  late int _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefs = sl<SharedPreferences>();
+    final today = WorshipLog.day(
+      DateTime.now(),
+    ).toIso8601String().split('T').first;
+    _key = 'adhkar_${widget.collection}_${widget.adhkar.id}_$today';
+    _count = (_prefs.getInt(_key) ?? 0).clamp(0, widget.adhkar.count);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final entry = widget.adhkar;
+    final theme = Theme.of(context);
+    final done = _count >= entry.count;
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Arabic Text
             Text(
-              adhkar.arabicText,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                height: 1.8,
+              entry.arabicText,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 24,
+                height: 1.7,
+                color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Transliteration
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                adhkar.transliteration,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.textPrimary.withOpacity(0.8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Translation
-            Text(
-              adhkar.translation,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Count Badge
-            if (adhkar.count > 1)
-              Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.goldAccent.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'يُكرر ${adhkar.count} مرة',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ),
-              ),
-
-            // Reference
             const SizedBox(height: 8),
             Text(
-              'المرجع: ${adhkar.reference}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary.withOpacity(0.7),
+              entry.reference,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-
-            // Benefits
-            if (adhkar.benefits.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.blue.withOpacity(0.2),
-                    width: 1,
-                  ),
+            if (entry.translation.isNotEmpty ||
+                entry.transliteration.isNotEmpty ||
+                entry.benefits.isNotEmpty)
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text(
+                  appText(context, 'المعنى والمعلومات', 'Meaning and details'),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.lightbulb_outline,
-                      size: 16,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        adhkar.benefits,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                children: [
+                  for (final text in [
+                    entry.translation,
+                    entry.transliteration,
+                    entry.benefits,
+                  ])
+                    if (text.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(
+                          text,
+                          textAlign: TextAlign.start,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
-
-            const SizedBox(height: 16),
-
-            // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            const SizedBox(height: 8),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 4,
+              runSpacing: 4,
               children: [
-                _buildActionButton(
-                  icon: Icons.copy,
-                  label: 'نسخ',
-                  onTap: onCopy,
+                FilledButton.tonal(
+                  onPressed: done
+                      ? null
+                      : () {
+                          setState(() => _count++);
+                          unawaited(_prefs.setInt(_key, _count));
+                          if (context
+                              .read<SettingsCubit>()
+                              .currentSettings
+                              .vibrationEnabled) {
+                            HapticFeedback.selectionClick();
+                          }
+                          if (_count == entry.count) {
+                            unawaited(
+                              WorshipLog.record(WorshipActivity.adhkar),
+                            );
+                          }
+                        },
+                  child: Text(
+                    done
+                        ? appText(context, 'اكتمل', 'Complete')
+                        : appText(
+                            context,
+                            'عدّ التكرار ($_count/${entry.count})',
+                            'Count ($_count/${entry.count})',
+                          ),
+                  ),
                 ),
-                _buildActionButton(
-                  icon: Icons.share,
-                  label: 'مشاركة',
-                  onTap: onShare,
+                IconButton(
+                  tooltip: appText(context, 'المفضلة', 'Favorite'),
+                  icon: Icon(
+                    entry.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  ),
+                  onPressed: widget.onFavorite,
                 ),
-                _buildActionButton(
-                  icon: adhkar.isFavorite
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  label: 'مفضلة',
-                  onTap: onFavorite,
-                  color: adhkar.isFavorite ? Colors.red : null,
+                IconButton(
+                  tooltip: appText(context, 'نسخ', 'Copy'),
+                  icon: const Icon(Icons.copy_outlined),
+                  onPressed:
+                      widget.onCopy ??
+                      () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: entry.arabicText),
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                appText(context, 'تم النسخ', 'Copied'),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                ),
+                Builder(
+                  builder: (context) => IconButton(
+                    tooltip: appText(context, 'مشاركة', 'Share'),
+                    icon: Icon(Icons.adaptive.share),
+                    onPressed:
+                        widget.onShare ??
+                        () {
+                          final box = context.findRenderObject();
+                          Share.share(
+                            '${entry.arabicText}\n\n${entry.translation}',
+                            sharePositionOrigin: box is RenderBox
+                                ? box.localToGlobal(Offset.zero) & box.size
+                                : null,
+                          );
+                        },
+                  ),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: color ?? AppColors.primaryGreen,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: color ?? AppColors.primaryGreen,
-                fontWeight: FontWeight.w500,
-              ),
             ),
           ],
         ),

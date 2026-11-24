@@ -216,13 +216,13 @@ class HomeScreen extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: AppRadius.lg,
         border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.2),
+          color: AppColors.goldAccent.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : AppColors.goldAccent.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.goldAccent.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -297,10 +297,10 @@ class HomeScreen extends StatelessWidget {
             width: 50.w,
             height: 50.w,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: AppRadius.md,
               border: Border.all(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
               ),
             ),
             child: Icon(

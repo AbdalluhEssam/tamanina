@@ -75,23 +75,21 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryGreen.withOpacity(0.1),
-            AppColors.goldAccent.withOpacity(0.1),
+            AppColors.primaryGreen.withValues(alpha: 0.1),
+            AppColors.goldAccent.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: AppRadius.lg,
-        border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.3),
-        ),
+        border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withOpacity(0.2),
+              color: AppColors.primaryGreen.withValues(alpha: 0.2),
               borderRadius: AppRadius.md,
             ),
             child: Icon(
@@ -116,7 +114,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                 Text(
                   'تخصيص التطبيق حسب احتياجك',
                   style: AppTypography.bodyMediumArabic.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -190,8 +188,8 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
           value: Theme.of(context).brightness == Brightness.dark,
           onChanged: (value) {
             context.read<ThemeCubit>().changeTheme(
-                  value ? ThemeMode.dark : ThemeMode.light,
-                );
+              value ? ThemeMode.dark : ThemeMode.light,
+            );
           },
         ),
         _buildSettingsItem(
@@ -321,11 +319,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
               ),
             ),
             AppSpacing.horizontalSpaceMD,
-            Icon(
-              icon,
-              color: AppColors.primaryGreen,
-              size: AppSizing.iconMD,
-            ),
+            Icon(icon, color: AppColors.primaryGreen, size: AppSizing.iconMD),
             AppSpacing.horizontalSpaceSM,
             Text(
               title,
@@ -342,19 +336,19 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
             color: colorScheme.surface,
             borderRadius: AppRadius.lg,
             border: Border.all(
-              color: AppColors.goldAccent.withOpacity(0.2),
+              color: AppColors.goldAccent.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
+                color: isDark
+                    ? Colors.black26
+                    : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -376,7 +370,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
         width: 40.w,
         height: 40.w,
         decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withOpacity(0.1),
+          color: AppColors.primaryGreen.withValues(alpha: 0.1),
           borderRadius: AppRadius.sm,
         ),
         child: Icon(
@@ -395,13 +389,14 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       subtitle: Text(
         subtitle,
         style: AppTypography.captionArabic.copyWith(
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
-      trailing: trailing ??
+      trailing:
+          trailing ??
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: colorScheme.onSurface.withOpacity(0.5),
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
             size: 16.w,
           ),
       onTap: onTap,
@@ -424,7 +419,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
         width: 40.w,
         height: 40.w,
         decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withOpacity(0.1),
+          color: AppColors.primaryGreen.withValues(alpha: 0.1),
           borderRadius: AppRadius.sm,
         ),
         child: Icon(
@@ -443,14 +438,14 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       subtitle: Text(
         subtitle,
         style: AppTypography.captionArabic.copyWith(
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppColors.primaryGreen,
-        activeTrackColor: AppColors.primaryGreen.withOpacity(0.3),
+        activeThumbColor: AppColors.primaryGreen,
+        activeTrackColor: AppColors.primaryGreen.withValues(alpha: 0.3),
       ),
     );
   }
@@ -461,9 +456,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'اختر اللغة',
-          style: AppTypography.h6Arabic.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTypography.h6Arabic.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -489,10 +482,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
     return ListTile(
       title: Text(language),
       trailing: isSelected
-          ? Icon(
-              Icons.check_circle_rounded,
-              color: AppColors.primaryGreen,
-            )
+          ? Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen)
           : null,
       onTap: () {
         setState(() {

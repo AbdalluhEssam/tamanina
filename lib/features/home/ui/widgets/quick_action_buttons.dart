@@ -23,7 +23,7 @@ class QuickActionButtons extends StatelessWidget {
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -157,10 +157,10 @@ class _QuickActionButton extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 16.h),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -170,7 +170,7 @@ class _QuickActionButton extends StatelessWidget {
                 width: 48.w,
                 height: 48.w,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

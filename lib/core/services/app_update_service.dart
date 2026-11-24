@@ -1,249 +1,141 @@
 import 'dart:io';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:new_version_plus/new_version_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// App Update Service - Checks for app updates using Firebase Remote Config
+import '../widgets/tamanina_ui.dart';
+
 class AppUpdateService {
-  static final AppUpdateService _instance = AppUpdateService._internal();
   factory AppUpdateService() => _instance;
-  AppUpdateService._internal();
+  AppUpdateService._();
+  static final _instance = AppUpdateService._();
 
-  final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
+  final _store = NewVersionPlus(
+    iOSId: const String.fromEnvironment(
+      'TAMANINA_IOS_STORE_BUNDLE_ID',
+      defaultValue: 'com.abdalluh.tamanina',
+    ),
+    androidId: const String.fromEnvironment(
+      'TAMANINA_ANDROID_STORE_PACKAGE',
+      defaultValue: 'com.abdalluh.tamanina',
+    ),
+    iOSAppStoreCountry: const String.fromEnvironment(
+      'TAMANINA_STORE_COUNTRY',
+      defaultValue: 'EG',
+    ),
+  );
+  bool _checking = false;
+  static const _lastCheckKey = 'store_update_last_check';
 
-  /// Initialize Remote Config
-  Future<void> initialize() async {
+  Future<void> manualCheckForUpdates(BuildContext context) =>
+      _check(context, automatic: false);
+
+  Future<void> checkForUpdates(BuildContext context) =>
+      _check(context, automatic: true);
+
+  Future<void> _check(BuildContext context, {required bool automatic}) async {
+    if (_checking || (!Platform.isAndroid && !Platform.isIOS)) return;
+    _checking = true;
     try {
-      await _remoteConfig.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        minimumFetchInterval: const Duration(hours: 1),
-      ));
-
-      // Set default values
-      await _remoteConfig.setDefaults({
-        'latest_version_android': '1.0.0',
-        'latest_version_ios': '1.0.0',
-        'force_update': false,
-        'update_message_ar': 'يتوفر تحديث جديد! يرجى التحديث إلى أحدث إصدار.',
-        'update_message_en':
-            'A new update is available! Please update to the latest version.',
-        'play_store_url':
-            'https://play.google.com/store/apps/details?id=com.abdalluh.tamanina',
-        'app_store_url': 'https://apps.apple.com/app/id123456789',
-      });
-
-      await _remoteConfig.fetchAndActivate();
-
-      if (kDebugMode) {
-        print('✅ Remote Config initialized successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error initializing Remote Config: $e');
-      }
-    }
-  }
-
-  /// Check for app updates
-  Future<void> checkForUpdates(BuildContext context) async {
-    try {
-      // Get current app version
-      final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
-
-      // Get latest version from Remote Config
-      final latestVersion = Platform.isAndroid
-          ? _remoteConfig.getString('latest_version_android')
-          : _remoteConfig.getString('latest_version_ios');
-
-      final forceUpdate = _remoteConfig.getBool('force_update');
-
-      if (kDebugMode) {
-        print('📱 Current Version: $currentVersion');
-        print('🆕 Latest Version: $latestVersion');
-        print('⚠️ Force Update: $forceUpdate');
-      }
-
-      // Compare versions
-      if (_isUpdateAvailable(currentVersion, latestVersion)) {
-        if (context.mounted) {
-          _showUpdateDialog(context, forceUpdate);
+      if (automatic) {
+        final prefs = await SharedPreferences.getInstance();
+        final last = prefs.getInt(_lastCheckKey);
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (last != null &&
+            now - last < const Duration(hours: 24).inMilliseconds) {
+          return;
         }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error checking for updates: $e');
-      }
-    }
-  }
-
-  /// Compare version strings
-  bool _isUpdateAvailable(String currentVersion, String latestVersion) {
-    try {
-      final current = currentVersion.split('.').map(int.parse).toList();
-      final latest = latestVersion.split('.').map(int.parse).toList();
-
-      for (int i = 0; i < 3; i++) {
-        final currentPart = i < current.length ? current[i] : 0;
-        final latestPart = i < latest.length ? latest[i] : 0;
-
-        if (latestPart > currentPart) return true;
-        if (latestPart < currentPart) return false;
+        await prefs.setInt(_lastCheckKey, now);
       }
 
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error comparing versions: $e');
+      final status = await _store.getVersionStatus().timeout(
+        const Duration(seconds: 8),
+      );
+      if (!context.mounted || ModalRoute.of(context)?.isCurrent == false) {
+        return;
       }
-      return false;
-    }
-  }
+      if (status == null ||
+          status.originalStoreVersion?.trim().isNotEmpty != true) {
+        if (!automatic) _showUnavailable(context);
+        return;
+      }
 
-  /// Show update dialog
-  void _showUpdateDialog(BuildContext context, bool forceUpdate) {
-    final messageAr = _remoteConfig.getString('update_message_ar');
-    final messageEn = _remoteConfig.getString('update_message_en');
-
-    // Determine current locale (you can improve this based on your app's locale logic)
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final message = isArabic ? messageAr : messageEn;
-
-    showDialog(
-      context: context,
-      barrierDismissible: !forceUpdate,
-      builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => !forceUpdate,
-          child: AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.system_update, color: Colors.blue),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    isArabic ? 'تحديث متاح' : 'Update Available',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+      final link = Uri.tryParse(status.appStoreLink);
+      final hasStoreLink =
+          link != null &&
+          link.scheme == 'https' &&
+          const {
+            'play.google.com',
+            'apps.apple.com',
+            'itunes.apple.com',
+          }.contains(link.host);
+      if (status.canUpdate && hasStoreLink) {
+        final accepted = await showAdaptiveDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) => AlertDialog.adaptive(
+            title: Text(
+              appText(
+                context,
+                'تحديث جديد لطمأنينة',
+                'Tamanina update available',
+              ),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                if (forceUpdate) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.warning, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            isArabic
-                                ? 'هذا التحديث إلزامي'
-                                : 'This update is mandatory',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+            content: Text(
+              appText(
+                context,
+                'تقدر تنزّل الإصدار ${status.storeVersion} من المتجر.',
+                'Version ${status.storeVersion} is available in the store.',
+              ),
             ),
             actions: [
-              if (!forceUpdate)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    isArabic ? 'لاحقاً' : 'Later',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ElevatedButton.icon(
-                onPressed: () => _openStore(),
-                icon: const Icon(Icons.download),
-                label: Text(
-                  isArabic ? 'تحديث الآن' : 'Update Now',
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(appText(context, 'لاحقًا', 'Later')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(appText(context, 'افتح المتجر', 'Open store')),
               ),
             ],
           ),
         );
-      },
-    );
-  }
-
-  /// Open the appropriate app store
-  Future<void> _openStore() async {
-    try {
-      final url = Platform.isAndroid
-          ? _remoteConfig.getString('play_store_url')
-          : _remoteConfig.getString('app_store_url');
-
-      final uri = Uri.parse(url);
-
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (kDebugMode) {
-          print('❌ Could not launch $url');
+        if (accepted == true && context.mounted) {
+          final opened = await launchUrl(
+            link,
+            mode: LaunchMode.externalApplication,
+          );
+          if (!opened && context.mounted) _showUnavailable(context);
+        }
+      } else if (!automatic) {
+        if (status.canUpdate) {
+          _showUnavailable(context);
+        } else {
+          _message(
+            context,
+            'أنت تستخدم أحدث إصدار متاح.',
+            'You’re using the latest available version.',
+          );
         }
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error opening store: $e');
-      }
+    } catch (_) {
+      if (!automatic && context.mounted) _showUnavailable(context);
+    } finally {
+      _checking = false;
     }
   }
 
-  /// Manually trigger update check
-  Future<void> manualCheckForUpdates(BuildContext context) async {
-    await _remoteConfig.fetchAndActivate();
-    await checkForUpdates(context);
-  }
+  void _showUnavailable(BuildContext context) => _message(
+    context,
+    'تعذّر التحقق من المتجر. جرّب مرة أخرى عند الاتصال.',
+    'Could not reach the store. Try again when connected.',
+  );
 
-  /// Get a specific Remote Config value
-  String getConfigValue(String key) {
-    return _remoteConfig.getString(key);
-  }
-
-  /// Get a boolean Remote Config value
-  bool getConfigBool(String key) {
-    return _remoteConfig.getBool(key);
-  }
-
-  /// Get an int Remote Config value
-  int getConfigInt(String key) {
-    return _remoteConfig.getInt(key);
+  void _message(BuildContext context, String arabic, String english) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(appText(context, arabic, english))));
   }
 }

@@ -22,7 +22,7 @@ ThemeData buildDarkTheme() {
       onError: AppColors.textOnPrimary,
       outline: AppColors.dividerDark,
       surfaceContainerHighest: AppColors.surfaceDark,
-      onSurfaceVariant: AppColors.textOnSurfaceDark.withOpacity(0.7),
+      onSurfaceVariant: AppColors.textOnSurfaceDark.withValues(alpha: 0.7),
     ),
     scaffoldBackgroundColor: AppColors.backgroundDark,
     appBarTheme: base.appBarTheme.copyWith(
@@ -44,18 +44,18 @@ ThemeData buildDarkTheme() {
       color: AppColors.surfaceDark,
     ),
     inputDecorationTheme: base.inputDecorationTheme.copyWith(
-      fillColor: AppColors.surfaceDark.withOpacity(0.8),
+      fillColor: AppColors.surfaceDark.withValues(alpha: 0.8),
       hintStyle: AppTypography.bodyMediumArabic.copyWith(
-        color: AppColors.textOnSurfaceDark.withOpacity(0.7),
+        color: AppColors.textOnSurfaceDark.withValues(alpha: 0.7),
       ),
       labelStyle: AppTypography.bodyMediumArabic.copyWith(
-        color: AppColors.textOnSurfaceDark.withOpacity(0.7),
+        color: AppColors.textOnSurfaceDark.withValues(alpha: 0.7),
       ),
     ),
     bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
       backgroundColor: AppColors.surfaceDark,
       selectedItemColor: AppColors.primaryGreenLight,
-      unselectedItemColor: AppColors.textOnSurfaceDark.withOpacity(0.6),
+      unselectedItemColor: AppColors.textOnSurfaceDark.withValues(alpha: 0.6),
     ),
     iconTheme: IconThemeData(
       color: AppColors.textOnSurfaceDark,

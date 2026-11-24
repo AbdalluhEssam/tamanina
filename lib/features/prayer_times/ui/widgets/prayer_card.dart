@@ -36,7 +36,7 @@ class PrayerCard extends StatelessWidget {
             ? LinearGradient(
                 colors: [
                   color ?? AppColors.primaryGreen,
-                  (color ?? AppColors.primaryGreen).withOpacity(0.7),
+                  (color ?? AppColors.primaryGreen).withValues(alpha: 0.7),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -51,7 +51,7 @@ class PrayerCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isNext
-                ? (color ?? AppColors.primaryGreen).withOpacity(0.3)
+                ? (color ?? AppColors.primaryGreen).withValues(alpha: 0.3)
                 : AppColors.shadow,
             blurRadius: isNext ? 12 : 8,
             offset: const Offset(0, 4),
@@ -83,8 +83,8 @@ class PrayerCard extends StatelessWidget {
                   height: 56.w,
                   decoration: BoxDecoration(
                     color: isNext
-                        ? Colors.white.withOpacity(0.2)
-                        : (color ?? AppColors.primaryGreen).withOpacity(0.1),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : (color ?? AppColors.primaryGreen).withValues(alpha: 0.1),
                     borderRadius: AppRadius.md,
                   ),
                   child: Center(
@@ -119,7 +119,7 @@ class PrayerCard extends StatelessWidget {
                         Text(
                           'الصلاة القادمة',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12.sp,
                           ),
                         ),
@@ -136,10 +136,10 @@ class PrayerCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isNext
-                        ? Colors.white.withOpacity(0.2)
+                        ? Colors.white.withValues(alpha: 0.2)
                         : isDark
                             ? AppColors.backgroundDark
-                            : AppColors.creamAccent.withOpacity(0.5),
+                            : AppColors.creamAccent.withValues(alpha: 0.5),
                     borderRadius: AppRadius.sm,
                   ),
                   child: Text(

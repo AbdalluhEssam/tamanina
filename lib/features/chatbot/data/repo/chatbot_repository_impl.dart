@@ -19,8 +19,8 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
   ChatbotRepositoryImpl({
     required SharedPreferences sharedPreferences,
     required IslamicAiService aiService,
-  })  : _sharedPreferences = sharedPreferences,
-        _aiService = aiService;
+  }) : _sharedPreferences = sharedPreferences,
+       _aiService = aiService;
 
   @override
   Future<ChatMessage> sendMessage({
@@ -35,12 +35,15 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         content: userMessage,
       );
 
+      final history =
+          (await getChatSession(sessionId))?.messages ?? const <ChatMessage>[];
       await _addMessageToSession(sessionId, userMsg);
 
       // Generate AI response
       final aiResponse = await _aiService.generateResponse(
         userMessage: userMessage,
         sessionId: sessionId,
+        context: history,
       );
 
       // Add AI response to session
@@ -65,36 +68,27 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         id: _generateMessageId(),
         content: userMessage,
       );
+      final history =
+          (await getChatSession(sessionId))?.messages ?? const <ChatMessage>[];
       await _addMessageToSession(sessionId, userMsg);
 
       // Get streaming response
       String fullResponse = '';
-      bool hasError = false;
-
       await for (final chunk in _aiService.generateStreamingResponse(
         userMessage: userMessage,
         sessionId: sessionId,
+        context: history,
       )) {
-        // Check if chunk contains error message
-        if (chunk.contains('Exception:') || chunk.contains('Error:')) {
-          hasError = true;
-          yield 'عذراً، حدث خطأ في الاتصال. سأحاول الإجابة من المعلومات المحفوظة...';
-          break;
-        }
-
-        // Service yields cumulative text; propagate as-is and track latest only
         fullResponse = chunk;
         yield chunk;
       }
 
-      // After streaming is complete, save the full response to session
-      if (fullResponse.isNotEmpty && !hasError) {
+      if (fullResponse.isNotEmpty) {
         final aiResponse = ChatMessage.assistant(
           id: _generateMessageId(),
           content: fullResponse,
           type: _determineMessageType(fullResponse),
         );
-
         await _addMessageToSession(sessionId, aiResponse);
       }
     } catch (e) {
@@ -111,8 +105,10 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
       final sessionsList = json.decode(sessionsJson) as List<dynamic>;
       final sessions = sessionsList
-          .map((sessionData) =>
-              ChatSessionModel.fromJson(sessionData as Map<String, dynamic>))
+          .map(
+            (sessionData) =>
+                ChatSessionModel.fromJson(sessionData as Map<String, dynamic>),
+          )
           .where((session) => session.userId == userId)
           .map((sessionModel) => sessionModel.toEntity())
           .toList();
@@ -140,8 +136,9 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
       if (sessionData == null) return null;
 
-      final sessionModel =
-          ChatSessionModel.fromJson(sessionData as Map<String, dynamic>);
+      final sessionModel = ChatSessionModel.fromJson(
+        sessionData as Map<String, dynamic>,
+      );
       return sessionModel.toEntity();
     } catch (e) {
       return null;
@@ -163,7 +160,9 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
       // Save back to SharedPreferences
       await _sharedPreferences.setString(
-          _sessionsKey, json.encode(sessionsList));
+        _sessionsKey,
+        json.encode(sessionsList),
+      );
     } catch (e) {
       throw Exception('فشل في حفظ جلسة المحادثة');
     }
@@ -179,7 +178,9 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
       sessionsList.removeWhere((session) => session['id'] == sessionId);
 
       await _sharedPreferences.setString(
-          _sessionsKey, json.encode(sessionsList));
+        _sessionsKey,
+        json.encode(sessionsList),
+      );
 
       // Clear current session if it's the deleted one
       final currentSessionId = _sharedPreferences.getString(_currentSessionKey);
@@ -201,7 +202,9 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
       sessionsList.removeWhere((session) => session['userId'] == userId);
 
       await _sharedPreferences.setString(
-          _sessionsKey, json.encode(sessionsList));
+        _sessionsKey,
+        json.encode(sessionsList),
+      );
       await _sharedPreferences.remove(_currentSessionKey);
     } catch (e) {
       throw Exception('فشل في مسح تاريخ المحادثات');
@@ -226,25 +229,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
       // Set as current session
       await _sharedPreferences.setString(_currentSessionKey, sessionId);
 
-      // Add greeting message
-      final greetingMessage = ChatMessage.assistant(
-        id: _generateMessageId(),
-        content: 'السلام عليكم ورحمة الله وبركاته 🌙\n\n'
-            'مرحباً بك في تطبيق "طمأنينة – Tamanina"، المساعد الإسلامي الذكي.\n\n'
-            'يمكنني مساعدتك في:\n'
-            '• القرآن الكريم وتفسيره\n'
-            '• الأحاديث النبوية\n'
-            '• أحكام الصلاة والعبادات\n'
-            '• الفقه والمعاملات\n'
-            '• الأخلاق والأدعية والأذكار\n\n'
-            'كيف يمكنني خدمتك اليوم؟',
-        type: MessageType.greeting,
-      );
-
-      final updatedSession = session.addMessage(greetingMessage);
-      await saveChatSession(updatedSession);
-
-      return updatedSession;
+      return session;
     } catch (e) {
       throw Exception('فشل في إنشاء جلسة محادثة جديدة');
     }
@@ -284,7 +269,9 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
   /// Helper method to add a message to a session
   Future<void> _addMessageToSession(
-      String sessionId, ChatMessage message) async {
+    String sessionId,
+    ChatMessage message,
+  ) async {
     final session = await getChatSession(sessionId);
     if (session != null) {
       final updatedSession = session.addMessage(message);

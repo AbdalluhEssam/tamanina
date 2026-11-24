@@ -59,14 +59,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
         gradient: LinearGradient(
           colors: [
             Theme.of(context).scaffoldBackgroundColor,
-            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.97),
+            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.97),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, -4),
             spreadRadius: 1,
@@ -96,13 +96,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                     borderRadius: BorderRadius.circular(24.r),
                     border: Border.all(
                       color: widget.isEnabled
-                          ? AppColors.primaryGreen.withOpacity(0.25)
-                          : AppColors.divider.withOpacity(0.5),
+                          ? AppColors.primaryGreen.withValues(alpha: 0.25)
+                          : AppColors.divider.withValues(alpha: 0.5),
                       width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -179,7 +179,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                               : LinearGradient(
                                   colors: [
                                     AppColors.divider,
-                                    AppColors.divider.withOpacity(0.85),
+                                    AppColors.divider.withValues(alpha: 0.85),
                                   ],
                                 ),
                           shape: BoxShape.circle,
@@ -187,7 +187,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                               ? [
                                   BoxShadow(
                                     color: const Color(0xFF4CAF50)
-                                        .withOpacity(0.35),
+                                        .withValues(alpha: 0.35),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),

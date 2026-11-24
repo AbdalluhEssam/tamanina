@@ -39,12 +39,12 @@ class IslamicPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.primaryGreen.withOpacity(opacity)
+      ..color = AppColors.primaryGreen.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
     final goldPaint = Paint()
-      ..color = AppColors.goldAccent.withOpacity(opacity * 0.7)
+      ..color = AppColors.goldAccent.withValues(alpha: opacity * 0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 

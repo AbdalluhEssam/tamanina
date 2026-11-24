@@ -26,16 +26,16 @@ class PrayerTimeCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: isNext
-            ? AppColors.primaryGreen.withOpacity(0.15)
+            ? AppColors.primaryGreen.withValues(alpha: 0.15)
             : isPassed
                 ? (isDark
-                    ? Colors.white.withOpacity(0.03)
-                    : Colors.grey.withOpacity(0.05))
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : Colors.grey.withValues(alpha: 0.05))
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(12.r),
         border: isNext
             ? Border.all(
-                color: AppColors.primaryGreen.withOpacity(0.3), width: 1.5)
+                color: AppColors.primaryGreen.withValues(alpha: 0.3), width: 1.5)
             : null,
       ),
       child: Row(
@@ -45,7 +45,7 @@ class PrayerTimeCard extends StatelessWidget {
             width: 44.w,
             height: 44.w,
             decoration: BoxDecoration(
-              color: _getPrayerColor().withOpacity(0.15),
+              color: _getPrayerColor().withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(

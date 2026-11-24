@@ -26,33 +26,29 @@ void main() {
 
     // Setup default mocks
     when(() => mockRepository.currentSettings).thenReturn(const AppSettings());
-    when(() => mockRepository.settingsStream)
-        .thenAnswer((_) => Stream.value(const AppSettings()));
+    when(
+      () => mockRepository.settingsStream,
+    ).thenAnswer((_) => Stream.value(const AppSettings()));
   });
 
   group('SettingsCubit', () {
-    blocTest<SettingsCubit, SettingsState>(
-      'emits [SettingsLoading, SettingsLoaded] on initialization',
-      build: () {
-        when(() => mockRepository.currentSettings)
-            .thenReturn(const AppSettings());
-        return SettingsCubit(repository: mockRepository);
-      },
-      expect: () => [
-        isA<SettingsLoading>(),
-        isA<SettingsLoaded>(),
-      ],
-    );
+    test('initializes with the current settings from the repository', () async {
+      final cubit = SettingsCubit(repository: mockRepository);
+      addTearDown(cubit.close);
+      expect(cubit.state, const SettingsLoaded(AppSettings()));
+    });
 
     blocTest<SettingsCubit, SettingsState>(
       'calls repository.updateThemeMode when updateThemeMode is called',
       build: () {
         final settings = const AppSettings(themeMode: ThemeMode.light);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateThemeMode(ThemeMode.dark))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateThemeMode(ThemeMode.dark),
+        ).thenAnswer((_) async {});
         when(() => mockRepository.settingsStream).thenAnswer(
-            (_) => Stream.value(const AppSettings(themeMode: ThemeMode.dark)));
+          (_) => Stream.value(const AppSettings(themeMode: ThemeMode.dark)),
+        );
         return SettingsCubit(repository: mockRepository);
       },
       seed: () => const SettingsLoaded(AppSettings(themeMode: ThemeMode.light)),
@@ -69,18 +65,26 @@ void main() {
           calculationMethod: PrayerCalculationMethod.muslimWorldLeague,
         );
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateCalculationMethod(
-            PrayerCalculationMethod.ummAlQura)).thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateCalculationMethod(
+            PrayerCalculationMethod.ummAlQura,
+          ),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
-      seed: () => const SettingsLoaded(AppSettings(
-        calculationMethod: PrayerCalculationMethod.muslimWorldLeague,
-      )),
+      seed: () => const SettingsLoaded(
+        AppSettings(
+          calculationMethod: PrayerCalculationMethod.muslimWorldLeague,
+        ),
+      ),
       act: (cubit) =>
           cubit.updateCalculationMethod(PrayerCalculationMethod.ummAlQura),
       verify: (_) {
-        verify(() => mockRepository.updateCalculationMethod(
-            PrayerCalculationMethod.ummAlQura)).called(1);
+        verify(
+          () => mockRepository.updateCalculationMethod(
+            PrayerCalculationMethod.ummAlQura,
+          ),
+        ).called(1);
       },
     );
 
@@ -89,8 +93,9 @@ void main() {
       build: () {
         final settings = const AppSettings(madhab: Madhab.shafi);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateMadhab(Madhab.hanafi))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateMadhab(Madhab.hanafi),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () => const SettingsLoaded(AppSettings(madhab: Madhab.shafi)),
@@ -105,8 +110,9 @@ void main() {
       build: () {
         final settings = const AppSettings(notificationsEnabled: false);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateNotificationsEnabled(true))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateNotificationsEnabled(true),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () =>
@@ -122,8 +128,9 @@ void main() {
       build: () {
         final settings = const AppSettings(muadhinMode: false);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateMuadhinMode(true))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateMuadhinMode(true),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () => const SettingsLoaded(AppSettings(muadhinMode: false)),
@@ -138,16 +145,18 @@ void main() {
       build: () {
         final settings = const AppSettings(selectedAdhan: AdhanSound.makkah);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateSelectedAdhan(AdhanSound.madinah))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateSelectedAdhan(AdhanSound.madinah),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () =>
           const SettingsLoaded(AppSettings(selectedAdhan: AdhanSound.makkah)),
       act: (cubit) => cubit.updateSelectedAdhan(AdhanSound.madinah),
       verify: (_) {
-        verify(() => mockRepository.updateSelectedAdhan(AdhanSound.madinah))
-            .called(1);
+        verify(
+          () => mockRepository.updateSelectedAdhan(AdhanSound.madinah),
+        ).called(1);
       },
     );
 
@@ -156,8 +165,9 @@ void main() {
       build: () {
         final settings = const AppSettings(prePrayerOffsetMinutes: 0);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updatePrePrayerOffset(15))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updatePrePrayerOffset(15),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () => const SettingsLoaded(AppSettings(prePrayerOffsetMinutes: 0)),
@@ -172,8 +182,9 @@ void main() {
       build: () {
         final settings = const AppSettings(adhanVolume: 1.0);
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updateAdhanVolume(0.5))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updateAdhanVolume(0.5),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
       seed: () => const SettingsLoaded(AppSettings(adhanVolume: 1.0)),
@@ -197,20 +208,23 @@ void main() {
           ),
         );
         when(() => mockRepository.currentSettings).thenReturn(settings);
-        when(() => mockRepository.updatePerPrayerSettings(any()))
-            .thenAnswer((_) async {});
+        when(
+          () => mockRepository.updatePerPrayerSettings(any()),
+        ).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
-      seed: () => const SettingsLoaded(AppSettings(
-        perPrayerEnabled: PerPrayerSettings(
-          fajr: true,
-          sunrise: true,
-          dhuhr: true,
-          asr: true,
-          maghrib: true,
-          isha: true,
+      seed: () => const SettingsLoaded(
+        AppSettings(
+          perPrayerEnabled: PerPrayerSettings(
+            fajr: true,
+            sunrise: true,
+            dhuhr: true,
+            asr: true,
+            maghrib: true,
+            isha: true,
+          ),
         ),
-      )),
+      ),
       act: (cubit) => cubit.updatePrayerNotification('fajr', false),
       verify: (_) {
         verify(() => mockRepository.updatePerPrayerSettings(any())).called(1);
@@ -220,16 +234,19 @@ void main() {
     blocTest<SettingsCubit, SettingsState>(
       'calls repository.resetToDefaults when resetToDefaults is called',
       build: () {
-        when(() => mockRepository.currentSettings)
-            .thenReturn(const AppSettings());
+        when(
+          () => mockRepository.currentSettings,
+        ).thenReturn(const AppSettings());
         when(() => mockRepository.resetToDefaults()).thenAnswer((_) async {});
         return SettingsCubit(repository: mockRepository);
       },
-      seed: () => const SettingsLoaded(AppSettings(
-        themeMode: ThemeMode.dark,
-        notificationsEnabled: false,
-        muadhinMode: true,
-      )),
+      seed: () => const SettingsLoaded(
+        AppSettings(
+          themeMode: ThemeMode.dark,
+          notificationsEnabled: false,
+          muadhinMode: true,
+        ),
+      ),
       act: (cubit) => cubit.resetToDefaults(),
       verify: (_) {
         verify(() => mockRepository.resetToDefaults()).called(1);
@@ -242,11 +259,11 @@ void main() {
       const settings = AppSettings();
 
       expect(settings.themeMode, ThemeMode.system);
-      expect(settings.calculationMethod, PrayerCalculationMethod.ummAlQura);
+      expect(settings.calculationMethod, PrayerCalculationMethod.automatic);
       expect(settings.madhab, Madhab.shafi);
       expect(settings.notificationsEnabled, true);
-      expect(settings.muadhinMode, false);
-      expect(settings.selectedAdhan, AdhanSound.makkah);
+      expect(settings.muadhinMode, true);
+      expect(settings.selectedAdhan, AdhanSound.local);
       expect(settings.prePrayerOffsetMinutes, 0);
       expect(settings.adhanVolume, 1.0);
       expect(settings.vibrationEnabled, true);
@@ -281,8 +298,10 @@ void main() {
   group('PrayerCalculationMethod', () {
     test('has correct Arabic names', () {
       expect(PrayerCalculationMethod.ummAlQura.arabicName, 'أم القرى - مكة');
-      expect(PrayerCalculationMethod.muslimWorldLeague.arabicName,
-          'رابطة العالم الإسلامي');
+      expect(
+        PrayerCalculationMethod.muslimWorldLeague.arabicName,
+        'رابطة العالم الإسلامي',
+      );
       expect(PrayerCalculationMethod.egyptian.arabicName, 'الهيئة المصرية');
     });
   });
@@ -298,17 +317,19 @@ void main() {
     test('has correct display names and asset paths', () {
       expect(AdhanSound.makkah.displayName, 'مكة المكرمة');
       expect(
-          AdhanSound.makkah.assetPath, 'assets/audio/adhan/adhan_makkah.mp3');
+        AdhanSound.makkah.assetPath,
+        'assets/audio/adhan/adhan_makkah.mp3',
+      );
       expect(AdhanSound.system.assetPath, 'system');
     });
   });
 
   group('PerPrayerSettings', () {
-    test('default values are all true', () {
+    test('obligatory prayer alerts are selected by default', () {
       const settings = PerPrayerSettings();
 
       expect(settings.fajr, true);
-      expect(settings.sunrise, true);
+      expect(settings.sunrise, false);
       expect(settings.dhuhr, true);
       expect(settings.asr, true);
       expect(settings.maghrib, true);

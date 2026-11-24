@@ -94,14 +94,14 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                   // Elegant Shadow
                   BoxShadow(
                     color: isDark
-                        ? Colors.black.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.05),
+                        ? Colors.black.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                     spreadRadius: 0,
                   ),
                   BoxShadow(
-                    color: widget.color.withOpacity(isDark ? 0.15 : 0.08),
+                    color: widget.color.withValues(alpha: isDark ? 0.15 : 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                     spreadRadius: 0,
@@ -109,8 +109,8 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                 ],
                 border: Border.all(
                   color: isDark
-                      ? widget.color.withOpacity(0.15)
-                      : widget.color.withOpacity(0.08),
+                      ? widget.color.withValues(alpha: 0.15)
+                      : widget.color.withValues(alpha: 0.08),
                   width: 1,
                 ),
               ),
@@ -128,20 +128,20 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            widget.color.withOpacity(0.15),
-                            widget.color.withOpacity(0.08),
+                            widget.color.withValues(alpha: 0.15),
+                            widget.color.withValues(alpha: 0.08),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
-                          color: widget.color.withOpacity(0.2),
+                          color: widget.color.withValues(alpha: 0.2),
                           width: 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.1),
+                            color: widget.color.withValues(alpha: 0.1),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -184,7 +184,7 @@ class _HomeFeatureCardState extends State<HomeFeatureCard>
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: colorScheme.onSurface
-                              .withOpacity(0.6), // Theme aware secondary text
+                              .withValues(alpha: 0.6), // Theme aware secondary text
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w500,
                         ),

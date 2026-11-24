@@ -27,15 +27,11 @@ class AppConstants {
   static const String prefKeyNotifications = 'notifications_enabled';
   static const String prefKeyLocation = 'user_location';
   static const String prefKeyPrayerSettings = 'prayer_settings';
+  static const String prefKeyTasbeehProgress = 'tasbeeh_progress';
   static const String prefKeyOnboardingCompleted = 'onboarding_completed';
 
   // URLs وروابط
-  static const String privacyPolicyUrl = 'https://tamanina.app/privacy';
-  static const String termsOfServiceUrl = 'https://tamanina.app/terms';
-  static const String supportEmailUrl = 'mailto:support@tamanina.app';
-  static const String appStoreUrl = 'https://apps.apple.com/app/tamanina';
-  static const String playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.tamanina.app';
+  static const supportEmail = String.fromEnvironment('TAMANINA_SUPPORT_EMAIL');
 
   // القيم الافتراضية
   static const int defaultNotificationMinutes = 15;
@@ -74,6 +70,8 @@ class AppRoutes {
   static const String prayer = '/prayer';
   static const String prayerTimes = '/prayer-times';
   static const String azkar = '/azkar';
+  static const String morningAdhkar = '/azkar/morning';
+  static const String eveningAdhkar = '/azkar/evening';
   static const String quran = '/quran';
   static const String sebha = '/sebha';
   static const String qibla = '/qibla';
@@ -84,6 +82,8 @@ class AppRoutes {
   static const String termsOfService = '/terms-of-service';
   static const String notificationSettings = '/notification-settings';
   static const String mushafReader = '/mushaf-reader';
+  static const String alKahfReader = '/mushaf-reader/al-kahf';
+  static const String adhan = '/adhan';
 }
 
 /// مسارات الملفات والأصول

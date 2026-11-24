@@ -78,7 +78,7 @@ class _BookmarkWidgetState extends State<BookmarkWidget>
                       ? LinearGradient(
                           colors: [
                             widget.color,
-                            widget.color.withOpacity(0.7),
+                            widget.color.withValues(alpha: 0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -93,7 +93,7 @@ class _BookmarkWidgetState extends State<BookmarkWidget>
                   boxShadow: widget.isBookmarked
                       ? [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.4),
+                            color: widget.color.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -131,7 +131,7 @@ class _BookmarkWidgetState extends State<BookmarkWidget>
                         widget.subtitle!,
                         style: AppTypography.captionArabic.copyWith(
                           color: widget.isBookmarked
-                              ? Colors.white.withOpacity(0.8)
+                              ? Colors.white.withValues(alpha: 0.8)
                               : Colors.grey.shade500,
                           fontSize: 10.sp,
                         ),
@@ -221,8 +221,8 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.black.withOpacity(0.9),
-              Colors.black.withOpacity(0.8),
+              Colors.black.withValues(alpha: 0.9),
+              Colors.black.withValues(alpha: 0.8),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -267,7 +267,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: AppColors.goldAccent.withOpacity(0.2),
+              color: AppColors.goldAccent.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20.r),
               border: Border.all(color: AppColors.goldAccent),
             ),
@@ -288,7 +288,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(25.r),
       ),
       child: TextField(
@@ -297,11 +297,11 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
         decoration: InputDecoration(
           hintText: 'البحث في العلامات المرجعية...',
           hintStyle: AppTypography.bodyMediumArabic.copyWith(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
           ),
           prefixIcon: Icon(
             Icons.search,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
@@ -338,12 +338,12 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                 ),
               ),
               selected: isSelected,
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               selectedColor: AppColors.goldAccent,
               side: BorderSide(
                 color: isSelected
                     ? AppColors.goldAccent
-                    : Colors.white.withOpacity(0.3),
+                    : Colors.white.withValues(alpha: 0.3),
               ),
               onSelected: (selected) {
                 // تنفيذ منطق الفلترة
@@ -364,7 +364,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
             Icon(
               Icons.bookmark_border,
               size: 64.w,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
             SizedBox(height: 16.h),
             Text(
@@ -372,7 +372,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                   ? 'لا توجد علامات مرجعية'
                   : 'لم يتم العثور على نتائج',
               style: AppTypography.bodyLargeArabic.copyWith(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -396,13 +396,13 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
         ),
       ),
       child: Material(
@@ -422,7 +422,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                     gradient: LinearGradient(
                       colors: [
                         bookmark.color,
-                        bookmark.color.withOpacity(0.7),
+                        bookmark.color.withValues(alpha: 0.7),
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -451,7 +451,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                       Text(
                         bookmark.description,
                         style: AppTypography.captionArabic.copyWith(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -462,13 +462,13 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                           Icon(
                             Icons.access_time,
                             size: 14.w,
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                           ),
                           SizedBox(width: 4.w),
                           Text(
                             bookmark.dateAdded,
                             style: AppTypography.captionArabic.copyWith(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withValues(alpha: 0.5),
                               fontSize: 10.sp,
                             ),
                           ),
@@ -480,7 +480,7 @@ class _AdvancedBookmarkManagerState extends State<AdvancedBookmarkManager>
                 PopupMenuButton<String>(
                   icon: Icon(
                     Icons.more_vert,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                   onSelected: (value) {
                     switch (value) {
@@ -608,13 +608,13 @@ class QuickBookmarkWidget extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                color.withOpacity(0.2),
-                color.withOpacity(0.1),
+                color.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
             ),
           ),
           child: Row(

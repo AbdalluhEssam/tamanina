@@ -65,7 +65,7 @@ class ExamplePage extends StatelessWidget {
         color: AppColors.surfaceLight,
         borderRadius: AppRadius.lg,
         border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.2),
+          color: AppColors.goldAccent.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -116,7 +116,7 @@ class ExamplePage extends StatelessWidget {
         Container(
           padding: AppSpacing.paddingMD,
           decoration: BoxDecoration(
-            color: AppColors.creamAccent.withOpacity(0.3),
+            color: AppColors.creamAccent.withValues(alpha: 0.3),
             borderRadius: AppRadius.md,
           ),
           child: Text(

@@ -7,13 +7,7 @@ import '../../data/models/adhkar_model.dart';
 
 part 'adhkar_state.dart';
 
-enum AdhkarCategory {
-  morning,
-  evening,
-  sleep,
-  postPrayer,
-  misc,
-}
+enum AdhkarCategory { morning, evening, sleep, postPrayer, misc }
 
 class AdhkarCubit extends Cubit<AdhkarState> {
   final SharedPreferences _prefs;
@@ -25,21 +19,25 @@ class AdhkarCubit extends Cubit<AdhkarState> {
       emit(AdhkarLoading());
 
       final String fileName = _getFileName(category);
-      final String jsonString =
-          await rootBundle.loadString('assets/data/adhkar/$fileName');
+      final String jsonString = await rootBundle.loadString(
+        'assets/data/adhkar/$fileName',
+      );
       final List<dynamic> jsonList = json.decode(jsonString);
 
-      List<AdhkarModel> adhkarList =
-          jsonList.map((json) => AdhkarModel.fromJson(json)).toList();
+      List<AdhkarModel> adhkarList = jsonList
+          .map((json) => AdhkarModel.fromJson(json))
+          .toList();
 
       // Load favorites
-      final Set<int> favorites = _loadFavorites();
+      final Set<int> favorites = _loadFavorites(category);
       adhkarList = adhkarList.map((adhkar) {
         return adhkar.copyWith(isFavorite: favorites.contains(adhkar.id));
       }).toList();
 
+      if (isClosed) return;
       emit(AdhkarLoaded(adhkarList: adhkarList, category: category));
     } catch (e) {
+      if (isClosed) return;
       emit(AdhkarError(message: 'فشل تحميل الأذكار: ${e.toString()}'));
     }
   }
@@ -49,7 +47,7 @@ class AdhkarCubit extends Cubit<AdhkarState> {
     if (currentState is! AdhkarLoaded) return;
 
     try {
-      final Set<int> favorites = _loadFavorites();
+      final Set<int> favorites = _loadFavorites(currentState.category);
 
       if (favorites.contains(adhkarId)) {
         favorites.remove(adhkarId);
@@ -57,7 +55,7 @@ class AdhkarCubit extends Cubit<AdhkarState> {
         favorites.add(adhkarId);
       }
 
-      await _saveFavorites(favorites);
+      await _saveFavorites(currentState.category, favorites);
 
       final updatedList = currentState.adhkarList.map((adhkar) {
         if (adhkar.id == adhkarId) {
@@ -66,11 +64,12 @@ class AdhkarCubit extends Cubit<AdhkarState> {
         return adhkar;
       }).toList();
 
-      emit(AdhkarLoaded(
-        adhkarList: updatedList,
-        category: currentState.category,
-      ));
+      if (isClosed) return;
+      emit(
+        AdhkarLoaded(adhkarList: updatedList, category: currentState.category),
+      );
     } catch (e) {
+      if (isClosed) return;
       emit(AdhkarError(message: 'فشل تحديث المفضلة: ${e.toString()}'));
     }
   }
@@ -90,17 +89,25 @@ class AdhkarCubit extends Cubit<AdhkarState> {
     }
   }
 
-  Set<int> _loadFavorites() {
+  Set<int> _loadFavorites(AdhkarCategory category) {
     final List<String>? favoritesString =
+        _prefs.getStringList('favorite_adhkar_${category.name}') ??
         _prefs.getStringList('favorite_adhkar');
     if (favoritesString == null) return {};
-    return favoritesString.map((id) => int.parse(id)).toSet();
+    return favoritesString.map(int.tryParse).whereType<int>().toSet();
   }
 
-  Future<void> _saveFavorites(Set<int> favorites) async {
-    final List<String> favoritesString =
-        favorites.map((id) => id.toString()).toList();
-    await _prefs.setStringList('favorite_adhkar', favoritesString);
+  Future<void> _saveFavorites(
+    AdhkarCategory category,
+    Set<int> favorites,
+  ) async {
+    final List<String> favoritesString = favorites
+        .map((id) => id.toString())
+        .toList();
+    await _prefs.setStringList(
+      'favorite_adhkar_${category.name}',
+      favoritesString,
+    );
   }
 
   String getCategoryTitle(AdhkarCategory category) {

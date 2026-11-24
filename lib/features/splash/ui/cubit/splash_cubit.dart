@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/usecases/base_usecase.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../data/repo/splash_usecases.dart';
 import 'splash_state.dart';
 
@@ -22,15 +21,11 @@ class SplashCubit extends Cubit<SplashState> {
     emit(const SplashLoading());
 
     try {
-      // انتظار مدة عرض الـ splash (3 ثواني)
-      // Wait for splash display duration (3 seconds)
-      await Future.delayed(
-          const Duration(milliseconds: AppConstants.splashDurationMs));
-
       // التحقق من حالة الأونبوردنج
       // Check onboarding status
-      final onboardingResult =
-          await checkOnboardingStatusUseCase(const NoParams());
+      final onboardingResult = await checkOnboardingStatusUseCase(
+        const NoParams(),
+      );
 
       onboardingResult.fold(
         (failure) => emit(SplashError(message: failure.message)),
@@ -56,16 +51,15 @@ class SplashCubit extends Cubit<SplashState> {
   Future<void> checkFirstRun() async {
     final result = await checkFirstRunUseCase(const NoParams());
 
-    result.fold(
-      (failure) => emit(SplashError(message: failure.message)),
-      (isFirstRun) {
-        // يمكن استخدام هذه المعلومة لعرض رسائل ترحيبية خاصة
-        // This information can be used to show special welcome messages
-        if (isFirstRun) {
-          // التشغيل الأول للتطبيق
-          // First time running the app
-        }
-      },
-    );
+    result.fold((failure) => emit(SplashError(message: failure.message)), (
+      isFirstRun,
+    ) {
+      // يمكن استخدام هذه المعلومة لعرض رسائل ترحيبية خاصة
+      // This information can be used to show special welcome messages
+      if (isFirstRun) {
+        // التشغيل الأول للتطبيق
+        // First time running the app
+      }
+    });
   }
 }

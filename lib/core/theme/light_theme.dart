@@ -118,7 +118,7 @@ ThemeData buildLightTheme() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.creamAccent.withOpacity(0.5),
+      fillColor: AppColors.creamAccent.withValues(alpha: 0.5),
       border: OutlineInputBorder(
         borderRadius: AppRadius.input,
         borderSide: const BorderSide(color: AppColors.divider),
@@ -193,7 +193,7 @@ ThemeData buildLightTheme() {
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.creamAccent,
       selectedColor: AppColors.primaryGreen,
-      disabledColor: AppColors.textSecondary.withOpacity(0.1),
+      disabledColor: AppColors.textSecondary.withValues(alpha: 0.1),
       labelStyle: AppTypography.bodyMediumArabic,
       secondaryLabelStyle: AppTypography.bodyMediumArabic.onPrimary,
       padding: AppSpacing.paddingMD,

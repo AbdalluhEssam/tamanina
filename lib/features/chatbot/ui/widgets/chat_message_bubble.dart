@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../data/model/chat_message.dart';
@@ -26,13 +25,11 @@ class ChatMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: Container(
-        margin: EdgeInsets.symmetric(
-          vertical: 2.h,
-          horizontal: AppSpacing.xs,
-        ),
+        margin: EdgeInsets.symmetric(vertical: 2.h, horizontal: AppSpacing.xs),
         child: Row(
-          mainAxisAlignment:
-              message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: message.isUser
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (!message.isUser) _buildAssistantAvatar(),
@@ -103,18 +100,18 @@ class ChatMessageBubble extends StatelessWidget {
           bottomStart: Radius.circular(18.r),
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2E7D32).withOpacity(0.3),
+            color: const Color(0xFF2E7D32).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
             spreadRadius: 2,
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -1),
             spreadRadius: 0,
@@ -134,8 +131,8 @@ class ChatMessageBubble extends StatelessWidget {
               : const [Color(0xFFE8F5E8), Color(0xFFF1F8E9), Color(0xFFFFFFFF)];
           borderTint = const Color(0xFF4CAF50);
           shadowColors = [
-            const Color(0xFF4CAF50).withOpacity(0.2),
-            const Color(0xFF2E7D32).withOpacity(0.1),
+            const Color(0xFF4CAF50).withValues(alpha: 0.2),
+            const Color(0xFF2E7D32).withValues(alpha: 0.1),
           ];
           break;
         case MessageType.hadith:
@@ -144,8 +141,8 @@ class ChatMessageBubble extends StatelessWidget {
               : const [Color(0xFFFFF3C4), Color(0xFFFFF8E1), Color(0xFFFFFFFF)];
           borderTint = const Color(0xFFFFB74D);
           shadowColors = [
-            const Color(0xFFFFB74D).withOpacity(0.2),
-            const Color(0xFFF57C00).withOpacity(0.1),
+            const Color(0xFFFFB74D).withValues(alpha: 0.2),
+            const Color(0xFFF57C00).withValues(alpha: 0.1),
           ];
           break;
         case MessageType.dua:
@@ -154,8 +151,8 @@ class ChatMessageBubble extends StatelessWidget {
               : const [Color(0xFFBBDEFB), Color(0xFFE3F2FD), Color(0xFFFFFFFF)];
           borderTint = const Color(0xFF2196F3);
           shadowColors = [
-            const Color(0xFF2196F3).withOpacity(0.2),
-            const Color(0xFF1976D2).withOpacity(0.1),
+            const Color(0xFF2196F3).withValues(alpha: 0.2),
+            const Color(0xFF1976D2).withValues(alpha: 0.1),
           ];
           break;
         case MessageType.error:
@@ -164,8 +161,8 @@ class ChatMessageBubble extends StatelessWidget {
               : const [Color(0xFFFFCDD2), Color(0xFFFFEBEE), Color(0xFFFFFFFF)];
           borderTint = const Color(0xFFE57373);
           shadowColors = [
-            const Color(0xFFE57373).withOpacity(0.2),
-            const Color(0xFFD32F2F).withOpacity(0.1),
+            const Color(0xFFE57373).withValues(alpha: 0.2),
+            const Color(0xFFD32F2F).withValues(alpha: 0.1),
           ];
           break;
         default:
@@ -174,8 +171,8 @@ class ChatMessageBubble extends StatelessWidget {
               : const [Color(0xFFF8F9FA), Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
           borderTint = isDarkMode ? Colors.white24 : Colors.black12;
           shadowColors = [
-            borderTint.withOpacity(0.15),
-            borderTint.withOpacity(0.05),
+            borderTint.withValues(alpha: 0.15),
+            borderTint.withValues(alpha: 0.05),
           ];
       }
 
@@ -193,7 +190,7 @@ class ChatMessageBubble extends StatelessWidget {
           bottomStart: Radius.circular(6.r),
         ),
         border: Border.all(
-          color: borderTint.withOpacity(0.3),
+          color: borderTint.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
@@ -211,7 +208,7 @@ class ChatMessageBubble extends StatelessWidget {
           ),
           if (!isDarkMode)
             BoxShadow(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               blurRadius: 3,
               offset: const Offset(0, -1),
               spreadRadius: 0,
@@ -242,7 +239,8 @@ class ChatMessageBubble extends StatelessWidget {
     if (isStreaming && !message.isUser) {
       return SimpleTypingText(
         text: message.content,
-        style: GoogleFonts.cairo(
+        style: TextStyle(
+          fontFamily: 'Cairo',
           color: textColor,
           height: 1.6,
           fontSize: 14.sp,
@@ -259,7 +257,8 @@ class ChatMessageBubble extends StatelessWidget {
     return SelectableText(
       message.content,
       style: message.isUser
-          ? GoogleFonts.cairo(
+          ? TextStyle(
+              fontFamily: 'Cairo',
               color: textColor,
               height: 1.5,
               fontSize: 14.sp,
@@ -273,7 +272,8 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
               ],
             )
-          : GoogleFonts.cairo(
+          : TextStyle(
+              fontFamily: 'Cairo',
               color: textColor,
               height: 1.6,
               fontSize: 14.sp,
@@ -296,20 +296,20 @@ class ChatMessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryGreen.withOpacity(0.10),
-            AppColors.primaryGreen.withOpacity(0.06),
+            AppColors.primaryGreen.withValues(alpha: 0.10),
+            AppColors.primaryGreen.withValues(alpha: 0.06),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(10.r),
         border: Border.all(
-          color: AppColors.primaryGreen.withOpacity(0.25),
+          color: AppColors.primaryGreen.withValues(alpha: 0.25),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.12),
+            color: AppColors.primaryGreen.withValues(alpha: 0.12),
             blurRadius: 6,
             offset: const Offset(0, 1),
           ),
@@ -337,7 +337,8 @@ class ChatMessageBubble extends StatelessWidget {
               children: [
                 Text(
                   'النقطة المهمة:',
-                  style: GoogleFonts.cairo(
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
                     color: AppColors.primaryGreen,
                     fontWeight: FontWeight.w700,
                     fontSize: 12.sp,
@@ -348,7 +349,8 @@ class ChatMessageBubble extends StatelessWidget {
                 SizedBox(height: 2.h),
                 Text(
                   highlight,
-                  style: GoogleFonts.cairo(
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w900,
                     height: 1.5,
@@ -383,8 +385,9 @@ class ChatMessageBubble extends StatelessWidget {
     if (sentences.isEmpty) return null;
 
     // Heuristic: choose a mid-length sentence that likely carries the ruling
-    sentences
-        .sort((a, b) => (a.length - 80).abs().compareTo((b.length - 80).abs()));
+    sentences.sort(
+      (a, b) => (a.length - 80).abs().compareTo((b.length - 80).abs()),
+    );
     final candidate = sentences.first;
 
     // Ensure it’s concise
@@ -407,15 +410,15 @@ class ChatMessageBubble extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primaryGreen.withOpacity(0.12),
-                  AppColors.primaryGreen.withOpacity(0.06),
+                  AppColors.primaryGreen.withValues(alpha: 0.12),
+                  AppColors.primaryGreen.withValues(alpha: 0.06),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
-                color: AppColors.primaryGreen.withOpacity(0.25),
+                color: AppColors.primaryGreen.withValues(alpha: 0.25),
                 width: 1,
               ),
             ),
@@ -429,7 +432,8 @@ class ChatMessageBubble extends StatelessWidget {
                 SizedBox(height: 6.h),
                 SelectableText(
                   parts.first,
-                  style: GoogleFonts.amiri(
+                  style: TextStyle(
+                    fontFamily: 'Amiri',
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                     height: 1.8,
@@ -446,7 +450,8 @@ class ChatMessageBubble extends StatelessWidget {
         if (parts.length > 1)
           SelectableText(
             parts.sublist(1).join('\n\n'),
-            style: GoogleFonts.cairo(
+            style: TextStyle(
+              fontFamily: 'Cairo',
               color: textColor,
               fontSize: 14.sp,
               fontWeight: FontWeight.w500,
@@ -468,15 +473,15 @@ class ChatMessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.goldAccent.withOpacity(0.10),
-            AppColors.goldAccent.withOpacity(0.05),
+            AppColors.goldAccent.withValues(alpha: 0.10),
+            AppColors.goldAccent.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.25),
+          color: AppColors.goldAccent.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -493,7 +498,8 @@ class ChatMessageBubble extends StatelessWidget {
               SizedBox(width: 6.w),
               Text(
                 'حديث شريف',
-                style: GoogleFonts.cairo(
+                style: TextStyle(
+                  fontFamily: 'Cairo',
                   color: AppColors.goldAccent,
                   fontWeight: FontWeight.w700,
                   fontSize: 12.sp,
@@ -504,7 +510,8 @@ class ChatMessageBubble extends StatelessWidget {
           SizedBox(height: 8.h),
           SelectableText(
             message.content,
-            style: GoogleFonts.amiri(
+            style: TextStyle(
+              fontFamily: 'Amiri',
               color: textColor,
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -533,15 +540,15 @@ class ChatMessageBubble extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.info.withOpacity(0.12),
-                  AppColors.info.withOpacity(0.06),
+                  AppColors.info.withValues(alpha: 0.12),
+                  AppColors.info.withValues(alpha: 0.06),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
-                color: AppColors.info.withOpacity(0.25),
+                color: AppColors.info.withValues(alpha: 0.25),
                 width: 1,
               ),
             ),
@@ -558,7 +565,8 @@ class ChatMessageBubble extends StatelessWidget {
                     SizedBox(width: 6.w),
                     Text(
                       'دعاء مبارك',
-                      style: GoogleFonts.cairo(
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
                         color: AppColors.info,
                         fontWeight: FontWeight.w700,
                         fontSize: 12.sp,
@@ -569,7 +577,8 @@ class ChatMessageBubble extends StatelessWidget {
                 SizedBox(height: 8.h),
                 SelectableText(
                   parts.first,
-                  style: GoogleFonts.amiri(
+                  style: TextStyle(
+                    fontFamily: 'Amiri',
                     color: AppColors.info,
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -586,7 +595,8 @@ class ChatMessageBubble extends StatelessWidget {
         if (parts.length > 1)
           SelectableText(
             parts.sublist(1).join('\n\n'),
-            style: GoogleFonts.cairo(
+            style: TextStyle(
+              fontFamily: 'Cairo',
               color: textColor,
               fontSize: 14.sp,
               fontWeight: FontWeight.w500,
@@ -607,27 +617,25 @@ class ChatMessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryGreen.withOpacity(0.08),
-            AppColors.primaryGreen.withOpacity(0.04),
+            AppColors.primaryGreen.withValues(alpha: 0.08),
+            AppColors.primaryGreen.withValues(alpha: 0.04),
           ],
         ),
         borderRadius: BorderRadius.circular(10.r),
         border: Border.all(
-          color: AppColors.primaryGreen.withOpacity(0.15),
+          color: AppColors.primaryGreen.withValues(alpha: 0.15),
           width: 0.8,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TypingIndicator(
-            color: AppColors.primaryGreen,
-            size: 6.w,
-          ),
+          TypingIndicator(color: AppColors.primaryGreen, size: 6.w),
           SizedBox(width: 8.w),
           Text(
             'جاري الكتابة...',
-            style: GoogleFonts.cairo(
+            style: TextStyle(
+              fontFamily: 'Cairo',
               color: AppColors.primaryGreen,
               fontWeight: FontWeight.w600,
               fontSize: 12.sp,
@@ -645,9 +653,10 @@ class ChatMessageBubble extends StatelessWidget {
       padding: EdgeInsets.only(top: 2.h),
       child: Text(
         _formatTime(message.timestamp),
-        style: GoogleFonts.cairo(
+        style: TextStyle(
+          fontFamily: 'Cairo',
           color: message.isUser
-              ? Colors.white.withOpacity(0.85)
+              ? Colors.white.withValues(alpha: 0.85)
               : AppColors.textSecondary,
           fontSize: 10.sp,
           fontWeight: FontWeight.w500,
@@ -670,24 +679,17 @@ class ChatMessageBubble extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.25),
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 2),
             spreadRadius: 0.5,
           ),
         ],
       ),
-      child: Icon(
-        Icons.person_rounded,
-        color: Colors.white,
-        size: 16.w,
-      ),
+      child: Icon(Icons.person_rounded, color: Colors.white, size: 16.w),
     );
   }
 
@@ -703,24 +705,17 @@ class ChatMessageBubble extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFB74D).withOpacity(0.25),
+            color: const Color(0xFFFFB74D).withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 2),
             spreadRadius: 0.5,
           ),
         ],
       ),
-      child: Icon(
-        Icons.mosque_rounded,
-        color: Colors.white,
-        size: 16.w,
-      ),
+      child: Icon(Icons.mosque_rounded, color: Colors.white, size: 16.w),
     );
   }
 
@@ -781,7 +776,7 @@ class ChatMessageBubble extends StatelessWidget {
                 leading: Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Icon(
@@ -792,7 +787,8 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 title: Text(
                   'نسخ النص',
-                  style: GoogleFonts.cairo(
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.1,
@@ -800,7 +796,8 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 subtitle: Text(
                   'انسخ محتوى الرسالة',
-                  style: GoogleFonts.cairo(
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
                     color: AppColors.textSecondary,
                     fontSize: 12.sp,
                   ),

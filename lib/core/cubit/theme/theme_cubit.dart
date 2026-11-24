@@ -31,7 +31,7 @@ class ThemeCubit extends Cubit<ThemeState> {
   void _init() {
     if (_settingsRepository != null) {
       _settingsSubscription =
-          _settingsRepository!.settingsStream.listen((settings) {
+          _settingsRepository.settingsStream.listen((settings) {
         if (state.themeMode != settings.themeMode) {
           emit(ThemeState(settings.themeMode));
         }
@@ -43,7 +43,7 @@ class ThemeCubit extends Cubit<ThemeState> {
   /// Change theme mode
   Future<void> changeTheme(ThemeMode newTheme) async {
     if (_settingsRepository != null) {
-      await _settingsRepository!.updateThemeMode(newTheme);
+      await _settingsRepository.updateThemeMode(newTheme);
     }
     emit(ThemeState(newTheme));
   }

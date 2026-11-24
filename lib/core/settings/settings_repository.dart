@@ -15,7 +15,8 @@ enum PrayerCalculationMethod {
   kuwait('الكويت', 'Kuwait'),
   qatar('قطر', 'Qatar'),
   singapore('سنغافورة', 'Singapore'),
-  turkey('تركيا', 'Turkey');
+  turkey('تركيا', 'Turkey'),
+  automatic('حسب الموقع', 'Based on location');
 
   const PrayerCalculationMethod(this.arabicName, this.englishName);
   final String arabicName;
@@ -41,7 +42,8 @@ enum AdhanSound {
   alAqsa('الأقصى', 'assets/audio/adhan/adhan_aqsa.mp3'),
   egypt('مصر', 'assets/audio/adhan/adhan_egypt.mp3'),
   mishary('مشاري العفاسي', 'assets/audio/adhan/adhan_mishary.mp3'),
-  system('صوت النظام', 'system');
+  system('صوت النظام', 'system'),
+  local('أذان طمأنينة', 'assets/audio/adhan/adhan_local.mp3');
 
   const AdhanSound(this.displayName, this.assetPath);
   final String displayName;
@@ -101,13 +103,13 @@ class PerPrayerSettings {
   }
 
   Map<String, bool> toMap() => {
-        'fajr': fajr,
-        'sunrise': sunrise,
-        'dhuhr': dhuhr,
-        'asr': asr,
-        'maghrib': maghrib,
-        'isha': isha,
-      };
+    'fajr': fajr,
+    'sunrise': sunrise,
+    'dhuhr': dhuhr,
+    'asr': asr,
+    'maghrib': maghrib,
+    'isha': isha,
+  };
 
   factory PerPrayerSettings.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const PerPrayerSettings();
@@ -120,6 +122,22 @@ class PerPrayerSettings {
       isha: map['isha'] ?? true,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      other is PerPrayerSettings &&
+      (fajr, sunrise, dhuhr, asr, maghrib, isha) ==
+          (
+            other.fajr,
+            other.sunrise,
+            other.dhuhr,
+            other.asr,
+            other.maghrib,
+            other.isha,
+          );
+
+  @override
+  int get hashCode => Object.hash(fajr, sunrise, dhuhr, asr, maghrib, isha);
 
   bool isEnabled(String prayerName) {
     switch (prayerName.toLowerCase()) {
@@ -158,6 +176,33 @@ class LocationSettings {
     this.countryName,
   });
 
+  @override
+  bool operator ==(Object other) =>
+      other is LocationSettings &&
+      (
+            useAutoLocation,
+            manualLatitude,
+            manualLongitude,
+            cityName,
+            countryName,
+          ) ==
+          (
+            other.useAutoLocation,
+            other.manualLatitude,
+            other.manualLongitude,
+            other.cityName,
+            other.countryName,
+          );
+
+  @override
+  int get hashCode => Object.hash(
+    useAutoLocation,
+    manualLatitude,
+    manualLongitude,
+    cityName,
+    countryName,
+  );
+
   LocationSettings copyWith({
     bool? useAutoLocation,
     double? manualLatitude,
@@ -175,12 +220,12 @@ class LocationSettings {
   }
 
   Map<String, dynamic> toMap() => {
-        'useAutoLocation': useAutoLocation,
-        'manualLatitude': manualLatitude,
-        'manualLongitude': manualLongitude,
-        'cityName': cityName,
-        'countryName': countryName,
-      };
+    'useAutoLocation': useAutoLocation,
+    'manualLatitude': manualLatitude,
+    'manualLongitude': manualLongitude,
+    'cityName': cityName,
+    'countryName': countryName,
+  };
 
   factory LocationSettings.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const LocationSettings();
@@ -229,14 +274,14 @@ class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.arabicFont = ArabicFont.cairo,
-    this.calculationMethod = PrayerCalculationMethod.ummAlQura,
+    this.calculationMethod = PrayerCalculationMethod.automatic,
     this.madhab = Madhab.shafi,
     this.locationSettings = const LocationSettings(),
     this.notificationsEnabled = true,
     this.perPrayerEnabled = const PerPrayerSettings(),
-    this.prePrayerOffsetMinutes = 15,
-    this.muadhinMode = false,
-    this.selectedAdhan = AdhanSound.makkah,
+    this.prePrayerOffsetMinutes = 0,
+    this.muadhinMode = true,
+    this.selectedAdhan = AdhanSound.local,
     this.adhanVolume = 1.0,
     this.vibrationEnabled = true,
     this.quietHoursEnabled = false,
@@ -307,16 +352,20 @@ class AppSettings {
       themeMode: ThemeMode.values[map['themeMode'] ?? 0],
       arabicFont: ArabicFont.values[map['arabicFont'] ?? 0],
       calculationMethod:
-          PrayerCalculationMethod.values[map['calculationMethod'] ?? 2],
+          PrayerCalculationMethod.values[map['calculationMethod'] ??
+              PrayerCalculationMethod.automatic.index],
       madhab: Madhab.values[map['madhab'] ?? 0],
       locationSettings: LocationSettings.fromMap(
-          map['locationSettings'] as Map<String, dynamic>?),
+        map['locationSettings'] as Map<String, dynamic>?,
+      ),
       notificationsEnabled: map['notificationsEnabled'] ?? true,
       perPrayerEnabled: PerPrayerSettings.fromMap(
-          map['perPrayerEnabled'] as Map<String, dynamic>?),
-      prePrayerOffsetMinutes: map['prePrayerOffsetMinutes'] ?? 15,
-      muadhinMode: map['muadhinMode'] ?? false,
-      selectedAdhan: AdhanSound.values[map['selectedAdhan'] ?? 0],
+        map['perPrayerEnabled'] as Map<String, dynamic>?,
+      ),
+      prePrayerOffsetMinutes: map['prePrayerOffsetMinutes'] ?? 0,
+      muadhinMode: map['muadhinMode'] ?? true,
+      selectedAdhan:
+          AdhanSound.values[map['selectedAdhan'] ?? AdhanSound.local.index],
       adhanVolume: (map['adhanVolume'] ?? 1.0).toDouble(),
       vibrationEnabled: map['vibrationEnabled'] ?? true,
       quietHoursEnabled: map['quietHoursEnabled'] ?? false,
@@ -333,13 +382,17 @@ class AppSettings {
         other.arabicFont == arabicFont &&
         other.calculationMethod == calculationMethod &&
         other.madhab == madhab &&
+        other.locationSettings == locationSettings &&
+        other.perPrayerEnabled == perPrayerEnabled &&
         other.notificationsEnabled == notificationsEnabled &&
         other.prePrayerOffsetMinutes == prePrayerOffsetMinutes &&
         other.muadhinMode == muadhinMode &&
         other.selectedAdhan == selectedAdhan &&
         other.adhanVolume == adhanVolume &&
         other.vibrationEnabled == vibrationEnabled &&
-        other.quietHoursEnabled == quietHoursEnabled;
+        other.quietHoursEnabled == quietHoursEnabled &&
+        other.quietHoursStart == quietHoursStart &&
+        other.quietHoursEnd == quietHoursEnd;
   }
 
   @override
@@ -349,6 +402,8 @@ class AppSettings {
       arabicFont,
       calculationMethod,
       madhab,
+      locationSettings,
+      perPrayerEnabled,
       notificationsEnabled,
       prePrayerOffsetMinutes,
       muadhinMode,
@@ -356,6 +411,8 @@ class AppSettings {
       adhanVolume,
       vibrationEnabled,
       quietHoursEnabled,
+      quietHoursStart,
+      quietHoursEnd,
     );
   }
 }
@@ -438,7 +495,8 @@ class SettingsRepository {
 
   Future<void> updateNotificationsEnabled(bool enabled) async {
     await saveSettings(
-        _currentSettings.copyWith(notificationsEnabled: enabled));
+      _currentSettings.copyWith(notificationsEnabled: enabled),
+    );
   }
 
   Future<void> updatePerPrayerSettings(PerPrayerSettings settings) async {
@@ -447,7 +505,8 @@ class SettingsRepository {
 
   Future<void> updatePrePrayerOffset(int minutes) async {
     await saveSettings(
-        _currentSettings.copyWith(prePrayerOffsetMinutes: minutes));
+      _currentSettings.copyWith(prePrayerOffsetMinutes: minutes),
+    );
   }
 
   Future<void> updateMuadhinMode(bool enabled) async {
@@ -470,16 +529,14 @@ class SettingsRepository {
     await saveSettings(_currentSettings.copyWith(locationSettings: location));
   }
 
-  Future<void> updateQuietHours({
-    bool? enabled,
-    int? start,
-    int? end,
-  }) async {
-    await saveSettings(_currentSettings.copyWith(
-      quietHoursEnabled: enabled,
-      quietHoursStart: start,
-      quietHoursEnd: end,
-    ));
+  Future<void> updateQuietHours({bool? enabled, int? start, int? end}) async {
+    await saveSettings(
+      _currentSettings.copyWith(
+        quietHoursEnabled: enabled,
+        quietHoursStart: start,
+        quietHoursEnd: end,
+      ),
+    );
   }
 
   /// إعادة تعيين الإعدادات إلى القيم الافتراضية
