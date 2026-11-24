@@ -135,6 +135,15 @@ class NotificationServiceEnhanced {
             sound: true,
           );
     } else {
+      try {
+        await _android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'tamanina_channel',
+            'Tamanina notifications',
+            importance: Importance.high,
+          ),
+        );
+      } catch (_) {}
       FirebaseMessaging.onMessage.listen((message) async {
         final notification = message.notification;
         if (notification == null ||
@@ -148,11 +157,19 @@ class NotificationServiceEnhanced {
             notification.title,
             notification.body,
             _details('updates', 'App updates', sound: true, vibrate: true),
+            payload: message.data['route'] as String?,
           );
         } catch (error) {
           if (kDebugMode) debugPrint('Could not show app update: $error');
         }
       });
+    }
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      WorshipShortcuts.instance.open(message.data['route'] as String?);
+    });
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      WorshipShortcuts.instance.open(initial.data['route'] as String?);
     }
   }
 

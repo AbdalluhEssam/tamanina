@@ -7,10 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FD9448A81BB64BD2A5CDD545 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD546 /* InfoPlist.strings */; };
-		FD9448A81BB64BD2A5CDD541 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD542 /* PrivacyInfo.xcprivacy */; };
-		FD9448A81BB64BD2A5CDD543 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD544 /* PrivacyInfo.xcprivacy */; };
-		86F7B971D28340EDA1BF2CA1 /* Artwork in Resources */ = {isa = PBXBuildFile; fileRef = 86F7B972D28340EDA1BF2CA1 /* Artwork */; };
 		047B310599BC288961A1810B /* libPods-Runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 390D5373011CD38FE08F49DD /* libPods-Runner.a */; };
 		05AA66BB202062C5C351FA43 /* libPods-RunnerTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C3AC2BF3F3EF6A34BB78F21 /* libPods-RunnerTests.a */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
@@ -19,6 +15,7 @@
 		33757A68EF4DDCD01A156BD3 /* WorshipWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC4FA98BE7251BC9E4F8613 /* WorshipWidgets.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		86F7B971D28340EDA1BF2CA1 /* Artwork in Resources */ = {isa = PBXBuildFile; fileRef = 86F7B972D28340EDA1BF2CA1 /* Artwork */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -27,6 +24,9 @@
 		C76FDCF0415B72146D7EFA42 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80C88EAF83A332C2AFC4260B /* Foundation.framework */; };
 		DAD7552C85CCF44C12AFB283 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 86CB15597FE07EC7911AF4E5 /* WidgetKit.framework */; };
 		E4FADB8B2086B6D6E8FAEBB8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 33AB6F53C295388C83723DB0 /* GoogleService-Info.plist */; };
+		FD9448A81BB64BD2A5CDD541 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD542 /* PrivacyInfo.xcprivacy */; };
+		FD9448A81BB64BD2A5CDD543 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD544 /* PrivacyInfo.xcprivacy */; };
+		FD9448A81BB64BD2A5CDD545 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FD9448A81BB64BD2A5CDD546 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,11 +71,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		FD9448A81BB64BD2A5CDD547 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FD9448A81BB64BD2A5CDD542 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		FD9448A81BB64BD2A5CDD544 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		86F7B972D28340EDA1BF2CA1 /* Artwork */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Artwork; sourceTree = "<group>"; };
-		07CDCC945A3DCA1AC0AFE904 /* adhan_alert.caf */ = {isa = PBXFileReference; includeInIndex = 1; path = adhan_alert.caf; sourceTree = "<group>"; };
+		07CDCC945A3DCA1AC0AFE904 /* adhan_alert.caf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = adhan_alert.caf; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		22C2FCA7786106B16030EA29 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -94,6 +90,7 @@
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		80C88EAF83A332C2AFC4260B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		86CB15597FE07EC7911AF4E5 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/WidgetKit.framework; sourceTree = DEVELOPER_DIR; };
+		86F7B972D28340EDA1BF2CA1 /* Artwork */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Artwork; sourceTree = "<group>"; };
 		94CFAF2C69248C0F4C9A2982 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -107,6 +104,9 @@
 		E072F0012ADB2D05F2942599 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F202D4D5D04D859093FC8B4B /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		FBC4FA98BE7251BC9E4F8613 /* WorshipWidgets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorshipWidgets.swift; sourceTree = "<group>"; };
+		FD9448A81BB64BD2A5CDD542 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		FD9448A81BB64BD2A5CDD544 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		FD9448A81BB64BD2A5CDD547 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,7 +177,6 @@
 				22C2FCA7786106B16030EA29 /* Pods-RunnerTests.release.xcconfig */,
 				CC0840994C35F570E21DB622 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -243,7 +242,6 @@
 				FD9448A81BB64BD2A5CDD544 /* PrivacyInfo.xcprivacy */,
 				86F7B972D28340EDA1BF2CA1 /* Artwork */,
 			);
-			name = TamaninaWidgets;
 			path = TamaninaWidgets;
 			sourceTree = "<group>";
 		};
@@ -331,11 +329,17 @@
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
 							};
+							com.apple.Push = {
+								enabled = 1;
+							};
 						};
 					};
 					B53CDF94018D6D52E6554028 = {
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.Push = {
 								enabled = 1;
 							};
 						};
@@ -535,14 +539,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		FD9448A81BB64BD2A5CDD546 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				FD9448A81BB64BD2A5CDD547 /* ar */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -557,6 +553,14 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		FD9448A81BB64BD2A5CDD546 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				FD9448A81BB64BD2A5CDD547 /* ar */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -645,10 +649,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P48S5252F6;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "طمأنينة · Tamanina";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -853,10 +860,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P48S5252F6;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "طمأنينة · Tamanina";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -877,10 +887,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P48S5252F6;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "طمأنينة · Tamanina";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
