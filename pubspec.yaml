@@ -1,7 +1,7 @@
 name: tamanina
 description: Tamanina brings together offline Quran reading, local prayer times and reminders, daily adhkar, and tasbeeh.
 
-version: 1.0.1+2
+version: 1.0.1+3
 publish_to: 'none'
 
 environment:
