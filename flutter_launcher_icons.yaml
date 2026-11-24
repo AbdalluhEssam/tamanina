@@ -1,0 +1,12 @@
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/logo.png
+  remove_alpha_ios: true
+  adaptive_icon_background: '#19283D'
+  adaptive_icon_foreground: assets/images/adaptive_foreground.png
+  adaptive_icon_monochrome: assets/images/adaptive_monochrome.png
+  adaptive_icon_foreground_inset: 0
+  image_path_ios_dark_transparent: assets/images/ios_dark_icon.png
+  image_path_ios_tinted_grayscale: assets/images/logo.png
+  desaturate_tinted_to_grayscale_ios: true

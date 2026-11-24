@@ -1,16 +1,17 @@
 name: tamanina
-description: A new Flutter project with Clean Architecture by Abdalluh Essam
+description: Tamanina brings together offline Quran reading, local prayer times and reminders, daily adhkar, and tasbeeh.
 
-version: 1.0.0+1
-# Flutter version on machine: 3.29.3
+version: 1.0.1+2
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: '>=3.35.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  bloc: ^9.0.0
   flutter_bloc:
   dio:
   shared_preferences:
@@ -23,36 +24,34 @@ dependencies:
   flutter_animate:
   freezed_annotation:
   json_annotation:
-  flutter_native_splash:
   animate_do:
   lottie:
-  google_fonts: ^8.1.0
-  flutter_launcher_icons:
   animator:
   dartz:
   flutter_svg:
   cupertino_icons:
-  # New dependencies for Tamanina features
-  supabase_flutter: ^2.3.4
   firebase_core: ^2.24.2
   firebase_messaging: ^14.7.10
   flutter_local_notifications: ^17.2.2
-  firebase_remote_config: ^4.3.8
   timezone: ^0.9.2
+  flutter_timezone: ^5.1.0
   url_launcher: ^6.2.4
-  in_app_review: ^2.0.9
-  package_info_plus: ^4.2.0
+  package_info_plus: ^9.0.0
+  new_version_plus: ^1.0.1
+  app_links: ^6.4.1
   permission_handler: ^11.3.1
   geolocator: ^10.1.0
   http: ^1.1.2
   # UI Enhancement Dependencies
   shimmer: ^3.0.0
+  skeletonizer: ^3.0.0
   smooth_page_indicator: ^1.1.0
   flutter_staggered_animations: ^1.1.1
   share_plus: ^7.2.1
   # Quran Library for complete Quran features
   quran_sharif: ^1.0.0
   just_audio: ^0.10.5
+  audio_service: ^0.18.19
   # Prayer Times - Accurate calculation using adhan algorithm
   adhan: ^2.0.0+1
   # Compass for Qibla direction
@@ -70,32 +69,89 @@ dependencies:
   path_provider: ^2.1.4
   # UUID for unique identifiers
   uuid: ^4.5.1
+  fllama: ^0.0.1
+  crypto: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_native_splash: ^2.4.6
+  flutter_launcher_icons: ^0.14.4
   build_runner: any
   freezed: any
   json_serializable: any
   mocktail: ^1.0.5
   flutter_lints: ^6.0.0
   bloc_test: any
-  hive_generator: any
   integration_test:
     sdk: flutter
-
-dependency_overrides:
-  test_api: 0.7.12
 
 flutter:
   uses-material-design: true
   generate: true
   assets:
     - assets/images/
-    - assets/icons/
-    - assets/lottie/
     - assets/lang/
+    - assets/fonts/
     - assets/data/
     - assets/data/adhkar/
+    - assets/mushaf/
     - assets/audio/
     - assets/audio/adhan/
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/cairo-400.ttf
+          weight: 400
+        - asset: assets/fonts/cairo-600.ttf
+          weight: 600
+        - asset: assets/fonts/cairo-700.ttf
+          weight: 700
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/amiri-400.ttf
+          weight: 400
+        - asset: assets/fonts/amiri-700.ttf
+          weight: 700
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/tajawal-400.ttf
+          weight: 400
+        - asset: assets/fonts/tajawal-700.ttf
+          weight: 700
+    - family: Noto Naskh Arabic
+      fonts:
+        - asset: assets/fonts/notonaskharabic-400.ttf
+          weight: 400
+        - asset: assets/fonts/notonaskharabic-700.ttf
+          weight: 700
+    - family: Scheherazade New
+      fonts:
+        - asset: assets/fonts/scheherazadenew-400.ttf
+          weight: 400
+        - asset: assets/fonts/scheherazadenew-700.ttf
+          weight: 700
+    - family: Reem Kufi
+      fonts:
+        - asset: assets/fonts/reemkufi-400.ttf
+          weight: 400
+        - asset: assets/fonts/reemkufi-500.ttf
+          weight: 500
+        - asset: assets/fonts/reemkufi-600.ttf
+          weight: 600
+        - asset: assets/fonts/reemkufi-700.ttf
+          weight: 700
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/poppins-300.ttf
+          weight: 300
+        - asset: assets/fonts/poppins-400.ttf
+          weight: 400
+        - asset: assets/fonts/poppins-500.ttf
+          weight: 500
+        - asset: assets/fonts/poppins-600.ttf
+          weight: 600
+        - asset: assets/fonts/poppins-700.ttf
+          weight: 700
