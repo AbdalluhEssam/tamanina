@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:audio_session/audio_session.dart';
@@ -7,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../../core/audio/audio_catalog.dart';
+import '../../../../core/audio/audio_library.dart';
+import '../../../../core/services/adhan_native_bridge.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/settings/settings_repository.dart';
@@ -18,11 +22,16 @@ class AdhanScreenArgs {
     this.prayerNameArabic = 'الصلاة',
     this.prayerName = 'Prayer',
     this.isFajr = false,
+    this.followNative = false,
   });
 
   final String prayerNameArabic;
   final String prayerName;
   final bool isFajr;
+
+  /// True when Android is already playing the adhan from its background
+  /// service. The screen then follows that playback instead of playing again.
+  final bool followNative;
 }
 
 // ─────────────────────────── Adhan Phrase Data ───────────────────────────────
@@ -221,6 +230,11 @@ class _StarPainter extends CustomPainter {
 // ─────────────────────────── Full Screen Adhan ───────────────────────────────
 
 class AdhanScreen extends StatefulWidget {
+  /// How long to wait for the Android alarm service to start playing before
+  /// treating the adhan as finished.
+  @visibleForTesting
+  static Duration followGrace = const Duration(seconds: 6);
+
   const AdhanScreen({super.key, this.args = const AdhanScreenArgs()});
 
   final AdhanScreenArgs args;
@@ -239,6 +253,11 @@ class _AdhanScreenState extends State<AdhanScreen>
 
   // ── Audio ──────────────────────────────────────────────────────────────────
   final _player = AudioPlayer();
+  final _native = const AdhanNativeBridge();
+  Timer? _followTimer;
+  late bool _following = widget.args.followNative && _native.supported;
+  bool _nativeStarted = false;
+  final _followSince = DateTime.now();
   StreamSubscription<Duration>? _posSub;
   StreamSubscription<PlayerState>? _stateSub;
   Duration _currentPos = Duration.zero;
@@ -250,7 +269,9 @@ class _AdhanScreenState extends State<AdhanScreen>
   bool _completed = false;
 
   // ── Phrases ────────────────────────────────────────────────────────────────
-  late final List<_AdhanPhrase> _phrases;
+  late List<_AdhanPhrase> _phrases;
+  bool _timed = true;
+  File? _voiceFile;
   int _activePhraseIndex = 0;
   int _activeWordIndex = 0;
   final _scrollController = ScrollController();
@@ -282,7 +303,99 @@ class _AdhanScreenState extends State<AdhanScreen>
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
 
-    _initAudio();
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    await _resolveVoice();
+    if (!mounted) return;
+    if (_following) {
+      _followNativePlayback();
+    } else {
+      unawaited(_initAudio());
+    }
+  }
+
+  /// Uses the adhan voice the user chose. A downloaded voice highlights words
+  /// only when its catalog entry has timings; otherwise the phrases are shown
+  /// without highlighting, since another recording's timings would be wrong.
+  Future<void> _resolveVoice() async {
+    try {
+      final id = sl.isRegistered<SettingsRepository>()
+          ? sl<SettingsRepository>().currentSettings.adhanVoiceId
+          : AdhanVoice.bundledId;
+      final voice = (await loadAudioCatalog(network: false)).voice(id);
+      if (voice.isBundled) return;
+      final library = await AudioLibrary.open();
+      final file = await library.installedAdhan(
+        voice,
+        isFajr: widget.args.isFajr,
+      );
+      if (file == null) return;
+      final timings = voice.fileFor(isFajr: widget.args.isFajr)?.phrases;
+      _voiceFile = file;
+      if (timings != null && timings.length == _phrases.length) {
+        _phrases = [
+          for (final (i, phrase) in _phrases.indexed)
+            _AdhanPhrase(
+              arabic: phrase.arabic,
+              transliteration: phrase.transliteration,
+              startSec: timings[i].start,
+              endSec: timings[i].end,
+            ),
+        ];
+      } else {
+        _timed = false;
+        _activeWordIndex = -1;
+      }
+    } catch (_) {
+      // Keep the bundled adhan.
+    }
+  }
+
+  /// Mirrors the Android service's playback position on screen.
+  void _followNativePlayback() {
+    setState(() => _audioLoaded = true);
+    Future<void> poll() async {
+      final status = await _native.status();
+      if (!mounted || !_following) return;
+      if (status.playing) _nativeStarted = true;
+      if (status.duration > Duration.zero) _totalDuration = status.duration;
+      setState(() => _isPlaying = status.playing);
+      if (status.playing) {
+        _onPositionUpdated(status.position);
+      } else {
+        // The alarm service may start a moment after the screen opens.
+        if (!_nativeStarted &&
+            DateTime.now().difference(_followSince) < AdhanScreen.followGrace) {
+          return;
+        }
+        _followTimer?.cancel();
+        setState(() => _completed = true);
+        if (!_nativeStarted) {
+          // The adhan already finished before the screen opened.
+          _currentPos = Duration.zero;
+        }
+      }
+    }
+
+    unawaited(poll());
+    _followTimer = Timer.periodic(
+      const Duration(milliseconds: 300),
+      (_) => unawaited(poll()),
+    );
+  }
+
+  /// Leaves follow mode and plays the recording from this screen (replay).
+  Future<void> _playHere() async {
+    _followTimer?.cancel();
+    await _native.stop();
+    setState(() {
+      _following = false;
+      _completed = false;
+      _audioLoaded = false;
+    });
+    await _initAudio();
   }
 
   Future<void> _initAudio() async {
@@ -292,7 +405,10 @@ class _AdhanScreenState extends State<AdhanScreen>
       final session = await AudioSession.instance;
       await session.configure(const AudioSessionConfiguration.music());
 
-      final duration = await _player.setAsset(AdhanSound.local.assetPath);
+      final file = _voiceFile;
+      final duration = file != null
+          ? await _player.setFilePath(file.path)
+          : await _player.setAsset(AdhanSound.local.assetPath);
       if (sl.isRegistered<SettingsRepository>()) {
         await _player.setVolume(
           sl<SettingsRepository>().currentSettings.adhanVolume,
@@ -335,6 +451,10 @@ class _AdhanScreenState extends State<AdhanScreen>
     if (!mounted) return;
     final sec = pos.inMilliseconds / 1000.0;
     _currentPos = pos;
+    if (!_timed) {
+      setState(() {});
+      return;
+    }
 
     // Find active phrase
     int phraseIdx = 0;
@@ -383,6 +503,11 @@ class _AdhanScreenState extends State<AdhanScreen>
   }
 
   Future<void> _togglePlayPause() async {
+    if (_following) {
+      // The service cannot pause; the button stops the adhan.
+      await _native.stop();
+      return;
+    }
     if (!_audioLoaded) {
       await _initAudio();
     } else if (_player.playing) {
@@ -393,16 +518,19 @@ class _AdhanScreenState extends State<AdhanScreen>
   }
 
   Future<void> _dismiss() async {
+    _followTimer?.cancel();
     try {
+      if (_following) await _native.stop();
       await _player.stop();
     } catch (_) {}
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    if (widget.args.followNative) await _native.closeOverLockScreen();
   }
 
   @override
   void dispose() {
+    _followTimer?.cancel();
     _posSub?.cancel();
     _stateSub?.cancel();
     _player.dispose();
@@ -685,7 +813,9 @@ class _AdhanScreenState extends State<AdhanScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${_activePhraseIndex + 1} / ${_phrases.length}',
+                    _timed
+                        ? '${_activePhraseIndex + 1} / ${_phrases.length}'
+                        : '${_phrases.length}',
                     style: const TextStyle(
                       color: _lanternAmber,
                       fontSize: 12,
@@ -806,12 +936,12 @@ class _AdhanScreenState extends State<AdhanScreen>
               itemCount: _phrases.length,
               itemBuilder: (context, index) {
                 final p = _phrases[index];
-                final isActive = index == _activePhraseIndex;
-                final isDone = index < _activePhraseIndex;
+                final isActive = _timed && index == _activePhraseIndex;
+                final isDone = _timed && index < _activePhraseIndex;
 
                 return GestureDetector(
                   onTap: () {
-                    if (_audioLoaded) {
+                    if (_audioLoaded && !_following) {
                       _player.seek(
                         Duration(milliseconds: (p.startSec * 1000).toInt()),
                       );
@@ -982,6 +1112,10 @@ class _AdhanScreenState extends State<AdhanScreen>
               // Repeat button
               GestureDetector(
                 onTap: () {
+                  if (_following) {
+                    _playHere();
+                    return;
+                  }
                   setState(() => _completed = false);
                   _player.seek(Duration.zero);
                   _player.play();
@@ -1081,11 +1215,13 @@ class _AdhanScreenState extends State<AdhanScreen>
                   ),
                   child: Slider(
                     value: progress,
-                    onChanged: (val) {
-                      final targetMs = (val * _totalDuration.inMilliseconds)
-                          .toInt();
-                      _player.seek(Duration(milliseconds: targetMs));
-                    },
+                    onChanged: _following
+                        ? null
+                        : (val) {
+                            final targetMs =
+                                (val * _totalDuration.inMilliseconds).toInt();
+                            _player.seek(Duration(milliseconds: targetMs));
+                          },
                   ),
                 ),
               ),
@@ -1107,10 +1243,15 @@ class _AdhanScreenState extends State<AdhanScreen>
               // Rewind 10s
               IconButton(
                 icon: const Icon(Icons.replay_10, color: _ivory, size: 22),
-                onPressed: () {
-                  final target = _currentPos - const Duration(seconds: 10);
-                  _player.seek(target < Duration.zero ? Duration.zero : target);
-                },
+                onPressed: _following
+                    ? null
+                    : () {
+                        final target =
+                            _currentPos - const Duration(seconds: 10);
+                        _player.seek(
+                          target < Duration.zero ? Duration.zero : target,
+                        );
+                      },
               ),
               const SizedBox(width: 16),
               // Play/Pause
@@ -1134,12 +1275,15 @@ class _AdhanScreenState extends State<AdhanScreen>
               // Forward 10s
               IconButton(
                 icon: const Icon(Icons.forward_10, color: _ivory, size: 22),
-                onPressed: () {
-                  final target = _currentPos + const Duration(seconds: 10);
-                  _player.seek(
-                    target > _totalDuration ? _totalDuration : target,
-                  );
-                },
+                onPressed: _following
+                    ? null
+                    : () {
+                        final target =
+                            _currentPos + const Duration(seconds: 10);
+                        _player.seek(
+                          target > _totalDuration ? _totalDuration : target,
+                        );
+                      },
               ),
             ],
           ),

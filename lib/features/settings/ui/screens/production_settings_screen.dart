@@ -10,6 +10,7 @@ import '../../../../core/services/service_locator.dart';
 import '../../../../core/settings/settings_cubit.dart';
 import '../../../../core/settings/settings_repository.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
+import '../widgets/packs_sheet.dart';
 
 class ProductionSettingsScreen extends StatelessWidget {
   const ProductionSettingsScreen({super.key, this.embedded = false});
@@ -207,6 +208,21 @@ class ProductionSettingsScreen extends StatelessWidget {
                       context,
                       AppRoutes.notificationSettings,
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.download_for_offline_outlined),
+                    title: Text(
+                      appText(context, 'التحميلات', 'Downloads'),
+                    ),
+                    subtitle: Text(
+                      appText(
+                        context,
+                        'المصحف، أصوات الأذان، المساعد على الجهاز',
+                        'Mushaf pages, adhan voices, on-device assistant',
+                      ),
+                    ),
+                    trailing: Icon(appChevron(context)),
+                    onTap: () => showPacksSheet(context),
                   ),
                   SwitchListTile.adaptive(
                     secondary: const Icon(Icons.vibration),

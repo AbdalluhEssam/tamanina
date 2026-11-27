@@ -43,6 +43,7 @@ class AppRouter {
           prayerName: prayer,
           prayerNameArabic: arabic,
           isFajr: fajr,
+          followNative: uri?.queryParameters['follow'] == '1',
         );
       }
       return MaterialPageRoute<void>(

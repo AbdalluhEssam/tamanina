@@ -1,1 +1,30 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"tamanina-624c9","appId":"1:902662652361:android:a3acbf9f1a10d6af7aa818","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"tamanina-624c9","appId":"1:902662652361:ios:d6322f60d322ec8f7aa818","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"tamanina-624c9","configurations":{"android":"1:902662652361:android:a3acbf9f1a10d6af7aa818","ios":"1:902662652361:ios:d6322f60d322ec8f7aa818"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "tamanina-624c9",
+          "appId": "1:902662652361:android:a3acbf9f1a10d6af7aa818",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "tamanina-624c9",
+          "appId": "1:902662652361:ios:d6322f60d322ec8f7aa818",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "tamanina-624c9",
+          "configurations": {
+            "android": "1:902662652361:android:a3acbf9f1a10d6af7aa818",
+            "ios": "1:902662652361:ios:d6322f60d322ec8f7aa818"
+          }
+        }
+      }
+    }
+  }
+}

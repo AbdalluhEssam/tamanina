@@ -120,16 +120,9 @@ class ChatbotCubit extends Cubit<ChatbotState> {
               );
             },
             onDone: () async {
-              // Mark complete but keep streaming UI until typing animation finishes
+              // The text is already on screen as it streamed, so save it now.
               _awaitingFinalize = true;
-              emit(
-                ChatbotStreamingResponse(
-                  currentSession: _currentSession!,
-                  currentStreamText: streamingText,
-                  isComplete: true,
-                  chatHistory: _chatHistory,
-                ),
-              );
+              finalizeStreaming();
             },
             onError: (error) {
               final message = error?.toString() ?? 'فشل في إرسال الرسالة.';

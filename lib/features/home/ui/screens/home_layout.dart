@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/audio/download_center.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/settings/settings_repository.dart';
 import '../../../../core/theme/worship_palette.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/home_widgets_service.dart';
@@ -17,6 +17,8 @@ import '../../../../core/services/worship_shortcuts.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
 import '../../../quran/ui/screens/quran_tab_screen.dart';
 import '../../../settings/ui/screens/production_settings_screen.dart';
+import '../../../settings/ui/widgets/packs_sheet.dart';
+import '../../../settings/ui/widgets/permission_flow.dart';
 import '../../../tasbeeh/ui/screens/tasbeeh_screen.dart';
 import '../cubit/home_navigation_cubit.dart';
 import '../widgets/home_visuals.dart';
@@ -56,17 +58,13 @@ class _HomeLayoutState extends State<HomeLayout> {
   }
 
   Future<void> _setUpHomePermissions() async {
-    if (sl.isRegistered<PrayerServiceEnhanced>()) {
-      await sl<PrayerServiceEnhanced>().requestAutoLocation(
-        promptForPermission: true,
-      );
-    }
-    if (!mounted || !sl.isRegistered<NotificationServiceEnhanced>()) return;
-    if (!sl<SettingsRepository>().currentSettings.notificationsEnabled) return;
-    try {
-      await sl<NotificationServiceEnhanced>().requestPermissions();
-    } catch (error) {
-      debugPrint('Notification permission unavailable: ${error.runtimeType}');
+    // Ask for whatever is still missing, one permission at a time, before the
+    // optional downloads are offered.
+    if (!mounted) return;
+    await PermissionFlow.run(context);
+    // Offer the optional downloads once, after the permission prompts.
+    if (mounted && await DownloadCenter.shouldOffer() && mounted) {
+      await showPacksSheet(context, firstRun: true);
     }
   }
 

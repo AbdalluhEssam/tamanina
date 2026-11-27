@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 
 import 'app.dart';
+import 'features/quran/data/services/mushaf_pages.dart';
 import 'core/constants/app_constants.dart';
 import 'core/cubit/locale/locale_cubit.dart';
 import 'core/cubit/theme/theme_cubit.dart';
@@ -117,6 +118,7 @@ Future<void> main() async {
           ),
         ),
   );
+  unawaited(MushafPages.instance.init().catchError((Object _) {}));
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(_initializeOnlineServices());
   });

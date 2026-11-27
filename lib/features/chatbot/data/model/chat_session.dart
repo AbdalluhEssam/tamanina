@@ -72,29 +72,21 @@ class ChatSession extends Equatable {
       return msg.id == messageId ? updatedMessage : msg;
     }).toList();
 
-    return copyWith(
-      messages: updatedMessages,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(messages: updatedMessages, updatedAt: DateTime.now());
   }
 
   /// Remove a message from the session
   ChatSession removeMessage(String messageId) {
-    final updatedMessages =
-        messages.where((msg) => msg.id != messageId).toList();
+    final updatedMessages = messages
+        .where((msg) => msg.id != messageId)
+        .toList();
 
-    return copyWith(
-      messages: updatedMessages,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(messages: updatedMessages, updatedAt: DateTime.now());
   }
 
   /// Clear all messages
   ChatSession clearMessages() {
-    return copyWith(
-      messages: [],
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(messages: [], updatedAt: DateTime.now());
   }
 
   /// Get the last message in the conversation
@@ -133,13 +125,13 @@ class ChatSession extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        userId,
-        title,
-        messages,
-        createdAt,
-        updatedAt,
-        isActive,
-        metadata,
-      ];
+    id,
+    userId,
+    title,
+    messages,
+    createdAt,
+    updatedAt,
+    isActive,
+    metadata,
+  ];
 }

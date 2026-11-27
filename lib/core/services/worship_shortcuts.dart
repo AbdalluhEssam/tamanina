@@ -21,7 +21,9 @@ class WorshipShortcuts {
   }
 
   void _handleLink(Uri link) {
-    if (link.scheme == 'tamanina' && link.host == 'open') open(link.path);
+    if (link.scheme == 'tamanina' && link.host == 'open') {
+      open(link.hasQuery ? '${link.path}?${link.query}' : link.path);
+    }
   }
 
   void open(String? route) {

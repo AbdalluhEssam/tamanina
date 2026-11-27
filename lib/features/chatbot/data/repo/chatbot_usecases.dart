@@ -76,14 +76,8 @@ class CreateChatSessionUseCase {
 
   CreateChatSessionUseCase(this._repository);
 
-  Future<ChatSession> call({
-    required String userId,
-    String? title,
-  }) async {
-    return await _repository.createChatSession(
-      userId: userId,
-      title: title,
-    );
+  Future<ChatSession> call({required String userId, String? title}) async {
+    return await _repository.createChatSession(userId: userId, title: title);
   }
 }
 
@@ -134,9 +128,6 @@ class SearchMessagesUseCase {
       return [];
     }
 
-    return await _repository.searchMessages(
-      userId: userId,
-      query: query,
-    );
+    return await _repository.searchMessages(userId: userId, query: query);
   }
 }

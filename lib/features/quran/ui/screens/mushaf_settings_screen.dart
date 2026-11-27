@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
+import '../../../settings/ui/screens/audio_library_screen.dart';
 import '../../../settings/ui/screens/production_settings_screen.dart';
 import '../../data/services/mushaf_settings.dart';
 import '../../data/services/mushaf_library.dart';
@@ -149,6 +150,18 @@ class _MushafSettingsScreenState extends State<MushafSettingsScreen> {
                       _change(settings.copyWith(fontFamily: value));
                       MushafSettings.setFontFamily(value);
                     },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.record_voice_over_outlined),
+                    title: Text(appText(context, 'القارئ', 'Reciter')),
+                    trailing: Icon(appChevron(context)),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AudioLibraryScreen(
+                          kind: AudioLibraryKind.reciter,
+                        ),
+                      ),
+                    ),
                   ),
                   ListTile(
                     title: Text(appText(context, 'حجم الخط', 'Text size')),

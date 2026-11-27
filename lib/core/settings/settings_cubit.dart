@@ -163,6 +163,11 @@ class SettingsCubit extends Cubit<SettingsState> {
     await _repository.updateSelectedAdhan(adhan);
   }
 
+  /// Choose the adhan voice from the audio catalog.
+  Future<void> updateAdhanVoice(String id) async {
+    await _repository.updateAdhanVoice(id);
+  }
+
   /// تحديث مستوى صوت الأذان
   /// Update adhan volume
   Future<void> updateAdhanVolume(double volume) async {

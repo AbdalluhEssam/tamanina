@@ -40,15 +40,27 @@ android {
     }
 
     if (signingFile.isFile) {
-        fun signingProperty(name: String): String = requireNotNull(
-            releaseSigning.getProperty(name)?.takeIf { it.isNotBlank() }
-        ) { "android/key.properties is missing $name." }
+        // Accepts storeFile or STORE_FILE style names.
+        fun signingProperty(name: String): String {
+            val upper = name.replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
+            return requireNotNull(
+                (releaseSigning.getProperty(name) ?: releaseSigning.getProperty(upper))
+                    ?.takeIf { it.isNotBlank() }
+            ) { "android/key.properties is missing $name." }
+        }
 
         signingConfigs.create("release") {
             storeFile = rootProject.file(signingProperty("storeFile"))
             storePassword = signingProperty("storePassword")
             keyAlias = signingProperty("keyAlias")
             keyPassword = signingProperty("keyPassword")
+        }
+    }
+
+    // Phones only: keeps the unused x86 native libraries out of the app.
+    packaging {
+        jniLibs {
+            excludes += setOf("**/x86/**", "**/x86_64/**")
         }
     }
 

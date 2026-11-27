@@ -27,7 +27,31 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
     ('الْحَمْدُ لِلَّهِ', 'Praise be to Allah', 33),
     ('اللَّهُ أَكْبَرُ', 'Allah is the Greatest', 34),
   ];
+  // Single-phrase counters: Arabic, English, target (0 = no target).
+  static const _presets = [
+    ('لَا إِلَٰهَ إِلَّا اللَّهُ', 'There is no god but Allah', 100),
+    ('أَسْتَغْفِرُ اللَّهَ', 'I seek Allah’s forgiveness', 100),
+    (
+      'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
+      'Send blessings on the Prophet ﷺ',
+      100,
+    ),
+    ('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', 'Glory and praise be to Allah', 100),
+    (
+      'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+      'There is no power but with Allah',
+      100,
+    ),
+    ('عَدّاد حُرّ', 'Free counter', 0),
+  ];
+  static const _modeKey = 'tasbeeh_mode';
   late final SharedPreferences _prefs;
+  // -1 is the three-stage tasbeeh; 0.. are the single-phrase counters above.
+  int _mode = -1;
+  int _presetCount = 0;
+  int _presetRounds = 0;
+  int _today = 0;
+  int _lifetime = 0;
   int _count = 0;
   int _phrase = 0;
   int _cycles = 0;
@@ -44,10 +68,99 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
       _count = (int.tryParse(saved[1]) ?? 0).clamp(0, _phrases[_phrase].$3 - 1);
       _cycles = (int.tryParse(saved[2]) ?? 0).clamp(0, 1 << 30);
     }
+    _mode = (_prefs.getInt(_modeKey) ?? -1).clamp(-1, _presets.length - 1);
+    _loadPreset();
+    _lifetime = _prefs.getInt('tasbeeh_lifetime') ?? 0;
+    _today = _prefs.getString('tasbeeh_day') == _dayKey()
+        ? (_prefs.getInt('tasbeeh_today') ?? 0)
+        : 0;
     _vibration = _prefs.getBool('tasbeeh_vibration');
     final x = _prefs.getDouble('tasbeeh_button_x');
     final y = _prefs.getDouble('tasbeeh_button_y');
     if (x != null && y != null) _buttonAnchor = Offset(x, y);
+  }
+
+  static String _dayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month}-${now.day}';
+  }
+
+  bool get _sequence => _mode < 0;
+
+  void _loadPreset() {
+    if (_sequence) return;
+    final saved = _prefs.getStringList('tasbeeh_preset_$_mode');
+    _presetCount = int.tryParse(saved?.elementAtOrNull(0) ?? '') ?? 0;
+    _presetRounds = int.tryParse(saved?.elementAtOrNull(1) ?? '') ?? 0;
+  }
+
+  void _tally(int delta) {
+    _today = (_today + delta).clamp(0, 1 << 30);
+    _lifetime = (_lifetime + delta).clamp(0, 1 << 30);
+    unawaited(_prefs.setString('tasbeeh_day', _dayKey()));
+    unawaited(_prefs.setInt('tasbeeh_today', _today));
+    unawaited(_prefs.setInt('tasbeeh_lifetime', _lifetime));
+  }
+
+  void _selectMode(int mode) {
+    if (mode == _mode) return;
+    setState(() {
+      _mode = mode;
+      _loadPreset();
+    });
+    unawaited(_prefs.setInt(_modeKey, mode));
+  }
+
+  /// Takes back the last count.
+  void _undo() {
+    if (_sequence) {
+      if (_count > 0) {
+        setState(() => _count--);
+        _tally(-1);
+        _save();
+      }
+    } else if (_presetCount > 0) {
+      setState(() => _presetCount--);
+      _tally(-1);
+      _savePreset();
+    }
+  }
+
+  void _savePreset() => unawaited(
+    _prefs.setStringList('tasbeeh_preset_$_mode', [
+      '$_presetCount',
+      '$_presetRounds',
+    ]),
+  );
+
+  void _incrementPreset(bool vibration) {
+    final target = _presets[_mode].$3;
+    final reached = target > 0 && _presetCount + 1 == target;
+    setState(() {
+      if (reached) {
+        _presetCount = 0;
+        _presetRounds++;
+      } else {
+        _presetCount++;
+      }
+    });
+    _tally(1);
+    _savePreset();
+    unawaited(WorshipLog.record(WorshipActivity.tasbeeh));
+    if (vibration) {
+      if (reached) {
+        HapticFeedback.heavyImpact();
+        Future<void>.delayed(
+          const Duration(milliseconds: 140),
+          HapticFeedback.heavyImpact,
+        );
+      } else if (target > 0 && (_presetCount + 1) % 10 == 0) {
+        HapticFeedback.mediumImpact();
+      } else {
+        HapticFeedback.lightImpact();
+      }
+    }
+    if (reached) unawaited(_showRoundComplete(rounds: _presetRounds));
   }
 
   void _save() {
@@ -64,6 +177,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
   }
 
   void _increment(bool vibration) {
+    if (!_sequence) return _incrementPreset(vibration);
     final targetReached = _count + 1 == _phrases[_phrase].$3;
     setState(() {
       if (targetReached) {
@@ -74,9 +188,20 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
         _count++;
       }
     });
+    _tally(1);
     _save();
     unawaited(WorshipLog.record(WorshipActivity.tasbeeh));
-    if (vibration) HapticFeedback.lightImpact();
+    if (vibration) {
+      if (targetReached) {
+        HapticFeedback.heavyImpact();
+        Future<void>.delayed(
+          const Duration(milliseconds: 140),
+          HapticFeedback.heavyImpact,
+        );
+      } else {
+        HapticFeedback.lightImpact();
+      }
+    }
     if (!targetReached) return;
     if (_phrase == 0) {
       unawaited(_showRoundComplete());
@@ -95,7 +220,8 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
     }
   }
 
-  Future<void> _showRoundComplete() async {
+  Future<void> _showRoundComplete({int? rounds}) async {
+    final done = rounds ?? _cycles;
     await showAdaptiveDialog<void>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
@@ -103,8 +229,8 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
         content: Text(
           appText(
             context,
-            'الدورات المكتملة: $_cycles',
-            'Completed rounds: $_cycles',
+            'الدورات المكتملة: $done',
+            'Completed rounds: $done',
           ),
         ),
         actions: [
@@ -145,27 +271,35 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
     );
     if (confirmed != true || !mounted) return;
     setState(() {
-      _count = 0;
-      _phrase = 0;
-      _cycles = 0;
+      if (_sequence) {
+        _count = 0;
+        _phrase = 0;
+        _cycles = 0;
+      } else {
+        _presetCount = 0;
+        _presetRounds = 0;
+      }
     });
-    _save();
+    _sequence ? _save() : _savePreset();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (arabic, english, target) = _phrases[_phrase];
+    final (arabic, english, rawTarget) = _sequence
+        ? _phrases[_phrase]
+        : _presets[_mode];
+    final target = rawTarget;
+    final shown = _sequence ? _count : _presetCount;
+    final rounds = _sequence ? _cycles : _presetRounds;
     final global = context
         .watch<SettingsCubit>()
         .currentSettings
         .vibrationEnabled;
     final vibration = global && (_vibration ?? true);
-    final countLabel = appText(
-      context,
-      '$_count من $target',
-      '$_count of $target',
-    );
+    final countLabel = target == 0
+        ? appText(context, 'بدون هدف', 'No target')
+        : appText(context, '$shown من $target', '$shown of $target');
 
     final scheme = theme.colorScheme;
     return ContentFrame(
@@ -201,11 +335,20 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
                         child: Text(
                           appText(
                             context,
-                            'الدورة ${_cycles + 1}',
-                            'Round ${_cycles + 1}',
+                            'الدورة ${rounds + 1}',
+                            'Round ${rounds + 1}',
                           ),
                           style: theme.textTheme.titleLarge,
                         ),
+                      ),
+                      IconButton(
+                        tooltip: appText(
+                          context,
+                          'تراجع عن آخر عدّة',
+                          'Undo last count',
+                        ),
+                        icon: const Icon(Icons.undo),
+                        onPressed: shown == 0 ? null : _undo,
                       ),
                       IconButton(
                         tooltip: appText(
@@ -220,7 +363,8 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
                             CupertinoIcons.arrow_counterclockwise,
                           ),
                         ),
-                        onPressed: _count + _phrase + _cycles == 0
+                        onPressed:
+                            shown + (_sequence ? _phrase : 0) + rounds == 0
                             ? null
                             : _reset,
                       ),
@@ -234,8 +378,8 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
                         aspectRatio: 1,
                         child: CustomPaint(
                           painter: _BeadsPainter(
-                            total: target,
-                            count: _count,
+                            total: target == 0 ? 33 : target,
+                            count: target == 0 ? shown % 33 : shown,
                             active: scheme.secondary,
                             inactive: scheme.outlineVariant,
                           ),
@@ -270,7 +414,7 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '$_count',
+                                        '$shown',
                                         style: theme.textTheme.displaySmall,
                                       ),
                                       Text(
@@ -294,49 +438,99 @@ class _TasbeehTabScreenState extends State<TasbeehTabScreen> {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium,
                     ),
+                  if (_sequence)
+                    Text(
+                      appText(
+                        context,
+                        'المرحلة ${_phrase + 1} من 3',
+                        'Stage ${_phrase + 1} of 3',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  const SizedBox(height: 10),
+                  if (_sequence)
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final (index, phrase) in _phrases.indexed)
+                          Semantics(
+                            selected: index == _phrase,
+                            child: Chip(
+                              avatar: index < _phrase
+                                  ? const Icon(Icons.check, size: 16)
+                                  : null,
+                              side: BorderSide(
+                                color: index == _phrase
+                                    ? scheme.secondary
+                                    : scheme.outlineVariant,
+                              ),
+                              label: Text(
+                                phrase.$1,
+                                style: const TextStyle(
+                                  fontFamily: 'Amiri',
+                                  fontSize: 19,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  const SizedBox(height: 14),
+                  Text(
+                    appText(context, 'اختر الذكر', 'Choose a dhikr'),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      ChoiceChip(
+                        label: Text(
+                          appText(
+                            context,
+                            'السبحة (٣٣ ٣٣ ٣٤)',
+                            'Tasbeeh (33 33 34)',
+                          ),
+                        ),
+                        selected: _sequence,
+                        onSelected: (_) => _selectMode(-1),
+                      ),
+                      for (final (index, preset) in _presets.indexed)
+                        ChoiceChip(
+                          label: Text(
+                            appText(
+                              context,
+                              preset.$3 == 0
+                                  ? preset.$1
+                                  : preset.$1.split(' ').take(3).join(' '),
+                              preset.$2,
+                            ),
+                          ),
+                          selected: _mode == index,
+                          onSelected: (_) => _selectMode(index),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     appText(
                       context,
-                      'المرحلة ${_phrase + 1} من 3',
-                      'Stage ${_phrase + 1} of 3',
+                      'اليوم: $_today   •   الإجمالي: $_lifetime',
+                      'Today: $_today   •   All time: $_lifetime',
                     ),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final (index, phrase) in _phrases.indexed)
-                        Semantics(
-                          selected: index == _phrase,
-                          child: Chip(
-                            avatar: index < _phrase
-                                ? const Icon(Icons.check, size: 16)
-                                : null,
-                            side: BorderSide(
-                              color: index == _phrase
-                                  ? scheme.secondary
-                                  : scheme.outlineVariant,
-                            ),
-                            label: Text(
-                              phrase.$1,
-                              style: const TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 19,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: _count / target,
-                    semanticsLabel: countLabel,
-                  ),
+                  if (target > 0)
+                    LinearProgressIndicator(
+                      value: shown / target,
+                      semanticsLabel: countLabel,
+                    ),
                   const SizedBox(height: 10),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,

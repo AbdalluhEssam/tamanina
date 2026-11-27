@@ -30,7 +30,7 @@ import app_links
 
     var resources = URLResourceValues()
     resources.isExcludedFromBackup = true
-    for folder in ["assistant", "recitation_alafasy"] {
+    for folder in ["assistant", "recitation_alafasy", "audio_packs", "mushaf"] {
       var directory = support.appendingPathComponent(folder, isDirectory: true)
       do {
         try files.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -38,6 +38,12 @@ import app_links
       } catch {
         NSLog("Could not exclude %@ downloads from backup", folder)
       }
+    }
+    // Downloaded adhan clips are copied to Library/Sounds so notifications can play them.
+    if var library = try? files.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true) {
+      library.appendPathComponent("Sounds", isDirectory: true)
+      try? files.createDirectory(at: library, withIntermediateDirectories: true)
+      try? library.setResourceValues(resources)
     }
   }
 
@@ -113,6 +119,8 @@ import app_links
     let route: String
     let sound: Bool
     let adhan: Bool
+    // Optional so queues saved by earlier versions still decode.
+    let soundName: String?
 
     var date: Date { Date(timeIntervalSince1970: Double(at) / 1000) }
   }
@@ -200,12 +208,18 @@ import app_links
       let content = UNMutableNotificationContent()
       content.title = alert.title
       if alert.sound {
-        content.sound = alert.adhan ? UNNotificationSound(named: UNNotificationSoundName("adhan_alert.caf")) : .default
+        let adhanSound = alert.soundName ?? "adhan_alert.caf"
+        content.sound = alert.adhan ? UNNotificationSound(named: UNNotificationSoundName(adhanSound)) : .default
+      }
+      if alert.adhan {
+        // Breaks through Focus modes and the scheduled summary at prayer time.
+        content.interruptionLevel = .timeSensitive
       }
       // Match flutter_local_notifications' userInfo for notification taps and foreground presentation.
       content.userInfo = [
         "NotificationId": alert.id, "payload": alert.route,
-        "presentAlert": true, "presentSound": alert.sound, "presentBadge": false,
+        // In the foreground the full-screen adhan plays the recording itself.
+        "presentAlert": true, "presentSound": alert.sound && !alert.adhan, "presentBadge": false,
         "presentBanner": true, "presentList": true,
       ]
       var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: alert.date)

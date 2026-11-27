@@ -35,13 +35,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -75,10 +71,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 10.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -171,7 +164,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                               ? const LinearGradient(
                                   colors: [
                                     Color(0xFF4CAF50),
-                                    Color(0xFF66BB6A)
+                                    Color(0xFF66BB6A),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -186,8 +179,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                           boxShadow: canSend
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF4CAF50)
-                                        .withValues(alpha: 0.35),
+                                    color: const Color(
+                                      0xFF4CAF50,
+                                    ).withValues(alpha: 0.35),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -196,8 +190,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget>
                         ),
                         child: Icon(
                           Icons.send_rounded,
-                          color:
-                              canSend ? Colors.white : AppColors.textSecondary,
+                          color: canSend
+                              ? Colors.white
+                              : AppColors.textSecondary,
                           size: 20.w,
                         ),
                       ),

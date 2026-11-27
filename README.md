@@ -26,9 +26,13 @@ Open the phone icon in the assistant to download the [Qwen2.5 0.5B model](https:
 
 Android builds use SDK CMake 3.31.6 for the local inference plugin. The optional test in `integration_test/local_assistant_smoke_test.dart` needs a simulator with the model already installed and `--dart-define=VERIFY_ON_DEVICE_ASSISTANT=true`. Use a dedicated simulator for this test because the Flutter test runner removes the test app and its local data.
 
-An HTTPS assistant service can also be configured for builds where the on-device model has not been installed.
+Open-ended questions go straight from the app to Groq. The key, model, token limit, per-device limits, and an `enabled` kill switch come from the Firebase Remote Config parameter `assistant` (type JSON), so they change without an app release (the app refreshes at most hourly). Example value:
 
-Run the Node 22+ service with `GROQ_API_KEY` set in the server environment and `node server/guide.mjs`. The service listens on `127.0.0.1:8080` by default and supports `PORT` and `GROQ_MODEL`. Publish `POST /guide` through your HTTPS reverse proxy with request rate limits, then build Flutter with `--dart-define=TAMANINA_GUIDE_URL=https://your-server.example/guide`. The request contains `message`, `language`, `model`, and up to six recent `history` turns. The endpoint returns `{"answer":"..."}`. The service chooses the model on the server and holds the provider key there.
+```json
+{"enabled": true, "apiKey": "gsk_...", "model": "openai/gpt-oss-20b", "reasoningEffort": "low", "maxTokens": 800, "burstLimit": 8, "windowMinutes": 10, "dailyLimit": 30}
+```
+
+The key is readable from the app, so keep the Groq account on the free plan with no billing method and rotate the key from Remote Config if it leaks. Limits are enforced on the device only.
 
 ## Updates and Home Screen widgets
 

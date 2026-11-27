@@ -63,6 +63,26 @@ enum LocationErrorType {
 }
 
 /// خدمة الموقع
+/// The most specific useful name for a place: the town or district, not the
+/// governorate ("الشروق", not "محافظة القاهرة").
+String? _placeName(Placemark placemark) {
+  String? clean(String? value) {
+    final text = value
+        ?.replaceAll(
+          RegExp(r'\b(Governorate|Province|Region)\b', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'^(محافظة|منطقة|إقليم)\s+'), '')
+        .trim();
+    return text == null || text.isEmpty ? null : text;
+  }
+
+  return clean(placemark.locality) ??
+      clean(placemark.subLocality) ??
+      clean(placemark.subAdministrativeArea) ??
+      clean(placemark.administrativeArea);
+}
+
 /// Location Service - Handles GPS and geocoding
 class LocationService {
   static final LocationService _instance = LocationService._internal();
@@ -77,6 +97,10 @@ class LocationService {
   static const String _keyCachedCity = 'location_cached_city';
   static const String _keyCachedCountry = 'location_cached_country';
   static const String _keyCachedTimestamp = 'location_cached_timestamp';
+  static const String _keyLastPlacemark = 'location_last_placemark';
+
+  /// What the address lookup returned last time, for the diagnostics screen.
+  String? get lastPlacemark => _prefs?.getString(_keyLastPlacemark);
 
   // Cache validity duration (1 hour)
   static const Duration _cacheValidity = Duration(hours: 1);
@@ -180,25 +204,50 @@ class LocationService {
         timeLimit: const Duration(seconds: 15),
       );
 
-      // Get city name using geocoding
+      // Get the place name with geocoding, in the app's language
       String? cityName;
       String? countryName;
       try {
+        final arabic = (_prefs?.getString('locale') ?? 'ar').startsWith('ar');
+        await setLocaleIdentifier(arabic ? 'ar_EG' : 'en_US');
         final placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
-        ).timeout(const Duration(seconds: 3));
+        ).timeout(const Duration(seconds: 4));
         if (placemarks.isNotEmpty) {
           final placemark = placemarks.first;
-          cityName =
-              placemark.locality ??
-              placemark.subAdministrativeArea ??
-              placemark.administrativeArea;
+          cityName = _placeName(placemark);
           countryName = placemark.isoCountryCode ?? placemark.country;
+          await _prefs?.setString(
+            _keyLastPlacemark,
+            'locality=${placemark.locality} | subLocality=${placemark.subLocality} | '
+            'subAdmin=${placemark.subAdministrativeArea} | admin=${placemark.administrativeArea} | '
+            'country=${placemark.isoCountryCode} | chosen=$cityName',
+          );
         }
       } catch (e) {
         if (kDebugMode) {
           print('⚠️ Geocoding error: $e');
+        }
+      }
+      if (cityName == null) {
+        // No address lookup (offline). If the phone has barely moved, keep the
+        // last good name instead of a nearby big-city label.
+        final lat = _prefs?.getDouble(_keyCachedLat);
+        final lng = _prefs?.getDouble(_keyCachedLng);
+        final previous = _prefs?.getString(_keyCachedCity);
+        if (lat != null &&
+            lng != null &&
+            previous != null &&
+            calculateDistance(
+                  startLatitude: position.latitude,
+                  startLongitude: position.longitude,
+                  endLatitude: lat,
+                  endLongitude: lng,
+                ) <
+                3) {
+          cityName = previous;
+          countryName ??= _prefs?.getString(_keyCachedCountry);
         }
       }
       if (cityName == null) {

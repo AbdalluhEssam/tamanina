@@ -69,9 +69,7 @@ class ChatMessage extends Equatable {
   }
 
   /// Create a loading message placeholder
-  factory ChatMessage.loading({
-    required String id,
-  }) {
+  factory ChatMessage.loading({required String id}) {
     return ChatMessage(
       id: id,
       content: '',
@@ -105,14 +103,14 @@ class ChatMessage extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        content,
-        isUser,
-        timestamp,
-        type,
-        metadata,
-        isLoading,
-      ];
+    id,
+    content,
+    isUser,
+    timestamp,
+    type,
+    metadata,
+    isLoading,
+  ];
 }
 
 /// Types of messages for special formatting

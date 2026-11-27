@@ -5,11 +5,14 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:quran_sharif/quran_sharif.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/audio/audio_library.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../statistics/data/worship_activity.dart';
+import '../../data/services/mushaf_geometry.dart';
 import '../../data/services/mushaf_library.dart';
 import '../../data/services/mushaf_settings.dart';
 import '../../data/services/reading_position_manager.dart';
@@ -17,6 +20,7 @@ import '../../data/services/recitation_playback.dart';
 import '../../data/services/recitation_store.dart';
 import '../widgets/mushaf_page_typography.dart';
 import '../widgets/printed_mushaf_page.dart';
+import '../widgets/recitation_bar.dart';
 import 'mushaf_settings_screen.dart';
 
 class SimpleMushafPageScreen extends StatefulWidget {
@@ -52,6 +56,12 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
   int _pageCount = 604;
   bool _playing = false;
   bool _showBars = true;
+  int? _activeVerse;
+  List<int> _playlistVerses = const [];
+  StreamSubscription<int?>? _indexSub;
+  StreamSubscription<void>? _completionSub;
+  bool _continuous = true;
+  int _repeat = 1;
 
   void _toggleReadingBars() => setState(() => _showBars = !_showBars);
 
@@ -63,6 +73,16 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
 
   Future<void> _load() async {
     _settings = await MushafSettings.getAllSettings();
+    // The verse positions are only needed once recitation starts, so the reader
+    // does not wait for them.
+    unawaited(
+      MushafGeometry.instance.load().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    final preferences = await SharedPreferences.getInstance();
+    _continuous = preferences.getBool('recitation_continue') ?? true;
+    _repeat = (preferences.getInt('recitation_repeat') ?? 1).clamp(1, 3);
     _pageCount = MushafLibrary.pages.length;
     final surah = widget.initialSurah;
     _page =
@@ -222,7 +242,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
       ..connectionTimeout = const Duration(seconds: 10);
     setState(() => _downloadClient = client);
     try {
-      final store = await RecitationStore.open();
+      final store = await RecitationStore.open(await selectedReciter());
       await store.downloadPage(
         MushafLibrary.pages[page]!.map((entry) => entry.verse),
         client,
@@ -250,9 +270,46 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
     context,
   ).showSnackBar(SnackBar(content: Text(appText(context, arabic, english))));
 
+  void _stopTracking() {
+    unawaited(_indexSub?.cancel());
+    unawaited(_completionSub?.cancel());
+    _indexSub = null;
+    _completionSub = null;
+    _activeVerse = null;
+    _playlistVerses = const [];
+  }
+
+  Future<void> _setRepeat() async {
+    final next = _repeat % 3 + 1;
+    setState(() => _repeat = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt('recitation_repeat', next);
+    if (_playing) {
+      _audioStatus(
+        'يسري التكرار عند بدء التلاوة من جديد.',
+        'The repeat setting applies the next time you start the recitation.',
+      );
+    }
+  }
+
+  Future<void> _setContinuous() async {
+    final next = !_continuous;
+    setState(() => _continuous = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('recitation_continue', next);
+  }
+
+  Future<void> _stopRecitation() async {
+    _playback++;
+    _stopTracking();
+    setState(() => _playing = false);
+    await _recitation?.stop();
+  }
+
   Future<void> _listen() async {
     final token = ++_playback;
     if (_playing) {
+      _stopTracking();
       setState(() => _playing = false);
       await _recitation?.stop();
       return;
@@ -264,24 +321,58 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
       'Quran recitation • Page $page',
     );
     final entries = MushafLibrary.pages[page]!;
+    final arabic = Localizations.localeOf(context).languageCode == 'ar';
     setState(() => _playing = true);
     try {
-      final store = await RecitationStore.open();
+      final reciter = await selectedReciter();
+      final store = await RecitationStore.open(reciter);
+      final artwork = await recitationArtwork();
       final sources = <AudioSource>[];
+      final items = <MediaItem>[];
+      final verses = <int>[];
       for (final entry in entries) {
         final file = await store.savedFileFor(entry.verse);
-        if (file != null) {
-          sources.add(AudioSource.file(file.path));
-        } else if (entry.verse.audio.startsWith('https://')) {
-          sources.add(AudioSource.uri(Uri.parse(entry.verse.audio)));
+        final source = file != null
+            ? AudioSource.file(file.path)
+            : AudioSource.uri(store.uriFor(entry.verse));
+        for (var i = 0; i < _repeat; i++) {
+          sources.add(source);
+          verses.add(entry.verse.number);
+          items.add(
+            MediaItem(
+              id: 'verse-${entry.verse.number}-$i',
+              title: arabic
+                  ? '${entry.surah.name} • الآية ${entry.verse.numberInSurah}'
+                  : '${entry.surah.englishName} • Verse ${entry.verse.numberInSurah}',
+              artist: arabic ? reciter.nameAr : reciter.nameEn,
+              album: arabic ? 'طمأنينة' : 'Tamanina',
+              artUri: artwork,
+            ),
+          );
         }
       }
       if (sources.isEmpty || !mounted || token != _playback) return;
       final player = await RecitationPlayback.instance;
       if (!mounted || token != _playback) return;
       _recitation = player;
-      await player.preparePage(page: page, title: title, sources: sources);
+      await player.preparePage(
+        page: page,
+        title: title,
+        sources: sources,
+        items: items,
+      );
       if (!mounted || token != _playback) return;
+      _stopTracking();
+      _playlistVerses = verses;
+      _indexSub = player.currentIndex.listen((index) {
+        if (!mounted || token != _playback || index == null) return;
+        if (index < _playlistVerses.length) {
+          setState(() => _activeVerse = _playlistVerses[index]);
+        }
+      });
+      _completionSub = player.completions.listen((_) {
+        if (mounted && token == _playback) unawaited(_continueToNextPage(token));
+      });
       await _recitationState?.cancel();
       if (!mounted || token != _playback) return;
       _recitationState = player.playbackState.listen((state) {
@@ -290,7 +381,10 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
             _playing &&
             state.processingState == AudioProcessingState.idle &&
             !player.hasPage) {
-          setState(() => _playing = false);
+          setState(() {
+            _playing = false;
+            _activeVerse = null;
+          });
         }
       });
       await player.play();
@@ -311,11 +405,29 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
     }
   }
 
+  /// After the last verse of a page, turns to the next page and keeps reciting.
+  Future<void> _continueToNextPage(int token) async {
+    if (!_continuous || _page >= _pageCount || token != _playback) {
+      if (mounted && token == _playback) {
+        setState(() {
+          _playing = false;
+          _activeVerse = null;
+        });
+      }
+      return;
+    }
+    _pages?.jumpToPage(_page); // index of the next page
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!mounted) return;
+    await _listen();
+  }
+
   @override
   void dispose() {
     _pages?.dispose();
     _downloadClient?.close(force: true);
     unawaited(_recitationState?.cancel());
+    _stopTracking();
     if (_playing) unawaited(_recitation?.stop());
     super.dispose();
   }
@@ -544,7 +656,9 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
                               _anchorVerse = null;
                               _initialScroll = 0;
                               _playing = false;
+                              _activeVerse = null;
                             });
+                            _stopTracking();
                             _playback++;
                             unawaited(_recitation?.stop());
                             _remember(_page);
@@ -558,7 +672,38 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
                 ],
               ),
       ),
-      bottomNavigationBar: ready && _showBars ? _readerControls(context) : null,
+      bottomNavigationBar: ready && (_showBars || _playing)
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_playing && _activeVerse != null) _recitationBar(context),
+                if (_showBars) _readerControls(context),
+              ],
+            )
+          : null,
+    );
+  }
+
+  Widget _recitationBar(BuildContext context) {
+    final player = _recitation;
+    final entry = MushafLibrary.pages[_page]!
+        .where((entry) => entry.verse.number == _activeVerse)
+        .firstOrNull;
+    if (player == null || entry == null) return const SizedBox.shrink();
+    return RecitationBar(
+      player: player,
+      surahName: appText(
+        context,
+        entry.surah.name,
+        entry.surah.englishName,
+      ),
+      ayah: entry.verse.numberInSurah,
+      verseText: entry.verse.text,
+      repeat: _repeat,
+      continuous: _continuous,
+      onRepeat: _setRepeat,
+      onContinuous: _setContinuous,
+      onStop: _stopRecitation,
     );
   }
 
@@ -570,9 +715,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
         IconButton(
           tooltip: appText(context, 'الصفحة السابقة', 'Previous page'),
           onPressed: _page > 1 ? () => _jump(_page - 1) : null,
-          icon: Icon(
-            appChevron(context, backwards: true),
-          ),
+          icon: Icon(appChevron(context, backwards: true)),
         ),
         Flexible(
           child: TextButton(
@@ -757,6 +900,7 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
         page: page,
         warmPaper: _settings.readingTheme == 'cream',
         onTap: _toggleReadingBars,
+        activeVerse: page == _page ? _activeVerse : null,
       );
     }
 
@@ -808,7 +952,15 @@ class _SimpleMushafPageScreenState extends State<SimpleMushafPageScreen> {
                     entry.surah.number,
                     entry.verse.numberInSurah,
                   ),
-                  style: entry.verse.number == _anchorVerse
+                  style: entry.verse.number == _activeVerse
+                      ? TextStyle(
+                          backgroundColor: gold.withValues(
+                            alpha: scheme.brightness == Brightness.dark
+                                ? 0.5
+                                : 0.42,
+                          ),
+                        )
+                      : entry.verse.number == _anchorVerse
                       ? TextStyle(backgroundColor: scheme.secondaryContainer)
                       : null,
                 ),

@@ -50,13 +50,16 @@ void main() {
       );
       const alarmsChannel = MethodChannel('com.abdalluh.tamanina/adhan_alarms');
       var exact = true;
+      var nativeAvailable = true;
       var native = <Map<String, dynamic>>[];
       final local = <int, Map<Object?, Object?>>{};
       var writes = 0;
       messenger.setMockMethodCallHandler(alarmsChannel, (call) async {
         expect(call.method, 'replace');
-        native = (jsonDecode(call.arguments as String) as List)
+        final requested = (jsonDecode(call.arguments as String) as List)
             .cast<Map<String, dynamic>>();
+        // When the native scheduler is unavailable it accepts no alarms.
+        native = nativeAvailable ? requested : [];
         return native.map((alert) => alert['id'] as int).toList();
       });
       messenger.setMockMethodCallHandler(notificationsChannel, (call) async {
@@ -107,8 +110,17 @@ void main() {
       await notifications.refresh();
       expect(writes, initialWrites);
 
+      // Losing the exact-alarm permission does not matter: the adhan uses an
+      // alarm-clock alarm, so it stays native and no duplicate notification is
+      // scheduled.
       exact = false;
       await notifications.refreshOnResume();
+      expect(native.map((alert) => alert['id'] as int).toSet(), adhanIds);
+      expect(adhanIds.intersection(local.keys.toSet()), isEmpty);
+
+      // If the native scheduler cannot take the alarms, notifications fill in.
+      nativeAvailable = false;
+      await notifications.refresh();
       expect(native, isEmpty);
       expect(local.keys, containsAll(adhanIds));
       expect(local[adhanIds.first]?['payload'], startsWith('/adhan?'));

@@ -141,7 +141,8 @@ class _TypingAnimationWidgetState extends State<TypingAnimationWidget>
             children: [
               TextSpan(
                 text: _displayedText,
-                style: widget.textStyle ??
+                style:
+                    widget.textStyle ??
                     AppTypography.bodyMediumArabic.copyWith(
                       color: AppColors.textPrimary,
                       height: 1.8,
@@ -206,11 +207,7 @@ class TypingIndicator extends StatefulWidget {
   final Color? color;
   final double size;
 
-  const TypingIndicator({
-    super.key,
-    this.color,
-    this.size = 8.0,
-  });
+  const TypingIndicator({super.key, this.color, this.size = 8.0});
 
   @override
   State<TypingIndicator> createState() => _TypingIndicatorState();
@@ -230,16 +227,21 @@ class _TypingIndicatorState extends State<TypingIndicator>
   void _initializeAnimations() {
     _animationControllers = List.generate(
       3,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 700),
-        vsync: this,
-      )..repeat(
-          reverse: true, period: Duration(milliseconds: 700 + index * 140)),
+      (index) =>
+          AnimationController(
+            duration: const Duration(milliseconds: 700),
+            vsync: this,
+          )..repeat(
+            reverse: true,
+            period: Duration(milliseconds: 700 + index * 140),
+          ),
     );
 
     _animations = _animationControllers
-        .map((controller) =>
-            CurvedAnimation(parent: controller, curve: Curves.easeInOut))
+        .map(
+          (controller) =>
+              CurvedAnimation(parent: controller, curve: Curves.easeInOut),
+        )
         .toList();
   }
 

@@ -30,6 +30,8 @@ import 'package:tamanina/features/quran/data/services/mushaf_library.dart';
 import 'package:tamanina/features/quran/data/services/reading_position_manager.dart';
 import 'package:tamanina/features/quran/ui/screens/simple_mushaf_page_screen.dart';
 import 'package:tamanina/features/quran/ui/screens/quran_tab_screen.dart';
+import 'package:tamanina/features/quran/data/services/mushaf_pages.dart';
+import 'package:tamanina/features/settings/ui/widgets/permission_flow.dart';
 import 'package:tamanina/features/quran/ui/widgets/printed_mushaf_page.dart';
 import 'package:tamanina/features/tasbeeh/ui/screens/tasbeeh_tab_screen.dart';
 import 'package:tamanina/features/statistics/data/worship_activity.dart';
@@ -44,6 +46,7 @@ void main() {
   late PrayerServiceEnhanced prayers;
 
   setUpAll(() async {
+    PermissionFlow.enabled = false;
     directory = await Directory.systemTemp.createTemp('tamanina_widget_test');
     Hive.init(directory.path);
     await Hive.openBox('app_settings');
@@ -51,6 +54,7 @@ void main() {
     await Hive.openBox('bookmarks');
     await Hive.openBox('prayer_settings');
     SharedPreferences.setMockInitialValues({
+      'packs_offer_seen': true,
       'last_mushaf_page': 3,
       'mushaf_bookmarks':
           '[{"page":3,"title":"Saved","timestamp":"2025-01-01"}]',
@@ -101,8 +105,9 @@ void main() {
         assets.listAssets().where(
           (path) => path.startsWith('assets/mushaf/') && path.endsWith('.webp'),
         ),
+        // Only the first pages ship in the app; the rest is a download.
         unorderedEquals([
-          for (final page in MushafLibrary.pages.keys)
+          for (var page = 1; page <= MushafPages.bundledPages; page++)
             'assets/mushaf/${page.toString().padLeft(3, '0')}.webp',
         ]),
       );
@@ -639,6 +644,26 @@ void main() {
     );
   });
 
+  testWidgets(
+    'bundled pages draw from assets and others ask for the download',
+    (tester) async {
+      await tester.pumpWidget(_pageApp(1));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Image &&
+              widget.image is ResizeImage &&
+              (widget.image as ResizeImage).imageProvider ==
+                  const AssetImage('assets/mushaf/001.webp'),
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(_pageApp(300));
+      expect(find.text('Download Mushaf'), findsOneWidget);
+      expect(find.byType(Image), findsNothing);
+    },
+  );
+
   testWidgets('tablet layout opens the locally indexed Quran by surah', (
     tester,
   ) async {
@@ -664,16 +689,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
+    // Page 604 is not bundled, so the reader offers the download.
     expect(
       find.descendant(
         of: find.byType(PrintedMushafPage),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Image &&
-              widget.image is ResizeImage &&
-              (widget.image as ResizeImage).imageProvider ==
-                  const AssetImage('assets/mushaf/604.webp'),
-        ),
+        matching: find.text('Download Mushaf'),
       ),
       findsOneWidget,
     );
@@ -683,6 +703,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
+
+Widget _pageApp(int page) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 400,
+      height: 700,
+      child: PrintedMushafPage(page: page, warmPaper: false, onTap: () {}),
+    ),
+  ),
+);
 
 Widget _app(
   SharedPreferences preferences,

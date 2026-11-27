@@ -6,6 +6,9 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/audio/audio_catalog.dart';
+import '../../../../core/audio/audio_library.dart';
+import '../../../../core/services/adhan_native_bridge.dart';
 import '../../../../core/services/notification_service_enhanced.dart';
 import '../../../../core/services/reminder_schedule.dart';
 import '../../../../core/services/service_locator.dart';
@@ -13,6 +16,8 @@ import '../../../../core/settings/settings_cubit.dart';
 import '../../../../core/settings/settings_repository.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
 import '../../../prayer_times/ui/screens/adhan_screen.dart';
+import 'adhan_diagnostics_screen.dart';
+import 'audio_library_screen.dart';
 import 'production_settings_screen.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -28,8 +33,23 @@ class _NotificationSettingsScreenState
   final _prefs = sl<SharedPreferences>();
   final _notifications = sl<NotificationServiceEnhanced>();
   AudioPlayer? _preview;
+  final _nativeAdhan = const AdhanNativeBridge();
   bool _busy = false;
   bool _playing = false;
+  bool _fullScreenAllowed = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshFullScreenAccess();
+  }
+
+  Future<void> _refreshFullScreenAccess() async {
+    final allowed = await _nativeAdhan.canUseFullScreenIntent();
+    if (mounted && allowed != _fullScreenAllowed) {
+      setState(() => _fullScreenAllowed = allowed);
+    }
+  }
 
   Future<void> _toggle(bool enabled) async {
     final settings = context.read<SettingsCubit>();
@@ -62,6 +82,7 @@ class _NotificationSettingsScreenState
   ).showSnackBar(SnackBar(content: Text(appText(context, ar, en))));
 
   Future<void> _previewAdhan(double volume) async {
+    final voiceId = context.read<SettingsCubit>().currentSettings.adhanVoiceId;
     final player = _preview ??= AudioPlayer();
     if (_playing) {
       setState(() => _playing = false);
@@ -70,7 +91,19 @@ class _NotificationSettingsScreenState
     }
     setState(() => _playing = true);
     try {
-      await player.setAsset(AdhanSound.local.assetPath);
+      final catalog = await loadAudioCatalog(network: false);
+      final voice = catalog.voice(voiceId);
+      final file = voice.isBundled
+          ? null
+          : await (await AudioLibrary.open()).installedAdhan(
+              voice,
+              isFajr: false,
+            );
+      if (file != null) {
+        await player.setFilePath(file.path);
+      } else {
+        await player.setAsset(AdhanSound.local.assetPath);
+      }
       await player.setVolume(volume);
       if (mounted && _playing) await player.play();
     } catch (_) {
@@ -269,6 +302,36 @@ class _NotificationSettingsScreenState
                           ),
                           if (adhan == AdhanSound.local && settings.muadhinMode)
                             ListTile(
+                              leading: const Icon(Icons.record_voice_over),
+                              title: Text(
+                                appText(context, 'صوت المؤذن', 'Muezzin voice'),
+                              ),
+                              subtitle: FutureBuilder<AudioCatalog>(
+                                future: loadAudioCatalog(network: false),
+                                builder: (context, snapshot) {
+                                  final voice =
+                                      (snapshot.data ?? AudioCatalog.fallback)
+                                          .voice(settings.adhanVoiceId);
+                                  return Text(
+                                    appText(
+                                      context,
+                                      voice.nameAr,
+                                      voice.nameEn,
+                                    ),
+                                  );
+                                },
+                              ),
+                              trailing: Icon(appChevron(context)),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AudioLibraryScreen(
+                                    kind: AudioLibraryKind.adhan,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (adhan == AdhanSound.local && settings.muadhinMode)
+                            ListTile(
                               leading: Icon(
                                 _playing ? Icons.stop : Icons.play_arrow,
                               ),
@@ -286,6 +349,54 @@ class _NotificationSettingsScreenState
                                       ),
                               ),
                               onTap: () => _previewAdhan(settings.adhanVolume),
+                            ),
+                          if (_nativeAdhan.supported)
+                            ListTile(
+                              leading: const Icon(Icons.health_and_safety_outlined),
+                              title: Text(
+                                appText(
+                                  context,
+                                  'تشخيص الأذان واختباره',
+                                  'Adhan check and test',
+                                ),
+                              ),
+                              subtitle: Text(
+                                appText(
+                                  context,
+                                  'يعرض سبب عدم عمل الأذان ويجرّبه بعد 10 ثوانٍ',
+                                  'Shows why the adhan may not play and tests it in 10 seconds',
+                                ),
+                              ),
+                              trailing: Icon(appChevron(context)),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AdhanDiagnosticsScreen(),
+                                ),
+                              ),
+                            ),
+                          if (!_fullScreenAllowed && settings.muadhinMode)
+                            ListTile(
+                              leading: const Icon(Icons.screen_lock_portrait),
+                              title: Text(
+                                appText(
+                                  context,
+                                  'السماح بعرض الأذان على الشاشة المقفلة',
+                                  'Allow adhan over the lock screen',
+                                ),
+                              ),
+                              subtitle: Text(
+                                appText(
+                                  context,
+                                  'فعّل «الإشعارات بملء الشاشة» لتظهر شاشة الأذان عند دخول الوقت.',
+                                  'Turn on full-screen notifications so the adhan screen opens at prayer time.',
+                                ),
+                              ),
+                              trailing: Icon(appChevron(context)),
+                              onTap: () async {
+                                await _nativeAdhan
+                                    .openFullScreenIntentSettings();
+                                await _refreshFullScreenAccess();
+                              },
                             ),
                           if (adhan == AdhanSound.local && settings.muadhinMode)
                             ListTile(
@@ -406,7 +517,7 @@ class _NotificationSettingsScreenState
                         title: Text(
                           appText(context, 'تذكير الجمعة', 'Friday reminder'),
                         ),
-                        value: _prefs.getBool('friday_reminder') ?? false,
+                        value: _prefs.getBool('friday_reminder') ?? true,
                         onChanged: (value) => _store('friday_reminder', value),
                       ),
                     ],
@@ -483,7 +594,7 @@ class _NotificationSettingsScreenState
 
   Widget _reminder(String key, int defaultHour, String title) {
     final preference = '${key}_adhkar_reminder';
-    final enabled = _prefs.getBool(preference) ?? false;
+    final enabled = _prefs.getBool(preference) ?? true;
     final time = TimeOfDay(
       hour: _prefs.getInt('${key}_reminder_hour') ?? defaultHour,
       minute: _prefs.getInt('${key}_reminder_minute') ?? 0,

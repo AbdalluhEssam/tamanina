@@ -1,28 +1,30 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/config/api_config.dart';
 import '../model/chat_message.dart';
+import 'assistant_gateway.dart';
 import 'local_assistant_model.dart';
 import '../../../quran/data/services/mushaf_library.dart';
 
+typedef AssistantCall = Future<Object?> Function(Map<String, Object?> request);
+typedef AssistantStream = Stream<String> Function(Map<String, Object?> request);
+
+final _gateway = AssistantGateway();
+
 class IslamicAiService {
   IslamicAiService({
-    this.model = ApiConfig.defaultModel,
     this.arabic = true,
-    Uri? endpoint,
-    http.Client? client,
+    AssistantCall? assistantCall,
+    AssistantStream? assistantStream,
     LocalAssistantModel? localModel,
-  }) : _endpoint = endpoint ?? ApiConfig.guideUri,
-       _client = client,
+  }) : _assistantCall = assistantCall ?? _gateway.call,
+       // Real streaming is used unless a test supplies its own call.
+       _assistantStream =
+           assistantStream ?? (assistantCall == null ? _gateway.stream : null),
        _localModel = localModel;
 
-  final String model;
   final bool arabic;
-  final Uri? _endpoint;
-  final http.Client? _client;
+  final AssistantCall _assistantCall;
+  final AssistantStream? _assistantStream;
   final LocalAssistantModel? _localModel;
 
   Future<ChatMessage> generateResponse({
@@ -34,70 +36,122 @@ class IslamicAiService {
         _quranAnswer(userMessage) ??
         _localAnswer(userMessage) ??
         await _answerQuestion(userMessage, context) ??
-        (arabic
-            ? 'المساعد بالذكاء الاصطناعي غير متاح الآن. تقدر تبحث عن آية أو تسأل عن استخدام طمأنينة. في الأسئلة الشرعية، ارجع إلى عالم موثوق.'
-            : 'AI answers are unavailable right now. You can find a Quran verse or ask about using Tamanina. For religious rulings, consult a qualified scholar.');
+        _unavailable;
     return ChatMessage.assistant(id: const Uuid().v4(), content: response);
   }
 
+  String get _unavailable => arabic
+      ? 'المساعد بالذكاء الاصطناعي غير متاح الآن. تقدر تبحث عن آية أو تسأل عن استخدام طمأنينة. في الأسئلة الشرعية، ارجع إلى عالم موثوق.'
+      : 'AI answers are unavailable right now. You can find a Quran verse or ask about using Tamanina. For religious rulings, consult a qualified scholar.';
+
+  /// Yields the answer so far (each event is the whole text up to now). The AI
+  /// answer streams in as it is written; instant local answers are revealed
+  /// word by word so every reply reads the same way.
   Stream<String> generateStreamingResponse({
     required String userMessage,
     required String sessionId,
     List<ChatMessage> context = const [],
   }) async* {
-    final response = await generateResponse(
-      userMessage: userMessage,
-      sessionId: sessionId,
-      context: context,
+    final instant = _quranAnswer(userMessage) ?? _localAnswer(userMessage);
+    if (instant != null) {
+      yield* _reveal(instant);
+      return;
+    }
+    final streamer = _assistantStream;
+    String? answer;
+    if (streamer != null) {
+      var text = '';
+      var shown = '';
+      final clock = Stopwatch()..start();
+      var lastEmit = 0;
+      try {
+        await for (final piece in streamer(_request(userMessage, context))) {
+          text += piece;
+          // About 25 updates a second keeps long answers smooth.
+          if (clock.elapsedMilliseconds - lastEmit >= 40) {
+            lastEmit = clock.elapsedMilliseconds;
+            shown = text;
+            yield text;
+          }
+        }
+      } catch (_) {
+        // Keep whatever arrived.
+      }
+      if (text.trim().isNotEmpty) {
+        if (shown != text) yield text;
+        return;
+      }
+      answer = await _localModelAnswer(userMessage, context);
+    } else {
+      answer = await _answerQuestion(userMessage, context);
+    }
+    yield* _reveal(answer ?? _unavailable);
+  }
+
+  Stream<String> _reveal(String text) async* {
+    final words = RegExp(r'\S+\s*').allMatches(text).toList();
+    if (words.length < 2) {
+      yield text;
+      return;
+    }
+    final delay = Duration(
+      milliseconds: (2600 / words.length).clamp(4, 22).round(),
     );
-    yield response.content;
+    var shown = '';
+    for (final word in words) {
+      shown += word.group(0)!;
+      yield shown;
+      await Future<void>.delayed(delay);
+    }
+  }
+
+  Map<String, Object?> _request(String message, List<ChatMessage> context) => {
+    'message': message,
+    'language': arabic ? 'ar' : 'en',
+    'history': [
+      for (final message
+          in context.reversed
+              .where((message) => message.type != MessageType.greeting)
+              .take(6)
+              .toList()
+              .reversed)
+        {
+          'role': message.isUser ? 'user' : 'assistant',
+          'content': message.content,
+        },
+    ],
+  };
+
+  Future<String?> _localModelAnswer(
+    String message,
+    List<ChatMessage> history,
+  ) async {
+    final localModel = _localModel;
+    if (localModel == null) return null;
+    await localModel.check();
+    return localModel.status == LocalModelStatus.ready
+        ? localModel.answer(message, history, arabic: arabic)
+        : null;
   }
 
   Future<String?> _answerQuestion(
     String message,
     List<ChatMessage> history,
   ) async {
-    final localModel = _localModel;
-    if (localModel != null) {
-      await localModel.check();
-      if (localModel.status == LocalModelStatus.ready) {
-        return localModel.answer(message, history, arabic: arabic);
-      }
-    }
-    return _onlineAnswer(message, history);
+    // Online first (Groq); the on-device model answers only when that fails.
+    final online = await _onlineAnswer(message, history);
+    if (online != null) return online;
+    return _localModelAnswer(message, history);
   }
 
   Future<String?> _onlineAnswer(
     String message,
     List<ChatMessage> context,
   ) async {
-    final endpoint = _endpoint;
-    if (endpoint == null) return null;
-
     try {
-      final response = await (_client?.post ?? http.post)(
-        endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'message': message,
-          'language': arabic ? 'ar' : 'en',
-          'model': model,
-          'history': [
-            for (final message
-                in context.reversed
-                    .where((message) => message.type != MessageType.greeting)
-                    .take(6)
-                    .toList()
-                    .reversed)
-              {
-                'role': message.isUser ? 'user' : 'assistant',
-                'content': message.content,
-              },
-          ],
-        }),
-      ).timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200) return null;
-      final result = jsonDecode(response.body);
+      final result = await _assistantCall(
+        _request(message, context),
+      ).timeout(const Duration(seconds: 25));
       if (result is Map && result['answer'] is String) {
         final answer = (result['answer'] as String).trim();
         if (answer.isNotEmpty) return answer;

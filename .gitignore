@@ -50,3 +50,6 @@ app.*.map.json
 *.keystore
 *.p12
 *.mobileprovision
+
+# Local copy of the Groq key (paste into Remote Config)
+.groq_key.local

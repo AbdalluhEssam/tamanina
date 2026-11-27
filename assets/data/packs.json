@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "adhan": [
+    {
+      "id": "doha",
+      "nameAr": "قطر – الدوحة",
+      "nameEn": "Doha, Qatar",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v2/adhan/doha.mp3",
+        "sha256": "5de5269f6366773e6e6b54d679c47bf856683ac69686a68ad4ed4f8d8e68bb61",
+        "bytes": 1431228,
+        "durationMs": 178831,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v2/adhan/doha.caf",
+        "iosSha256": "1f676378bb55abd612809d1af9a7e88e41d19120a31b0cb762eeec5163d6cfdd",
+        "iosBytes": 332094
+      },
+      "fajr": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v2/adhan/doha-fajr.mp3",
+        "sha256": "48af930796ff4d5a874312d11ab723faa8dc464f4d627df98d43a7d8369536c6",
+        "bytes": 1738009,
+        "durationMs": 217168,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v2/adhan/doha-fajr.caf",
+        "iosSha256": "3c3940f9d6abf9f4670d571d709a6016e236e0754cacf2e3c22d02e9724747ce",
+        "iosBytes": 332094
+      },
+      "credit": "Adhan recordings from Doha, Qatar (2013-2014), Internet Archive, Public Domain Mark"
+    },
+    {
+      "id": "asim",
+      "nameAr": "عاصم جاويد – المملكة المتحدة",
+      "nameEn": "Asim Javed – United Kingdom",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/asim.mp3",
+        "sha256": "7a24a50618b5472dffccc423261fadae023221b92d624a21305bc63bcb2da2e0",
+        "bytes": 1758870,
+        "durationMs": 219743,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/asim.caf",
+        "iosSha256": "790cad0324b854d1b45220cded5edd0e7bec83e5c77a1f7f0552f98e2e59156d",
+        "iosBytes": 332094
+      },
+      "credit": "Called by Asim Javed, ICR (Internet Archive), CC0 1.0"
+    },
+    {
+      "id": "klcc",
+      "nameAr": "مسجد KLCC – كوالالمبور",
+      "nameEn": "KLCC Mosque – Kuala Lumpur",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/klcc.mp3",
+        "sha256": "c533e4bdae5b9f646a5055d4337460d382cfe5fc626f830f0871cef437052e6f",
+        "bytes": 1494021,
+        "durationMs": 186645,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/klcc.caf",
+        "iosSha256": "6120b3acdd33506c6d45cf50c4227a0e3a36fca3c2b88fccb0b1278f543415a6",
+        "iosBytes": 332094
+      },
+      "credit": "KLCC Mosque, Kuala Lumpur (Internet Archive), CC0 1.0"
+    },
+    {
+      "id": "mirza",
+      "nameAr": "معظّم ميرزا – أحمد آباد",
+      "nameEn": "Moazzam Mirza – Ahmedabad",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/mirza.mp3",
+        "sha256": "42ab8cff1e9141927a06fbf522fab459e79cd03d7afdab813e4e8deb565af584",
+        "bytes": 2179396,
+        "durationMs": 272353,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/mirza.caf",
+        "iosSha256": "74fc0081889cd5bcacc5417f79fa4681d448ce6fcd4def3e70616815700ac1ec",
+        "iosBytes": 332094
+      },
+      "credit": "Moazzam Mirza, Ahmedabad (Internet Archive), Public Domain Mark"
+    },
+    {
+      "id": "nisad",
+      "nameAr": "نصاد أفندية – البوسنة",
+      "nameEn": "Nisad Efendija – Bosnia",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/nisad.mp3",
+        "sha256": "3499a56f7623fa1508e12a1a647703a210a4e214e381c97da978a73ca2af271d",
+        "bytes": 1875843,
+        "durationMs": 234423,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v3/adhan/nisad.caf",
+        "iosSha256": "c9c5fd4dd40951bedf172b85bc786746e6cc2c49a50c9c445818a367e915477f",
+        "iosBytes": 332094
+      },
+      "credit": "Nisad Efendija, live ezan (Internet Archive), Public Domain"
+    },
+    {
+      "id": "madinah",
+      "nameAr": "المسجد النبوي – المدينة المنورة",
+      "nameEn": "Prophet's Mosque – Madinah",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v4/adhan/madinah.mp3",
+        "sha256": "695de3a0aaee28b138f5db6b033266dad6b14c2339c0ef4b17570a6e7b1ff836",
+        "bytes": 1493202,
+        "durationMs": 186577,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v4/adhan/madinah.caf",
+        "iosSha256": "e25890030a1a9e49e58b5fc55e2aa173fd85702f3116a66421a4a54564b2c6f2",
+        "iosBytes": 332094
+      },
+      "credit": "Recorded by ejaz215 (Freesound / Wikimedia Commons), CC BY 3.0"
+    },
+    {
+      "id": "azan",
+      "nameAr": "أذان – تسجيل Andrewler",
+      "nameEn": "Adhan – recorded by Andrewler",
+      "main": {
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v4/adhan/azan.mp3",
+        "sha256": "506760f090aca553401e37ab09e7a0e49333188e4a4e0e73d05d1065ca67b7fa",
+        "bytes": 1468333,
+        "durationMs": 183484,
+        "iosUrl": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v4/adhan/azan.caf",
+        "iosSha256": "8864cd4adab4b89ad9a46bf20f71eee8b80762ee81a0cc9b0593658478dd63aa",
+        "iosBytes": 332094
+      },
+      "credit": "Recorded by Andrewler (Wikimedia Commons), CC BY-SA 4.0"
+    }
+  ],
+  "mushaf": {
+    "bundledPages": 5,
+    "chunks": [
+      {
+        "from": 6,
+        "to": 105,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-006-105.pack",
+        "sha256": "7d3841438640dd2972447c14e66a232f3511318583e7fa38ea810963c7e73b53",
+        "bytes": 5965464
+      },
+      {
+        "from": 106,
+        "to": 205,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-106-205.pack",
+        "sha256": "0263da1cc6c4ff94dc8b305fe788d1742893cef224f3d95e46477cf08dcc2c16",
+        "bytes": 5965288
+      },
+      {
+        "from": 206,
+        "to": 305,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-206-305.pack",
+        "sha256": "4b1ea6c7181641e177e08e1298778c9a678ce0088cfedf843ed7cc3501f07195",
+        "bytes": 6010278
+      },
+      {
+        "from": 306,
+        "to": 405,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-306-405.pack",
+        "sha256": "a6f093461d6b62c5109b1b8e7cd65cd9bd58f1b0260485ebc628f7249843ed32",
+        "bytes": 6007908
+      },
+      {
+        "from": 406,
+        "to": 505,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-406-505.pack",
+        "sha256": "475f0bd961ee1a3e313b622cbc82adbfb897c3ab765d3bebcd3d7a3ebc84231b",
+        "bytes": 6051440
+      },
+      {
+        "from": 506,
+        "to": 604,
+        "url": "https://cdn.jsdelivr.net/gh/AbdalluhEssam/tamanina-packs@v1/mushaf/mushaf-506-604.pack",
+        "sha256": "213d10b74b1f7528957f2979db7b75581eb55b983a7b1fd37e48d693a454281c",
+        "bytes": 6020888
+      }
+    ]
+  }
+}

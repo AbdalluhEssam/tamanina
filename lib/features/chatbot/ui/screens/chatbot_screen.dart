@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../widgets/markdown_text.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/config/api_config.dart';
 import '../../../../core/widgets/tamanina_ui.dart';
 import '../../data/model/chat_message.dart';
 import '../../data/services/local_assistant_model.dart';
@@ -36,7 +36,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final text = raw.trim();
     if (text.isEmpty || state is! ChatbotLoaded || state.isTyping) return;
     _input.clear();
-    cubit.sendMessage(text);
+    cubit.sendStreamingMessage(text);
   }
 
   Future<void> _manageLocalModel(LocalAssistantModel model) async {
@@ -286,15 +286,21 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     return BlocConsumer<ChatbotCubit, ChatbotState>(
       listener: (context, state) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _scroll.hasClients) {
-            _scroll.jumpTo(_scroll.position.maxScrollExtent);
+          if (!mounted || !_scroll.hasClients) return;
+          final position = _scroll.position;
+          // Follow the answer as it grows, unless the reader scrolled up.
+          if (state is ChatbotStreamingResponse &&
+              position.maxScrollExtent - position.pixels > 160) {
+            return;
           }
+          _scroll.jumpTo(position.maxScrollExtent);
         });
       },
       builder: (context, state) {
         final cubit = context.read<ChatbotCubit>();
         final session = cubit.currentSession;
-        final busy = state is ChatbotLoaded && state.isTyping;
+        final streaming = state is ChatbotStreamingResponse;
+        final busy = streaming || (state is ChatbotLoaded && state.isTyping);
         final ready = session != null;
         final messages =
             session?.messages
@@ -379,17 +385,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  ApiConfig.guideUri == null
-                                      ? appText(
-                                          context,
-                                          'ابحث في القرآن أو اسأل عن التطبيق. البحث وسجل المحادثات محفوظان على جهازك.',
-                                          'Find verses or ask about the app. Quran search and chat history stay on this device.',
-                                        )
-                                      : appText(
-                                          context,
-                                          'البحث في القرآن واستخدام التطبيق متاحان محليًا. أسئلة الذكاء الاصطناعي تُرسل لخدمة الإجابة مع بعض الرسائل الأخيرة.',
-                                          'Quran search and app help are available offline. AI questions and recent chat messages are shared with the answering service.',
-                                        ),
+                                  appText(
+                                    context,
+                                    'البحث في القرآن واستخدام التطبيق متاحان محليًا. أسئلة الذكاء الاصطناعي تُرسل لخدمة الإجابة مع بعض الرسائل الأخيرة.',
+                                    'Quran search and app help are available offline. AI questions and recent chat messages are shared with the answering service.',
+                                  ),
                                 ),
                                 const SizedBox(height: 18),
                                 for (final question in [
@@ -426,12 +426,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                               ],
                               for (final message in messages)
                                 _Bubble(message: message),
-                              if (busy)
-                                const AppSkeleton(
-                                  child: ListTile(
-                                    title: Text('                    '),
-                                  ),
-                                ),
+                              if (streaming)
+                                if (state.currentStreamText.isEmpty)
+                                  const _Thinking()
+                                else
+                                  _Bubble(
+                                    message: ChatMessage.assistant(
+                                      id: 'streaming',
+                                      content: state.currentStreamText,
+                                    ),
+                                    streaming: true,
+                                  )
+                              else if (busy)
+                                const _Thinking(),
                               if (state is ChatbotLoaded && state.error != null)
                                 Text(
                                   appText(
@@ -489,14 +496,34 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 }
 
+class _Thinking extends StatelessWidget {
+  const _Thinking();
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        appText(context, 'يكتب…', 'Typing…'),
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ),
+  );
+}
+
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message});
+  const _Bubble({required this.message, this.streaming = false});
 
   final ChatMessage message;
+  final bool streaming;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final style = Theme.of(
+      context,
+    ).textTheme.bodyMedium!.copyWith(height: 1.65);
     return Align(
       alignment: message.isUser
           ? AlignmentDirectional.centerEnd
@@ -504,14 +531,21 @@ class _Bubble extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 530),
+          constraints: const BoxConstraints(maxWidth: 560),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: message.isUser ? colors.primaryContainer : colors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.outlineVariant),
           ),
-          child: SelectableText(message.content),
+          child: message.isUser
+              ? SelectableText(message.content, style: style)
+              : MarkdownText(
+                  message.content,
+                  style: style,
+                  caret: streaming,
+                  selectable: !streaming,
+                ),
         ),
       ),
     );

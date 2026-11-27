@@ -22,7 +22,14 @@ void main() {
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
       tz.initializeTimeZones();
       await initializeDateFormatting('ar');
-      SharedPreferences.setMockInitialValues({});
+      // This test is about prayer alerts, so keep the reminders (on by default)
+      // out of the 64 pending-notification slots.
+      SharedPreferences.setMockInitialValues({
+        'morning_adhkar_reminder': false,
+        'evening_adhkar_reminder': false,
+        'sleep_adhkar_reminder': false,
+        'friday_reminder': false,
+      });
       final directory = await Directory.systemTemp.createTemp(
         'prayer_permissions',
       );
@@ -99,6 +106,7 @@ void main() {
         expect(call.method, 'replace');
         savedQueue = (jsonDecode(call.arguments as String) as List)
             .cast<Map<String, dynamic>>();
+        return null;
       });
       addTearDown(
         () => binding.defaultBinaryMessenger.setMockMethodCallHandler(

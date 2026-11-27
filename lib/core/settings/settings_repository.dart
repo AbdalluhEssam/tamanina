@@ -263,6 +263,9 @@ class AppSettings {
   // Adhan
   final bool muadhinMode;
   final AdhanSound selectedAdhan;
+
+  /// The adhan voice from the audio catalog. `local` is the bundled adhan.
+  final String adhanVoiceId;
   final double adhanVolume;
   final bool vibrationEnabled;
 
@@ -282,6 +285,7 @@ class AppSettings {
     this.prePrayerOffsetMinutes = 0,
     this.muadhinMode = true,
     this.selectedAdhan = AdhanSound.local,
+    this.adhanVoiceId = 'local',
     this.adhanVolume = 1.0,
     this.vibrationEnabled = true,
     this.quietHoursEnabled = false,
@@ -300,6 +304,7 @@ class AppSettings {
     int? prePrayerOffsetMinutes,
     bool? muadhinMode,
     AdhanSound? selectedAdhan,
+    String? adhanVoiceId,
     double? adhanVolume,
     bool? vibrationEnabled,
     bool? quietHoursEnabled,
@@ -318,6 +323,7 @@ class AppSettings {
           prePrayerOffsetMinutes ?? this.prePrayerOffsetMinutes,
       muadhinMode: muadhinMode ?? this.muadhinMode,
       selectedAdhan: selectedAdhan ?? this.selectedAdhan,
+      adhanVoiceId: adhanVoiceId ?? this.adhanVoiceId,
       adhanVolume: adhanVolume ?? this.adhanVolume,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,
@@ -338,6 +344,7 @@ class AppSettings {
       'prePrayerOffsetMinutes': prePrayerOffsetMinutes,
       'muadhinMode': muadhinMode,
       'selectedAdhan': selectedAdhan.index,
+      'adhanVoiceId': adhanVoiceId,
       'adhanVolume': adhanVolume,
       'vibrationEnabled': vibrationEnabled,
       'quietHoursEnabled': quietHoursEnabled,
@@ -366,6 +373,9 @@ class AppSettings {
       muadhinMode: map['muadhinMode'] ?? true,
       selectedAdhan:
           AdhanSound.values[map['selectedAdhan'] ?? AdhanSound.local.index],
+      adhanVoiceId: map['adhanVoiceId'] is String
+          ? map['adhanVoiceId'] as String
+          : 'local',
       adhanVolume: (map['adhanVolume'] ?? 1.0).toDouble(),
       vibrationEnabled: map['vibrationEnabled'] ?? true,
       quietHoursEnabled: map['quietHoursEnabled'] ?? false,
@@ -388,6 +398,7 @@ class AppSettings {
         other.prePrayerOffsetMinutes == prePrayerOffsetMinutes &&
         other.muadhinMode == muadhinMode &&
         other.selectedAdhan == selectedAdhan &&
+        other.adhanVoiceId == adhanVoiceId &&
         other.adhanVolume == adhanVolume &&
         other.vibrationEnabled == vibrationEnabled &&
         other.quietHoursEnabled == quietHoursEnabled &&
@@ -408,6 +419,7 @@ class AppSettings {
       prePrayerOffsetMinutes,
       muadhinMode,
       selectedAdhan,
+      adhanVoiceId,
       adhanVolume,
       vibrationEnabled,
       quietHoursEnabled,
@@ -515,6 +527,10 @@ class SettingsRepository {
 
   Future<void> updateSelectedAdhan(AdhanSound adhan) async {
     await saveSettings(_currentSettings.copyWith(selectedAdhan: adhan));
+  }
+
+  Future<void> updateAdhanVoice(String id) async {
+    await saveSettings(_currentSettings.copyWith(adhanVoiceId: id));
   }
 
   Future<void> updateAdhanVolume(double volume) async {

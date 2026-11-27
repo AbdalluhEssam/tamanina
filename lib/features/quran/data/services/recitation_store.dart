@@ -1,17 +1,30 @@
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
 import 'package:quran_sharif/quran_sharif.dart';
 
+import '../../../../core/audio/audio_catalog.dart';
+import '../../../../core/audio/audio_library.dart';
+
 class RecitationStore {
-  RecitationStore(this._directory);
+  RecitationStore(this._directory, [this.reciter = _alafasy]);
+
+  static const _alafasy = Reciter(
+    'ar.alafasy',
+    'مشاري العفاسي',
+    'Alafasy',
+    128,
+  );
 
   final Directory _directory;
+  final Reciter reciter;
 
-  static Future<RecitationStore> open() async {
-    final support = await getApplicationSupportDirectory();
-    return RecitationStore(Directory('${support.path}/recitation_alafasy'));
+  static Future<RecitationStore> open([Reciter reciter = _alafasy]) async {
+    final library = await AudioLibrary.open();
+    return RecitationStore(library.recitationDir(reciter), reciter);
   }
+
+  /// Where [verse] is streamed from for the chosen reciter.
+  Uri uriFor(Ayahs verse) => reciter.verseUri(verse.number);
 
   File fileFor(Ayahs verse) => File('${_directory.path}/${verse.number}.mp3');
 
@@ -25,7 +38,7 @@ class RecitationStore {
     for (final verse in verses) {
       final file = fileFor(verse);
       if (await savedFileFor(verse) != null) continue;
-      final uri = Uri.parse(verse.audio);
+      final uri = uriFor(verse);
       if (uri.scheme != 'https' || uri.host != 'cdn.islamic.network') {
         throw StateError('Recitation source is unavailable');
       }

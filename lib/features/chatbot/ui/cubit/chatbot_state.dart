@@ -121,8 +121,12 @@ class ChatbotStreamingResponse extends ChatbotState {
   });
 
   @override
-  List<Object?> get props =>
-      [currentSession, currentStreamText, isComplete, chatHistory];
+  List<Object?> get props => [
+    currentSession,
+    currentStreamText,
+    isComplete,
+    chatHistory,
+  ];
 
   ChatbotStreamingResponse copyWith({
     ChatSession? currentSession,

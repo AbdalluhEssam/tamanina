@@ -35,9 +35,11 @@ class ChatSessionModel extends ChatSession {
       id: json['id'] as String,
       userId: json['userId'] as String,
       title: json['title'] as String,
-      messages: (json['messages'] as List<dynamic>?)
-              ?.map((msg) =>
-                  ChatMessageModel.fromJson(msg as Map<String, dynamic>))
+      messages:
+          (json['messages'] as List<dynamic>?)
+              ?.map(
+                (msg) => ChatMessageModel.fromJson(msg as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       createdAt: DateTime.parse(json['createdAt'] as String),
